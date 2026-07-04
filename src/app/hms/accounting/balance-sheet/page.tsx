@@ -6,8 +6,10 @@ import { Printer, Calendar, RefreshCcw, Search, ChevronDown, ChevronUp } from 'l
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { useLocalization } from "@/contexts/localization-context";
 
 export default function BalanceSheetPage() {
+    const { currencySymbol } = useLocalization();
     const [data, setData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [asOfDate, setAsOfDate] = useState(new Date().toISOString().split('T')[0]);
@@ -146,7 +148,7 @@ export default function BalanceSheetPage() {
                             {Math.abs((data?.totalLiabilities + data?.totalEquity) - data?.totalAssets) > 0.01 && (
                                 <div className="bg-rose-900/50 p-2 text-center text-rose-300 text-[10px] font-black uppercase flex items-center justify-center gap-4">
                                     <div className="animate-pulse h-2 w-2 rounded-full bg-rose-500" />
-                                    <span>Difference in Opening Balance: ₹{Math.abs((data?.totalLiabilities + data?.totalEquity) - data?.totalAssets).toLocaleString()}</span>
+                                    <span>Difference in Opening Balance: ${currencySymbol}{Math.abs((data?.totalLiabilities + data?.totalEquity) - data?.totalAssets).toLocaleString()}</span>
                                     <div className="animate-pulse h-2 w-2 rounded-full bg-rose-500" />
                                 </div>
                             )}
@@ -157,7 +159,7 @@ export default function BalanceSheetPage() {
                     <div className="h-8 bg-[#003333] border-t border-[#006666] flex items-center justify-between px-6 text-[10px] font-bold no-print">
                         <div className="flex gap-8">
                             <span className="text-[#64ffff]">FY: 2025-26</span>
-                            <span className="text-[#64ffff]">CURRENCY: INR (₹)</span>
+                            <span className="text-[#64ffff]">CURRENCY: INR (${currencySymbol})</span>
                             <span className="text-[#64ffff]">NODES: { (data?.assets?.length || 0) + (data?.liabilities?.length || 0) + (data?.equity?.length || 0) } LEDGERS</span>
                         </div>
                         <div className="flex gap-4">

@@ -16,8 +16,10 @@ import { Checkbox } from "@/components/ui/checkbox"
 import Link from "next/link"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { X } from "lucide-react"
+import { useLocalization } from "@/contexts/localization-context";
 
 export default function LabTestManagementPage() {
+    const { currencySymbol } = useLocalization();
     const { toast } = useToast()
     const [isMounted, setIsMounted] = useState(false)
     const [tests, setTests] = useState<any[]>([])
@@ -198,7 +200,7 @@ export default function LabTestManagementPage() {
                                         <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{test.units || "—"}</span>
                                     </td>
                                     <td className="px-6 py-5 text-right">
-                                        <span className="font-black text-indigo-600 text-lg">₹{Number(test.price) || '0'}</span>
+                                        <span className="font-black text-indigo-600 text-lg">{currencySymbol}{Number(test.price) || '0'}</span>
                                     </td>
                                     <td className="px-6 py-5">
                                         <div className="flex justify-center gap-1">
@@ -245,6 +247,7 @@ export default function LabTestManagementPage() {
 }
 
 function LabTestForm({ initialData, allTests, onSubmit, onClose }: any) {
+    const { currencySymbol } = useLocalization();
     const [formData, setFormData] = useState(initialData ? {
         ...initialData,
         reference_range: typeof initialData.reference_range === 'object' ? initialData.reference_range?.range || JSON.stringify(initialData.reference_range) : initialData.reference_range || "",
@@ -384,6 +387,7 @@ function LabTestForm({ initialData, allTests, onSubmit, onClose }: any) {
                     {formData.panel_members.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-3 p-3 bg-slate-50 border border-slate-200 rounded-xl max-h-48 overflow-y-auto">
                             {formData.panel_members.map((id: string) => {
+                                const { currencySymbol } = useLocalization();
                                 const test = individualTests.find((t: any) => t.id === id) || (allTests || []).find((t: any) => t.id === id);
                                 return (
                                     <div key={id} className="flex items-center gap-2 bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm">

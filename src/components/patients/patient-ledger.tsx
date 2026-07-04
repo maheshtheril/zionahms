@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLocalization } from "@/contexts/localization-context";
 
 interface LedgerLine {
   id: string;
@@ -40,6 +41,7 @@ interface LedgerLine {
 }
 
 export function PatientLedger({ patientId }: { patientId: string }) {
+    const { currencySymbol } = useLocalization();
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<LedgerLine[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -90,7 +92,7 @@ export function PatientLedger({ patientId }: { patientId: string }) {
               <TrendingUp className="h-16 w-16 text-rose-500" />
             </div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Total Invoiced (Debits)</p>
-            <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">₹{totalDebit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h3>
+            <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{currencySymbol}{totalDebit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h3>
             <div className="flex items-center gap-2 mt-4">
               <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
               <span className="text-[10px] font-bold text-slate-500">Accumulated Patient Debt</span>
@@ -104,7 +106,7 @@ export function PatientLedger({ patientId }: { patientId: string }) {
               <TrendingDown className="h-16 w-16 text-emerald-500" />
             </div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Total Collected (Credits)</p>
-            <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">₹{totalCredit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h3>
+            <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{currencySymbol}{totalCredit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h3>
             <div className="flex items-center gap-2 mt-4">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[10px] font-bold text-slate-500">Total Payments Received</span>
@@ -121,7 +123,7 @@ export function PatientLedger({ patientId }: { patientId: string }) {
               <Calculator className="h-16 w-16" />
             </div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60 mb-2">Effective Standing</p>
-            <h3 className="text-3xl font-black text-white tracking-tighter">₹{Math.abs(netBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}</h3>
+            <h3 className="text-3xl font-black text-white tracking-tighter">{currencySymbol}{Math.abs(netBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}</h3>
             <div className="flex items-center gap-2 mt-4">
               <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
               <span className="text-[10px] font-bold text-white/80 uppercase tracking-widest">
@@ -203,14 +205,14 @@ export function PatientLedger({ patientId }: { patientId: string }) {
                     <td className="px-6 py-5 text-right">
                       {Number(entry.debit) > 0 ? (
                         <span className="text-sm font-black text-rose-600 italic">
-                           ₹{Number(entry.debit).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                           ${currencySymbol}{Number(entry.debit).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
                       ) : <span className="text-slate-200 dark:text-slate-800">-</span>}
                     </td>
                     <td className="px-6 py-5 text-right">
                       {Number(entry.credit) > 0 ? (
                         <span className="text-sm font-black text-emerald-600 italic">
-                          ₹{Number(entry.credit).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          ${currencySymbol}{Number(entry.credit).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
                       ) : <span className="text-slate-200 dark:text-slate-800">-</span>}
                     </td>
@@ -223,7 +225,7 @@ export function PatientLedger({ patientId }: { patientId: string }) {
                             ? "bg-emerald-50 text-emerald-700 border-emerald-100" 
                             : "bg-slate-50 text-slate-400 border-slate-100"
                       )}>
-                        ₹{Math.abs(entry.runningBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        ${currencySymbol}{Math.abs(entry.runningBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         {entry.runningBalance > 0.1 ? <ArrowUpRight className="h-3 w-3" /> : entry.runningBalance < -0.1 ? <ArrowDownLeft className="h-3 w-3" /> : null}
                       </div>
                     </td>
@@ -265,7 +267,7 @@ export function PatientLedger({ patientId }: { patientId: string }) {
                 "text-2xl font-black tracking-tighter text-right",
                 netBalance > 0.1 ? "text-rose-600" : netBalance < -0.1 ? "text-emerald-600" : "text-slate-400"
               )}>
-                ₹{Math.abs(netBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                ${currencySymbol}{Math.abs(netBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 <span className="ml-2 text-xs font-bold uppercase tracking-tighter">
                   {netBalance > 0.1 ? 'DR' : netBalance < -0.1 ? 'CR' : ''}
                 </span>
@@ -280,6 +282,7 @@ export function PatientLedger({ patientId }: { patientId: string }) {
 }
 
 function LedgerSkeleton() {
+    const { currencySymbol } = useLocalization();
   return (
     <div className="space-y-8 animate-pulse">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

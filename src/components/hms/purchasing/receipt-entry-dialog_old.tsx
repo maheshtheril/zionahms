@@ -30,6 +30,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { FileUpload } from "@/components/ui/file-upload";
+import { useLocalization } from "@/contexts/localization-context";
 
 type ReceiptItem = {
     productId: string;
@@ -67,6 +68,7 @@ interface ReceiptEntryDialogProps {
 const TAX_OPTIONS = [0, 5, 12, 18, 28];
 
 export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryDialogProps) {
+    const { currencySymbol } = useLocalization();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isProductCreationOpen, setProductCreationOpen] = useState(false);
@@ -229,7 +231,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         const item = newItems[index];
         if (item.mrp && salePrice > item.mrp) {
             // Keep it but show a toast warning (non-blocking)
-            toast({ title: "Price Warning", description: `Sale price (₹${salePrice}) is higher than MRP (₹${item.mrp})`, variant: "destructive" });
+            toast({ title: "Price Warning", description: `Sale price (${currencySymbol}${salePrice}) is higher than MRP (${currencySymbol}${item.mrp})`, variant: "destructive" });
         }
         item.salePrice = salePrice;
         item.pricingStrategy = 'manual';
@@ -1035,11 +1037,11 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                         <div className="flex items-center gap-8">
                             <div className="space-y-1">
                                 <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Total Taxable</p>
-                                <p className="text-sm font-mono font-bold text-foreground">₹{totalTaxable.toFixed(2)}</p>
+                                <p className="text-sm font-mono font-bold text-foreground">{currencySymbol}{totalTaxable.toFixed(2)}</p>
                             </div>
                             <div className="space-y-1 border-l border-border pl-8">
                                 <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Aggregate Tax</p>
-                                <p className="text-sm font-mono font-bold text-indigo-500">₹{totalTax.toFixed(2)}</p>
+                                <p className="text-sm font-mono font-bold text-indigo-500">{currencySymbol}{totalTax.toFixed(2)}</p>
                             </div>
                             <div className="flex flex-col space-y-1 border-l border-border pl-8 group/round">
                                 <div className="flex items-center gap-2">
@@ -1057,16 +1059,16 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
 
                         <div className="bg-accent/50 px-6 py-2 rounded-2xl border border-border flex flex-col items-center">
                             <p className="text-[8px] font-black text-indigo-500 uppercase tracking-widest mb-0.5">Grand Total INR</p>
-                            <p className="text-2xl font-black text-foreground tracking-tighter">₹{netTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                            <p className="text-2xl font-black text-foreground tracking-tighter">{currencySymbol}{netTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                         </div>
 
                         {scannedTotal > 0 && (
                             <div className="flex flex-col items-start px-4 border-l border-border">
                                 <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Scanned Total</p>
                                 <div className="flex items-center gap-2">
-                                    <p className="text-sm font-mono font-bold text-muted-foreground/80">₹{scannedTotal.toFixed(2)}</p>
+                                    <p className="text-sm font-mono font-bold text-muted-foreground/80">{currencySymbol}{scannedTotal.toFixed(2)}</p>
                                     <Badge className={Math.abs(scannedTotal - netTotal) < 0.01 ? 'bg-emerald-500/10 text-emerald-500 border-none' : 'bg-rose-500/10 text-rose-500 border-none animate-pulse'}>
-                                        {Math.abs(scannedTotal - netTotal) < 0.01 ? 'Matched' : `Mismatch: ₹${(netTotal - scannedTotal).toFixed(2)}`}
+                                        {Math.abs(scannedTotal - netTotal) < 0.01 ? 'Matched' : `Mismatch: ${currencySymbol}${(netTotal - scannedTotal).toFixed(2)}`}
                                     </Badge>
                                 </div>
                             </div>

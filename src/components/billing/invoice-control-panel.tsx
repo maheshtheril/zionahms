@@ -27,6 +27,7 @@ import {
 import { recordPayment, updateInvoiceStatus, shareInvoiceWhatsapp } from '@/app/actions/billing';
 import { useToast } from '@/components/ui/use-toast';
 import { generateInvoicePDFBase64 } from '@/lib/utils/pdf-generator';
+import { useLocalization } from "@/contexts/localization-context";
 
 interface InvoiceControlPanelProps {
     invoiceId: string;
@@ -47,6 +48,7 @@ export function InvoiceControlPanel({
     autoOpenPayment = false,
     pendingConsumablesCount = 0
 }: InvoiceControlPanelProps) {
+    const { currencySymbol } = useLocalization();
     const [isLoading, setIsLoading] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(autoOpenPayment && currentStatus === 'posted');
 
@@ -104,7 +106,7 @@ export function InvoiceControlPanel({
             if (res.success) {
                 toast({
                     title: "Payment Recorded",
-                    description: `Received ₹${paymentAmount} via ${paymentMethod.toUpperCase()}`,
+                    description: `Received ${currencySymbol}${paymentAmount} via ${paymentMethod.toUpperCase()}`,
                     variant: "default"
                 });
                 router.refresh();
@@ -242,7 +244,7 @@ export function InvoiceControlPanel({
                             <div>
                                 <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Received Amount</label>
                                 <div className="flex items-center gap-2 border-b border-slate-300 pb-1">
-                                    <span className="text-2xl font-bold font-mono text-slate-400">₹</span>
+                                    <span className="text-2xl font-bold font-mono text-slate-400">{currencySymbol}</span>
                                     <input
                                         type="number"
                                         min="1"
@@ -255,18 +257,18 @@ export function InvoiceControlPanel({
                             </div>
 
                             <div className="flex justify-between items-center text-xs font-medium pt-2 border-t border-slate-200">
-                                <span className="text-slate-500">Invoice Due: <span className="font-bold text-slate-700">₹{outstandingAmount.toFixed(2)}</span></span>
+                                <span className="text-slate-500">Invoice Due: <span className="font-bold text-slate-700">{currencySymbol}{outstandingAmount.toFixed(2)}</span></span>
                                 {balanceDifference < 0 ? (
-                                    <span className="text-orange-600 font-bold">Remaining Due: ₹{Math.abs(balanceDifference).toFixed(2)}</span>
+                                    <span className="text-orange-600 font-bold">Remaining Due: ${currencySymbol}{Math.abs(balanceDifference).toFixed(2)}</span>
                                 ) : (
-                                    <span className="text-emerald-600 font-bold">Change / Advance: ₹{balanceDifference.toFixed(2)}</span>
+                                    <span className="text-emerald-600 font-bold">Change / Advance: ${currencySymbol}{balanceDifference.toFixed(2)}</span>
                                 )}
                             </div>
 
                             {balanceDifference > 0 && (
                                 <div className="bg-emerald-50 text-emerald-700 text-[10px] p-2 rounded border border-emerald-100 flex items-center gap-2">
                                     <CheckCircle2 className="h-3 w-3" />
-                                    <span>Excess amount of ₹{balanceDifference.toFixed(2)} will be recorded as <strong>Advance Payment</strong>.</span>
+                                    <span>Excess amount of ${currencySymbol}{balanceDifference.toFixed(2)} will be recorded as <strong>Advance Payment</strong>.</span>
                                 </div>
                             )}
                         </div>

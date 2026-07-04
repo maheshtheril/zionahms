@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { Search, Save, Settings2, CheckCircle2, AlertCircle, Calculator, Plus, Trash2, X, Edit2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { bulkUpsertSalary, BulkSalaryInput } from '@/app/actions/payroll-bulk'
+import { useLocalization } from "@/contexts/localization-context";
 
 type StaffUser = {
     id: string
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function BulkSalaryGrid({ users, initialSalaries }: Props) {
+    const { currencySymbol } = useLocalization();
     const [search, setSearch] = useState('')
     const [salaries, setSalaries] = useState<StaffSalaryMap>(initialSalaries)
     const [isSaving, setIsSaving] = useState(false)
@@ -124,7 +126,7 @@ export function BulkSalaryGrid({ users, initialSalaries }: Props) {
                                         className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 dark:bg-zinc-950 dark:border-zinc-800 rounded-lg text-sm"
                                     />
                                     <div className="relative w-32">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">₹</span>
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">{currencySymbol}</span>
                                         <input 
                                             type="number" 
                                             value={item.value || ''}
@@ -198,6 +200,7 @@ export function BulkSalaryGrid({ users, initialSalaries }: Props) {
                         </thead>
                         <tbody className="divide-y divide-slate-200 dark:divide-zinc-800">
                             {filteredUsers.map(user => {
+                                const { currencySymbol } = useLocalization();
                                 const currentSalary = salaries[user.id] || { baseSalary: 0, allowances: {}, deductions: {} }
                                 const allowCount = Object.keys(currentSalary.allowances || {}).length
                                 const dedCount = Object.keys(currentSalary.deductions || {}).length
@@ -211,7 +214,7 @@ export function BulkSalaryGrid({ users, initialSalaries }: Props) {
                                         </td>
                                         <td className="px-4 py-2">
                                             <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">₹</span>
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">{currencySymbol}</span>
                                                 <input 
                                                     type="number"
                                                     value={currentSalary.baseSalary || ''}
@@ -244,7 +247,7 @@ export function BulkSalaryGrid({ users, initialSalaries }: Props) {
                                             </button>
                                         </td>
                                         <td className="px-4 py-3 text-right">
-                                            <p className="font-black text-slate-900 dark:text-white">₹{gross.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+                                            <p className="font-black text-slate-900 dark:text-white">{currencySymbol}{gross.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
                                         </td>
                                     </tr>
                                 )

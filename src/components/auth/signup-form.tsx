@@ -8,6 +8,56 @@ import { currenciesList, countriesList, modulesList } from "@/lib/static-data"
 import { Check, ChevronRight, Building, Layers } from "lucide-react"
 import { ZionaLogo } from "@/components/branding/ziona-logo"
 
+const WorkspaceSetupLoader = () => {
+    const [step, setStep] = useState(0);
+    const steps = [
+        "Initializing secure environment...",
+        "Provisioning isolated tenant database...",
+        "Configuring selected modules...",
+        "Applying security policies...",
+        "Finalizing your workspace..."
+    ];
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setStep(s => (s < steps.length - 1 ? s + 1 : s));
+        }, 2000);
+        return () => clearInterval(timer);
+    }, []);
+
+    return (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-500">
+            <div className="bg-white dark:bg-slate-950 p-10 rounded-3xl shadow-2xl shadow-indigo-500/10 max-w-md w-full border border-gray-100 dark:border-slate-800">
+                <div className="flex flex-col items-center text-center space-y-8">
+                    <div className="relative w-24 h-24">
+                        <div className="absolute inset-0 border-4 border-slate-100 dark:border-slate-900 rounded-full"></div>
+                        <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <Layers className="w-10 h-10 text-blue-600 animate-pulse" />
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-3 w-full">
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white">
+                            Building Workspace
+                        </h3>
+                        <p className="text-sm font-semibold text-blue-600 h-5">
+                            {steps[step]}
+                        </p>
+                    </div>
+
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div 
+                            className="bg-gradient-to-r from-blue-600 to-indigo-600 h-full transition-all duration-1000 ease-in-out"
+                            style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+                        ></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 export function SignupForm({ 
     setIsLogin, 
     branding,
@@ -62,8 +112,8 @@ export function SignupForm({
         companyName: '',
         countryId: '',
         currencyId: '',
-        industry: '',
-        modules: [] as string[]
+        industry: 'Healthcare',
+        modules: ['hms', 'inventory', 'finance', 'hr', 'crm'] as string[]
     })
 
     const nextStep = () => {
@@ -131,8 +181,12 @@ export function SignupForm({
         }
     }, [formData.countryId, currencies, countries])
 
+    const isWorking = isPending || signingIn || (state && !('error' in state));
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 relative">
+            {isWorking && <WorkspaceSetupLoader />}
+            
             <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex flex-col md:flex-row min-h-[600px]">
 
                 {/* Sidebar Progress */}
@@ -249,32 +303,10 @@ export function SignupForm({
                                         <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Industry</label>
                                         <select 
                                             value={formData.industry} 
-                                            required
-                                            onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} 
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                let newModules: string[] = [];
-
-                                                // SMART DEFAULTS (World Class)
-                                                if (val === 'Healthcare') {
-                                                    newModules = ['hms', 'inventory', 'finance'];
-                                                } else if (val === 'Retail' || val === 'Manufacturing') {
-                                                    newModules = ['inventory', 'finance', 'crm'];
-                                                } else if (val === 'Services') {
-                                                    newModules = ['crm', 'finance'];
-                                                }
-
-                                                setFormData({ ...formData, industry: val, modules: newModules });
-                                            }} 
-                                            className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
+                                            disabled
+                                            className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 bg-gray-100 dark:bg-slate-800 text-gray-500 cursor-not-allowed"
                                         >
-                                            <option value="">Select Industry...</option>
                                             <option value="Healthcare">Healthcare / Hospital</option>
-                                            <option value="Manufacturing">Manufacturing</option>
-                                            <option value="Retail">Retail / Pharmacy</option>
-                                            <option value="Services">Professional Services</option>
-                                            <option value="Technology">Technology</option>
-                                            <option value="Other">Other</option>
                                         </select>
                                     </div>
                                 </div>
@@ -301,23 +333,32 @@ export function SignupForm({
                                 )}
 
                                 <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-2">
-                                    {modules.filter(m => !['reports', 'system'].includes(m.module_key.toLowerCase())).map(mod => (
+                                    {modules.filter(m => !['reports', 'system'].includes(m.module_key.toLowerCase())).map(mod => {
+                                        const isAvailable = ['hms', 'inventory', 'finance', 'hr', 'crm'].includes(mod.module_key);
+                                        return (
                                         <div
                                             key={mod.module_key}
-                                            onClick={() => toggleModule(mod.module_key)}
-                                            className={`p-4 rounded-xl border cursor-pointer transition-all ${formData.modules.includes(mod.module_key) ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-200'}`}
+                                            onClick={() => isAvailable && toggleModule(mod.module_key)}
+                                            className={`p-4 rounded-xl border transition-all ${!isAvailable ? 'opacity-70 bg-gray-50 border-gray-100 cursor-not-allowed' : formData.modules.includes(mod.module_key) ? 'border-blue-500 bg-blue-50 cursor-pointer' : 'border-gray-200 hover:border-blue-200 cursor-pointer'}`}
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-5 h-5 rounded border flex items-center justify-center ${formData.modules.includes(mod.module_key) ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
-                                                    {formData.modules.includes(mod.module_key) && <Check className="h-3 w-3 text-white" />}
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-5 h-5 rounded border flex items-center justify-center ${!isAvailable ? 'bg-gray-200 border-gray-300' : formData.modules.includes(mod.module_key) ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
+                                                        {formData.modules.includes(mod.module_key) && <Check className="h-3 w-3 text-white" />}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-medium text-gray-900">{mod.name}</h4>
+                                                        <p className="text-xs text-gray-500">{mod.description}</p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <h4 className="font-medium text-gray-900">{mod.name}</h4>
-                                                    <p className="text-xs text-gray-500">{mod.description}</p>
-                                                </div>
+                                                {!isAvailable && (
+                                                    <span className="text-[10px] font-bold tracking-wider uppercase bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full shrink-0">
+                                                        Coming Soon
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
-                                    ))}
+                                    )})}
                                 </div>
 
                             </div>
@@ -326,11 +367,6 @@ export function SignupForm({
                         {/* Error/Success Messages */}
                         {step === 3 && state && 'error' in state && (
                             <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm mt-2">{state.error}</div>
-                        )}
-                        {step === 3 && state && !('error' in state) && (
-                            <div className="p-3 bg-green-50 text-green-600 rounded-lg text-sm mt-2">
-                                Account created successfully! Finalizing your setup...
-                            </div>
                         )}
 
 

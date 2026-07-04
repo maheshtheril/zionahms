@@ -8,8 +8,10 @@ import {
     searchPatients, searchJournals, searchAccounts, getOutstandingInvoices 
 } from '@/app/actions/accounting/helpers';
 import { Loader2 } from 'lucide-react';
+import { useLocalization } from "@/contexts/localization-context";
 
 export default function EditReceiptPage() {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
     const params = useParams();
     const id = params.id as string;
@@ -76,7 +78,7 @@ export default function EditReceiptPage() {
                 journalsSearch={searchJournals}
                 accountsSearch={searchAccounts}
                 getBills={getOutstandingInvoices}
-                currency="₹"
+                currency={currencySymbol}
             />
         </div>
     );

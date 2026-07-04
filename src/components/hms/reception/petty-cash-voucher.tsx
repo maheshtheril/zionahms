@@ -3,6 +3,7 @@
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Printer } from "lucide-react"
+import { useLocalization } from "@/contexts/localization-context";
 
 interface PettyCashVoucherProps {
     payment: any
@@ -28,6 +29,7 @@ function numberToWords(amount: number): string {
 }
 
 export function PettyCashVoucher({ payment, onClose }: PettyCashVoucherProps) {
+    const { currencySymbol } = useLocalization();
     const handlePrint = () => {
         window.print();
     };
@@ -141,7 +143,7 @@ export function PettyCashVoucher({ payment, onClose }: PettyCashVoucherProps) {
                         <div className="flex items-center justify-end gap-3 p-4 bg-slate-100 rounded border border-slate-200">
                             <span className="font-bold text-slate-600 uppercase">Total Amount</span>
                             <span className="text-2xl font-bold font-mono text-slate-900">
-                                ₹{Number(payment.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                ${currencySymbol}{Number(payment.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                             </span>
                         </div>
                     </div>

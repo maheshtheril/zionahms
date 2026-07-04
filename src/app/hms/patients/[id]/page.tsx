@@ -13,8 +13,10 @@ import { PatientHistoryLog } from "@/components/patients/patient-history-log"
 import { PatientLedger } from "@/components/patients/patient-ledger"
 
 import { AdmissionDialog } from "@/components/hms/patients/admission-dialog"
+import { useLocalization } from "@/contexts/localization-context";
 
 export default async function PatientDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { currencySymbol } = useLocalization();
     const { id } = await params;
 
     const [patient, activeAdmission] = await Promise.all([
@@ -350,11 +352,11 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 opacity-60 grayscale hover:grayscale-0 transition-all duration-700">
                                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                                     <p className="text-slate-500 font-medium text-sm">Summary Invoiced</p>
-                                    <p className="text-3xl font-black text-slate-900 mt-2">₹{totalInvoiced.toLocaleString()}</p>
+                                    <p className="text-3xl font-black text-slate-900 mt-2">{currencySymbol}{totalInvoiced.toLocaleString()}</p>
                                 </div>
                                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                                     <p className="text-slate-500 font-medium text-sm">Net Outstanding</p>
-                                    <p className={`text-3xl font-black mt-2 ${totalOutstanding > 0 ? 'text-red-600' : 'text-emerald-600'}`}>₹{totalOutstanding.toLocaleString()}</p>
+                                    <p className={`text-3xl font-black mt-2 ${totalOutstanding > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{currencySymbol}{totalOutstanding.toLocaleString()}</p>
                                 </div>
                             </div>
 
@@ -365,6 +367,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                 </div>
                                 <div className="divide-y divide-slate-100">
                                     {patient.hms_invoice.map((inv, i) => {
+                                        const { currencySymbol } = useLocalization();
                                         const serializedInv = JSON.parse(JSON.stringify(inv));
                                         return (
                                             <InvoicePreviewDialog
@@ -384,7 +387,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                                             </div>
                                                         </div>
                                                         <div className="text-right">
-                                                            <p className="font-mono font-black text-slate-900 text-lg">₹{Number(inv.total || 0).toLocaleString()}</p>
+                                                            <p className="font-mono font-black text-slate-900 text-lg">{currencySymbol}{Number(inv.total || 0).toLocaleString()}</p>
                                                             <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full border ${inv.status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-orange-50 text-orange-700 border-orange-100'}`}>
                                                                 {inv.status}
                                                             </span>

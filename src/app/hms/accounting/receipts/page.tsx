@@ -11,8 +11,10 @@ import { format } from 'date-fns';
 import { CreateReceiptDialog } from '@/components/accounting/create-receipt-dialog';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocalization } from "@/contexts/localization-context";
 
 export default function ReceiptsPage() {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
     const [payments, setPayments] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -128,7 +130,7 @@ export default function ReceiptsPage() {
                                                 </div>
                                             </td>
                                             <td className="px-4 py-2 border-r border-[#006666] uppercase text-[9px] font-bold text-[#64ffff]/80">{p.method}</td>
-                                            <td className="px-4 py-2 text-right font-black text-[#ffffcc] pr-8">₹{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                            <td className="px-4 py-2 text-right font-black text-[#ffffcc] pr-8">{currencySymbol}{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                                         </tr>
                                     ))
                                 )}
@@ -141,7 +143,7 @@ export default function ReceiptsPage() {
                         <div className="flex gap-8">
                             <div className="flex gap-2">
                                 <span className="text-[#64ffff]">TOTAL COLLECTION:</span>
-                                <span className="text-white">₹{totalReceipts.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                <span className="text-white">{currencySymbol}{totalReceipts.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                             </div>
                             <div className="flex gap-2">
                                 <span className="text-[#64ffff]">VOUCHERS:</span>

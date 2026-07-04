@@ -12,10 +12,12 @@ import {
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { redirect } from "next/navigation"
+import { useLocalization } from "@/contexts/localization-context";
 
 export const dynamic = 'force-dynamic'
 
 export default async function ManagementDashboard() {
+    const { currencySymbol } = useLocalization();
     const session = await auth()
     if (!session?.user) redirect('/auth/login')
 
@@ -94,8 +96,8 @@ export default async function ManagementDashboard() {
                             <div>
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500 mb-2">Revenue Synthesis</p>
                                 <h3 className="text-4xl font-black text-slate-900 dark:text-white tabular-nums">
-                                    ₹{stats.totalRevenueAchieved.toLocaleString()}
-                                    <span className="text-lg text-slate-400 ml-2 font-bold font-sans tracking-tight">/ ₹{stats.totalRevenueGoal.toLocaleString()}</span>
+                                    ${currencySymbol}{stats.totalRevenueAchieved.toLocaleString()}
+                                    <span className="text-lg text-slate-400 ml-2 font-bold font-sans tracking-tight">/ ${currencySymbol}{stats.totalRevenueGoal.toLocaleString()}</span>
                                 </h3>
                             </div>
                             <div className="p-3 bg-indigo-500/10 rounded-2xl">
@@ -126,6 +128,7 @@ export default async function ManagementDashboard() {
 
                     <div className="grid grid-cols-1 gap-4">
                         {targets.map((t: any) => {
+                            const { currencySymbol } = useLocalization();
                             const isAtRisk = t.milestones?.some((m: any) => m.status === 'failed' && m.is_blocking);
                             const progress = (Number(t.achieved_value) / Number(t.target_value)) * 100;
 

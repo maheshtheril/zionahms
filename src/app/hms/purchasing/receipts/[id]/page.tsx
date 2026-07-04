@@ -15,6 +15,7 @@ import { SupplierDialog } from '@/components/hms/purchasing/supplier-dialog';
 import { SupplierPricingDefaults } from '@/components/hms/purchasing/supplier-pricing-defaults';
 import { PurchaseReturnDialog } from '@/components/hms/purchasing/purchase-return-dialog';
 import { Undo2 } from 'lucide-react';
+import { useLocalization } from "@/contexts/localization-context";
 
 const PACKING_OPTIONS = ['1 Strip', '1 Box', '1 Bottle', '10x10', '1x10', '1x15', '1 Unit', '1 kg', '1 L'];
 const TAX_OPTIONS = ['0', '5', '12', '18', '28'];
@@ -45,6 +46,7 @@ type ReceiptItem = {
 };
 
 export default function EditPurchaseReceiptPage() {
+    const { currencySymbol } = useLocalization();
     const params = useParams<{ id: string }>();
     const router = useRouter();
     const { toast } = useToast();
@@ -310,7 +312,7 @@ export default function EditPurchaseReceiptPage() {
         if (item.mrp && salePrice > item.mrp) {
             toast({
                 title: "Invalid Price",
-                description: `Sale price (₹${salePrice}) cannot exceed MRP (₹${item.mrp}). This violates India's Legal Metrology Act.`,
+                description: `Sale price (${currencySymbol}${salePrice}) cannot exceed MRP (${currencySymbol}${item.mrp}). This violates India's Legal Metrology Act.`,
                 variant: "destructive"
             });
             return;
@@ -376,7 +378,7 @@ export default function EditPurchaseReceiptPage() {
         if (item.mrp && item.salePrice > item.mrp) {
             toast({
                 title: "Exceeds MRP",
-                description: `Calculated sale price (₹${item.salePrice}) exceeds MRP (₹${item.mrp}). Adjusting to MRP.`,
+                description: `Calculated sale price (${currencySymbol}${item.salePrice}) exceeds MRP (${currencySymbol}${item.mrp}). Adjusting to MRP.`,
                 variant: "default"
             });
             item.salePrice = item.mrp;
@@ -1150,11 +1152,11 @@ export default function EditPurchaseReceiptPage() {
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-muted-foreground font-medium uppercase tracking-widest text-[10px]">Taxable Value</span>
-                                        <span className="text-foreground font-black font-mono text-lg tracking-tighter">₹{totalTaxable.toFixed(2)}</span>
+                                        <span className="text-foreground font-black font-mono text-lg tracking-tighter">{currencySymbol}{totalTaxable.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-muted-foreground font-medium uppercase tracking-widest text-[10px]">Total Tax</span>
-                                        <span className="text-foreground font-black font-mono text-lg tracking-tighter">₹{totalTax.toFixed(2)}</span>
+                                        <span className="text-foreground font-black font-mono text-lg tracking-tighter">{currencySymbol}{totalTax.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-sm">
                                         <div className="flex items-center gap-2">
@@ -1190,7 +1192,7 @@ export default function EditPurchaseReceiptPage() {
                                         </div>
                                         <div className="text-right">
                                             <span className="text-4xl font-black text-foreground font-mono tracking-tighter block">
-                                                ₹{netTotal.toFixed(2)}
+                                                ${currencySymbol}{netTotal.toFixed(2)}
                                             </span>
                                         </div>
                                     </div>
@@ -1200,12 +1202,12 @@ export default function EditPurchaseReceiptPage() {
                                         <div className="mt-6 p-4 bg-background rounded-2xl border border-border space-y-3 shadow-inner">
                                             <div className="flex justify-between items-center text-[10px] uppercase font-black tracking-widest">
                                                 <span className="text-muted-foreground">Scanned Total</span>
-                                                <span className="text-foreground font-mono">₹{scannedTotal.toFixed(2)}</span>
+                                                <span className="text-foreground font-mono">{currencySymbol}{scannedTotal.toFixed(2)}</span>
                                             </div>
                                             {Math.abs(scannedTotal - netTotal) > 0.01 ? (
                                                 <div className="flex justify-between items-center text-[10px] uppercase font-black tracking-widest text-rose-500">
                                                     <span>Mismatch</span>
-                                                    <span className="font-mono">₹{(netTotal - scannedTotal).toFixed(2)}</span>
+                                                    <span className="font-mono">{currencySymbol}{(netTotal - scannedTotal).toFixed(2)}</span>
                                                 </div>
                                             ) : (
                                                 <div className="flex justify-between items-center text-[10px] uppercase font-black tracking-widest text-emerald-600">

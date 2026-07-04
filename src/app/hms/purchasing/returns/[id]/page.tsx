@@ -18,8 +18,10 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useLocalization } from "@/contexts/localization-context";
 
 export default function PurchaseReturnDetailsPage() {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
     const params = useParams<{ id: string }>();
     const { toast } = useToast();
@@ -153,7 +155,7 @@ export default function PurchaseReturnDetailsPage() {
                                     <p className="text-[10px] text-muted-foreground uppercase">Qty</p>
                                 </div>
                                 <div className="col-span-2 text-right">
-                                    <p className="text-sm font-bold text-red-600">₹{Number(line.line_total).toFixed(2)}</p>
+                                    <p className="text-sm font-bold text-red-600">{currencySymbol}{Number(line.line_total).toFixed(2)}</p>
                                 </div>
                             </div>
                         ))}
@@ -164,7 +166,7 @@ export default function PurchaseReturnDetailsPage() {
                         </div>
                         <div className="text-right">
                             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Total Debit</p>
-                            <p className="text-3xl font-black text-red-600">₹{Number(returnIdx.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                            <p className="text-3xl font-black text-red-600">{currencySymbol}{Number(returnIdx.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                         </div>
                     </div>
                 </div>

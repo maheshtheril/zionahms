@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, UserPlus } from 'lucide-react'
 import { createInvoice, updateInvoice } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
+import { useLocalization } from "@/contexts/localization-context";
+
 // hms_invoice_status refactored to string
 
 export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice }: {
@@ -17,6 +19,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
     appointmentId?: string,
     initialInvoice?: any
 }) {
+    const { currencySymbol } = useLocalization();
     const router = useRouter()
     const searchParams = useSearchParams()
     const [loading, setLoading] = useState(false)
@@ -385,22 +388,22 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                         if (selectedUom === 'PCS') {
                             // Selling individual pieces
                             updated.unit_price = line.base_price;
-                            console.log(`✅ PCS selected → Price: ₹${line.base_price}`);
+                            console.log(`✅ PCS selected → Price: ${currencySymbol}${line.base_price}`);
                         } else if (selectedUom === line.pack_uom && line.pack_price) {
                             // Selling full pack (PACK-10, PACK-15, etc.)
                             updated.unit_price = line.pack_price;
-                            console.log(`✅ ${selectedUom} selected → Price: ₹${line.pack_price}`);
+                            console.log(`✅ ${selectedUom} selected → Price: ${currencySymbol}${line.pack_price}`);
                         } else {
                             // Fallback: calculate from base price
                             const match = selectedUom.match(/PACK-(\d+)/i);
                             if (match) {
                                 const packSize = parseInt(match[1]);
                                 updated.unit_price = line.base_price * packSize;
-                                console.log(`✅ ${selectedUom} calculated → Price: ₹${updated.unit_price}`);
+                                console.log(`✅ ${selectedUom} calculated → Price: ${currencySymbol}${updated.unit_price}`);
                             }
                         }
 
-                        console.log(`💰 Final price: ₹${updated.unit_price}`);
+                        console.log(`💰 Final price: ${currencySymbol}${updated.unit_price}`);
                     } else {
                         console.warn('⚠️ Missing pricing data for UOM calculation');
                     }
@@ -793,7 +796,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                             <div className="flex justify-between items-center pt-4">
                                 <span className="text-2xl font-bold">Grand Total</span>
                                 <span className="text-3xl font-bold text-green-400 font-mono">
-                                    ₹{grandTotal.toFixed(2)}
+                                    ${currencySymbol}{grandTotal.toFixed(2)}
                                 </span>
                             </div>
                         </div>

@@ -12,6 +12,7 @@ import { useState } from 'react'
 import { SYSTEM_DEFAULT_CURRENCY_CODE, SYSTEM_DEFAULT_CURRENCY_SYMBOL } from '@/lib/currency-constants'
 
 import { CurrencyInfo } from '@/app/actions/currency'
+import { useLocalization } from "@/contexts/localization-context";
 
 export function DealForm({
     company,
@@ -28,6 +29,7 @@ export function DealForm({
     defaultCurrency?: CurrencyInfo,
     supportedCurrencies?: CurrencyInfo[]
 }) {
+    const { currencySymbol } = useLocalization();
     const initialState: DealFormState = { message: '', errors: {} }
     const [state, dispatch] = useFormState(mode === 'edit' ? updateDeal : createDeal, initialState)
     const [selectedPipelineId, setSelectedPipelineId] = useState<string>(initialData?.pipeline_id || pipelines[0]?.id || '')
@@ -42,6 +44,7 @@ export function DealForm({
     const stages = selectedPipeline?.stages || []
 
     const CurrencyIcon = () => {
+        const { currencySymbol } = useLocalization();
         switch (currency) {
             case 'INR': return <IndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
             case 'EUR': return <Euro className="absolute left-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
@@ -91,7 +94,7 @@ export function DealForm({
                                         ))
                                     ) : (
                                         <>
-                                            <option value="INR">INR (₹)</option>
+                                            <option value="INR">INR (${currencySymbol})</option>
                                             <option value="USD">USD ($)</option>
                                             <option value="EUR">EUR (€)</option>
                                             <option value="GBP">GBP (£)</option>

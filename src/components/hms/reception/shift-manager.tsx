@@ -33,6 +33,7 @@ import { getCurrentShift, startShift, getShiftSummary, closeShift, getShiftHisto
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useLocalization } from "@/contexts/localization-context";
 
 const DENOMINATIONS = [
     { value: 500, label: "500" },
@@ -47,6 +48,7 @@ const DENOMINATIONS = [
 ];
 
 export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShiftUpdate?: (shift: any) => void, onOpenExpense?: () => void, onClose?: () => void }) {
+    const { currencySymbol } = useLocalization();
     const [shift, setShift] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isStartOpen, setIsStartOpen] = useState(false);
@@ -237,7 +239,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <div className="p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-900/50 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm space-y-2">
                                     <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Starting Change Float</Label>
-                                    <div className="text-3xl font-black text-slate-800 dark:text-white font-mono">₹{Number(shift.opening_balance).toLocaleString('en-IN')}</div>
+                                    <div className="text-3xl font-black text-slate-800 dark:text-white font-mono">{currencySymbol}{Number(shift.opening_balance).toLocaleString('en-IN')}</div>
                                 </div>
                                 <div className="p-6 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/30 dark:to-purple-950/30 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 shadow-sm space-y-2">
                                     <Label className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-[0.2em]">Authorized Officer / Terminal</Label>
@@ -312,10 +314,10 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                                             <div className="font-semibold">{format(new Date(s.end_time), 'MMM dd, yyyy')}</div>
                                             <div className="text-[10px] text-muted-foreground">{format(new Date(s.start_time), 'hh:mm')} - {format(new Date(s.end_time), 'hh:mm')}</div>
                                         </TableCell>
-                                        <TableCell>₹{Number(s.system_balance).toLocaleString()}</TableCell>
-                                        <TableCell>₹{Number(s.closing_balance).toLocaleString()}</TableCell>
+                                        <TableCell>{currencySymbol}{Number(s.system_balance).toLocaleString()}</TableCell>
+                                        <TableCell>{currencySymbol}{Number(s.closing_balance).toLocaleString()}</TableCell>
                                         <TableCell className={Number(s.difference) === 0 ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
-                                            ₹{Number(s.difference).toLocaleString()}
+                                            ${currencySymbol}{Number(s.difference).toLocaleString()}
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
@@ -379,7 +381,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                             <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2">
                                 {DENOMINATIONS.filter(d => d.value <= 500).map((d) => (
                                     <div key={d.value} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border border-slate-100 dark:border-slate-800/50">
-                                        <div className="w-16 font-mono font-bold text-slate-600 dark:text-slate-300 text-xs">₹{d.label}</div>
+                                        <div className="w-16 font-mono font-bold text-slate-600 dark:text-slate-300 text-xs">{currencySymbol}{d.label}</div>
                                         <div className="text-slate-400 text-xs font-bold">×</div>
                                         <Input
                                             type="number"
@@ -390,7 +392,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                                             onFocus={(e) => e.target.select()}
                                         />
                                         <div className="flex-1 text-right font-mono font-bold text-indigo-600 dark:text-indigo-400 text-xs">
-                                            = ₹{(parseInt(startQuantities[d.value] || "0") * d.value).toLocaleString('en-IN')}
+                                            = ${currencySymbol}{(parseInt(startQuantities[d.value] || "0") * d.value).toLocaleString('en-IN')}
                                         </div>
                                     </div>
                                 ))}
@@ -401,13 +403,13 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                             <div className="space-y-4">
                                 <div className="space-y-1 border-b border-slate-200 dark:border-slate-700 pb-4">
                                     <Label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Calculated Denomination Float</Label>
-                                    <div className="text-3xl font-black text-indigo-600 dark:text-indigo-400 font-mono">₹{totalOpeningPhysical.toLocaleString('en-IN')}</div>
+                                    <div className="text-3xl font-black text-indigo-600 dark:text-indigo-400 font-mono">{currencySymbol}{totalOpeningPhysical.toLocaleString('en-IN')}</div>
                                 </div>
 
                                 <div className="space-y-2 pt-2">
-                                    <Label htmlFor="flat-opening" className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Or Manual Flat Entry (₹)</Label>
+                                    <Label htmlFor="flat-opening" className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Or Manual Flat Entry (${currencySymbol})</Label>
                                     <div className="relative">
-                                        <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-sm">₹</span>
+                                        <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-sm">{currencySymbol}</span>
                                         <Input
                                             id="flat-opening"
                                             className="pl-8 h-10 text-lg font-bold bg-white dark:bg-slate-900 border-slate-200 font-mono"
@@ -443,7 +445,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="exp-amount">Amount (₹)</Label>
+                            <Label htmlFor="exp-amount">Amount (${currencySymbol})</Label>
                             <Input
                                 id="exp-amount"
                                 type="number"
@@ -495,7 +497,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                             <div className="grid gap-3">
                                 {DENOMINATIONS.map((d) => (
                                     <div key={d.value} className="flex items-center gap-4 p-2 rounded-md hover:bg-slate-50 group">
-                                        <div className="w-20 font-bold text-slate-500">₹{d.label}</div>
+                                        <div className="w-20 font-bold text-slate-500">{currencySymbol}{d.label}</div>
                                         <div className="text-slate-400">×</div>
                                         <Input
                                             type="number"
@@ -506,14 +508,14 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                                             onFocus={(e) => e.target.select()}
                                         />
                                         <div className="flex-1 text-right font-mono font-bold text-slate-700">
-                                            = ₹{(parseInt(quantities[d.value] || "0") * d.value).toLocaleString()}
+                                            = ${currencySymbol}{(parseInt(quantities[d.value] || "0") * d.value).toLocaleString()}
                                         </div>
                                     </div>
                                 ))}
                             </div>
                             <div className="pt-4 border-t flex justify-between items-center px-4">
                                 <span className="text-lg font-bold">Actual Cash Total:</span>
-                                <span className="text-2xl font-black text-primary">₹{totalCashPhysical.toLocaleString()}</span>
+                                <span className="text-2xl font-black text-primary">{currencySymbol}{totalCashPhysical.toLocaleString()}</span>
                             </div>
                         </div>
 
@@ -532,28 +534,28 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                                       <div className="space-y-3">
                                           <div className="flex justify-between text-sm">
                                               <span>Total Revenue (Sales)</span>
-                                              <span className="font-bold text-indigo-600">₹{summary.totalRevenue?.toLocaleString() || 0}</span>
+                                              <span className="font-bold text-indigo-600">{currencySymbol}{summary.totalRevenue?.toLocaleString() || 0}</span>
                                           </div>
                                           <div className="flex justify-between text-sm pb-3 border-b border-dashed">
                                               <span>Draft / Pending Bills</span>
-                                              <span className="font-bold text-amber-600">₹{summary.pendingBillsTotal?.toLocaleString() || 0}</span>
+                                              <span className="font-bold text-amber-600">{currencySymbol}{summary.pendingBillsTotal?.toLocaleString() || 0}</span>
                                           </div>
                                           <div className="flex justify-between text-sm pt-1">
                                               <span>Opening Float</span>
-                                              <span className="font-bold">₹{Number(shift?.opening_balance || 0).toLocaleString()}</span>
+                                              <span className="font-bold">{currencySymbol}{Number(shift?.opening_balance || 0).toLocaleString()}</span>
                                           </div>
                                         <div className="flex justify-between text-sm">
                                             <span>Cash Collected</span>
-                                            <span className="font-bold text-green-600">+ ₹{summary.cashCollected.toLocaleString()}</span>
+                                            <span className="font-bold text-green-600">+ ${currencySymbol}{summary.cashCollected.toLocaleString()}</span>
                                         </div>
                                         <div className="flex justify-between text-sm">
                                             <span>Expenses (Cash)</span>
-                                            <span className="font-bold text-red-600">- ₹{summary.cashExpenses.toLocaleString()}</span>
+                                            <span className="font-bold text-red-600">- ${currencySymbol}{summary.cashExpenses.toLocaleString()}</span>
                                         </div>
 
                                         <div className="flex justify-between text-lg border-t-2 pt-2 font-black">
                                             <span>Expected In Drawer</span>
-                                            <span>₹{(Number(shift?.opening_balance || 0) + summary.netCash).toLocaleString()}</span>
+                                            <span>{currencySymbol}{(Number(shift?.opening_balance || 0) + summary.netCash).toLocaleString()}</span>
                                         </div>
 
                                         <div className="pt-6">
@@ -561,15 +563,15 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                                             <div className="space-y-2">
                                                 <div className="flex justify-between text-sm">
                                                     <span>Card Payments</span>
-                                                    <span className="font-semibold text-blue-600">₹{summary.card.toLocaleString()}</span>
+                                                    <span className="font-semibold text-blue-600">{currencySymbol}{summary.card.toLocaleString()}</span>
                                                 </div>
                                                 <div className="flex justify-between text-sm">
                                                     <span>UPI / Online</span>
-                                                    <span className="font-semibold text-purple-600">₹{summary.upi.toLocaleString()}</span>
+                                                    <span className="font-semibold text-purple-600">{currencySymbol}{summary.upi.toLocaleString()}</span>
                                                 </div>
                                                 <div className="flex justify-between text-sm">
                                                     <span>Other / Insurance</span>
-                                                    <span className="font-semibold text-slate-600">₹{summary.other.toLocaleString()}</span>
+                                                    <span className="font-semibold text-slate-600">{currencySymbol}{summary.other.toLocaleString()}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -588,7 +590,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                                     <div className="text-sm font-bold uppercase tracking-wider">Cash Variance</div>
                                     <div className="text-3xl font-black">
                                         {totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.netCash) > 0 ? "+" : ""}
-                                        ₹{(totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.netCash)).toLocaleString()}
+                                        ${currencySymbol}{(totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.netCash)).toLocaleString()}
                                     </div>
                                     <div className="flex items-center gap-1 text-xs">
                                         {Math.abs(totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.netCash)) < 0.1 ? (
@@ -669,7 +671,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className={`text-right font-bold ${tx.type === 'IN' ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {tx.type === 'IN' ? '+' : '-'} ₹{tx.amount.toLocaleString()}
+                                                    {tx.type === 'IN' ? '+' : '-'} ${currencySymbol}{tx.amount.toLocaleString()}
                                                 </TableCell>
                                             </TableRow>
                                         ))}

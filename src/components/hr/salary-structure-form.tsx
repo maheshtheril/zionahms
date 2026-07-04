@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { setStaffSalary } from "@/app/actions/payroll"
 import { Loader2, Plus, Trash2, CheckCircle2 } from "lucide-react"
+import { useLocalization } from "@/contexts/localization-context";
 
 interface SalaryFormProps {
     userId: string;
@@ -20,6 +21,7 @@ interface SalaryFormProps {
 }
 
 export function SalaryStructureForm({ userId, userName, initialData, onSuccess }: SalaryFormProps) {
+    const { currencySymbol } = useLocalization();
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
     
@@ -80,7 +82,7 @@ export function SalaryStructureForm({ userId, userName, initialData, onSuccess }
                 <div className="space-y-3">
                     <Label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Monthly Base Salary</Label>
                     <div className="relative">
-                        <span className="absolute left-3 top-2 text-slate-400">₹</span>
+                        <span className="absolute left-3 top-2 text-slate-400">{currencySymbol}</span>
                         <Input 
                             type="number" 
                             className="pl-8 text-lg font-medium" 
@@ -144,7 +146,7 @@ export function SalaryStructureForm({ userId, userName, initialData, onSuccess }
                 <div className="bg-slate-50 dark:bg-zinc-900/50 p-4 rounded-lg flex justify-between items-center">
                     <div className="text-sm text-slate-500">Estimated Gross Monthly Pay</div>
                     <div className="text-xl font-bold text-slate-900 dark:text-white">
-                        ₹{Number(baseSalary) + allowances.reduce((acc, a) => acc + (Number(a.amount)||0), 0)}
+                        ${currencySymbol}{Number(baseSalary) + allowances.reduce((acc, a) => acc + (Number(a.amount)||0), 0)}
                     </div>
                 </div>
 

@@ -10,6 +10,7 @@ import { Trash2, RotateCcw, AlertCircle, Package, ArrowLeftRight, Loader2 } from
 import { useToast } from "@/components/ui/use-toast";
 import { createPurchaseReturn } from '@/app/actions/returns';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocalization } from "@/contexts/localization-context";
 
 type ReturnItem = {
     receiptLineId: string;
@@ -41,6 +42,7 @@ export function PurchaseReturnDialog({
     initialItems,
     onSuccess
 }: PurchaseReturnDialogProps) {
+    const { currencySymbol } = useLocalization();
     const { toast } = useToast();
     const [items, setItems] = useState<ReturnItem[]>([]);
     const [reason, setReason] = useState('Damaged / Defective');
@@ -148,7 +150,7 @@ export function PurchaseReturnDialog({
                                                             BATCH: {item.batchNo}
                                                         </span>
                                                     )}
-                                                    <span className="text-[10px] text-muted-foreground">₹{item.unitPrice.toFixed(2)} / unit</span>
+                                                    <span className="text-[10px] text-muted-foreground">{currencySymbol}{item.unitPrice.toFixed(2)} / unit</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -176,7 +178,7 @@ export function PurchaseReturnDialog({
                                         </div>
 
                                         <div className="col-span-2 text-right">
-                                            <p className="text-sm font-bold text-foreground">₹{(item.returnQty * item.unitPrice).toFixed(2)}</p>
+                                            <p className="text-sm font-bold text-foreground">{currencySymbol}{(item.returnQty * item.unitPrice).toFixed(2)}</p>
                                             <p className="text-[10px] text-red-500/70 font-black uppercase tracking-tighter">Debit Amt</p>
                                         </div>
                                     </motion.div>
@@ -197,7 +199,7 @@ export function PurchaseReturnDialog({
                         </div>
                         <div className="text-right">
                             <p className="text-xs font-black text-red-500 uppercase tracking-widest mb-1">Total Return Value</p>
-                            <p className="text-2xl font-black text-red-600">₹{totalReturnAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                            <p className="text-2xl font-black text-red-600">{currencySymbol}{totalReturnAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                         </div>
                     </div>
                 </div>

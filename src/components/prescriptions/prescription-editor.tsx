@@ -10,6 +10,7 @@ import { sharePrescriptionWhatsapp } from '@/app/actions/prescription'
 import { getLabReportForAppointment } from '@/app/actions/lab'
 import { getProductAvailableUOMs } from '@/app/actions/product-uom'
 import { generatePrescriptionPDFBase64 } from '@/lib/utils/prescription-pdf-generator'
+import { useLocalization } from "@/contexts/localization-context";
 
 interface PrescriptionEditorProps {
     isModal?: boolean
@@ -17,6 +18,7 @@ interface PrescriptionEditorProps {
 }
 
 export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEditorProps) {
+    const { currencySymbol } = useLocalization();
     const router = useRouter()
     const { toast } = useToast()
     const searchParams = useSearchParams()
@@ -96,6 +98,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
 
     // Helper to get icon for a template
     const getTemplateIcon = (name: string) => {
+        const { currencySymbol } = useLocalization();
         const lower = name.toLowerCase()
         if (lower.includes('fever') || lower.includes('cold')) return <Thermometer className="h-3 w-3" />
         if (lower.includes('heart') || lower.includes('tension')) return <Heart className="h-3 w-3" />
@@ -1543,7 +1546,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                                                                 <div className={`text-xs font-black ${
                                                                     modalBatchId === b.id ? 'text-white' : 'text-slate-300'
                                                                 }`}>
-                                                                    ₹{Number(b.sale_price || 0)}
+                                                                    ${currencySymbol}{Number(b.sale_price || 0)}
                                                                 </div>
                                                                 {modalBatchId === b.id && (
                                                                     <div className="h-1.5 w-1.5 rounded-full bg-white ml-auto mt-1 animate-pulse" />
@@ -1603,6 +1606,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
 }
 
 function Stethoscope(props: any) {
+    const { currencySymbol } = useLocalization();
     return (
         <svg
             {...props}
@@ -1629,6 +1633,7 @@ function Stethoscope(props: any) {
 }
 
 function Receipt(props: any) {
+    const { currencySymbol } = useLocalization();
     return (
         <svg
             {...props}

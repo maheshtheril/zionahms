@@ -4,8 +4,10 @@ import { useSearchParams } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
 import { Zap, Clock, ShieldCheck } from 'lucide-react'
 import { Suspense } from 'react'
+import { useLocalization } from "@/contexts/localization-context";
 
 function CustomerDisplayContent() {
+    const { currencySymbol } = useLocalization();
     const searchParams = useSearchParams()
     const qrUrl = searchParams.get('url')
     const amount = searchParams.get('amount')
@@ -45,7 +47,7 @@ function CustomerDisplayContent() {
                     </div>
                     <div className="text-center">
                         <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] mb-2 leading-none">Exact Amount Required</p>
-                        <h2 className="text-6xl font-black text-slate-900 tracking-tighter italic">₹{Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h2>
+                        <h2 className="text-6xl font-black text-slate-900 tracking-tighter italic">{currencySymbol}{Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h2>
                     </div>
                 </div>
 
@@ -79,6 +81,7 @@ function CustomerDisplayContent() {
 }
 
 export default function CustomerDisplayPage() {
+    const { currencySymbol } = useLocalization();
     return (
         <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center"><Zap className="h-10 w-10 text-indigo-600 animate-pulse" /></div>}>
             <CustomerDisplayContent />

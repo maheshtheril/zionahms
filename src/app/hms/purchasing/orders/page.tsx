@@ -2,8 +2,10 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { Plus, Search } from 'lucide-react'
+import { useLocalization } from "@/contexts/localization-context";
 
 export default async function PurchaseOrdersPage() {
+    const { currencySymbol } = useLocalization();
     const session = await auth()
     if (!session?.user?.companyId || !session?.user?.tenantId) {
         return <div>Unauthorized</div>
@@ -124,7 +126,7 @@ export default async function PurchaseOrdersPage() {
                                         </span>
                                     </div>
                                     <div className="col-span-3 text-right font-mono text-2xl font-bold tracking-tighter">
-                                        <span className="text-sm text-slate-400 mr-2 align-middle font-sans font-bold">₹</span>
+                                        <span className="text-sm text-slate-400 mr-2 align-middle font-sans font-bold">{currencySymbol}</span>
                                         {Number(po.total_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </div>
                                 </Link>

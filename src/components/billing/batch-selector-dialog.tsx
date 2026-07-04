@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar, Package, ArrowRight, Table as TableIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useLocalization } from "@/contexts/localization-context";
 
 interface Batch {
   id: string;
@@ -32,8 +33,9 @@ export function BatchSelectorDialog({
   productName,
   batches,
   onSelect,
-  currency = '₹'
+  currency = currencySymbol
 }: BatchSelectorDialogProps) {
+    const { currencySymbol } = useLocalization();
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -120,6 +122,7 @@ export function BatchSelectorDialog({
           <ScrollArea className="h-[300px] pr-4" ref={scrollRef}>
             <div className="space-y-3">
               {batches.map((batch, index) => {
+                  const { currencySymbol } = useLocalization();
                 const isExpired = batch.expiry_date && new Date(batch.expiry_date) < new Date();
                 const stockQty = Number(batch.qty_on_hand);
                 const isActive = index === activeIndex;

@@ -1,4 +1,5 @@
 'use client';
+import { useLocalization } from '@/contexts/localization-context';
 
 import * as React from 'react';
 import { X, Loader2, Building, Mail, Phone, MapPin, FileText } from 'lucide-react';
@@ -12,8 +13,9 @@ interface SupplierDialogProps {
 }
 
 export function SupplierDialog({ isOpen, onClose, onSuccess, initialData }: SupplierDialogProps) {
+    const { currencySymbol: locCurrency } = useLocalization();
     // State for currency
-    const [currencySymbol, setCurrencySymbol] = React.useState('₹');
+    const [currencySymbol, setCurrencySymbol] = React.useState(locCurrency);
 
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);

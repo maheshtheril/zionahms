@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Calendar, User, Receipt, Download, Printer, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { useLocalization } from "@/contexts/localization-context";
 
 interface InvoicePreviewDialogProps {
     invoice: any
@@ -13,6 +14,7 @@ interface InvoicePreviewDialogProps {
 }
 
 export function InvoicePreviewDialog({ invoice, trigger, open, onOpenChange }: InvoicePreviewDialogProps) {
+    const { currencySymbol } = useLocalization();
     if (!invoice) return null;
 
     return (
@@ -49,7 +51,7 @@ export function InvoicePreviewDialog({ invoice, trigger, open, onOpenChange }: I
                             <span className="font-bold capitalize">{invoice.status}</span>
                         </div>
                         <div className="font-mono font-bold text-lg">
-                            Balance: ₹{Number(invoice.outstanding_amount || 0).toFixed(2)}
+                            Balance: ${currencySymbol}{Number(invoice.outstanding_amount || 0).toFixed(2)}
                         </div>
                     </div>
 
@@ -110,23 +112,23 @@ export function InvoicePreviewDialog({ invoice, trigger, open, onOpenChange }: I
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-right text-slate-600 font-medium">{Number(line.quantity)}</td>
-                                        <td className="px-6 py-4 text-right text-slate-600">₹{Number(line.unit_price).toFixed(2)}</td>
-                                        <td className="px-6 py-4 text-right font-bold text-slate-900">₹{Number(line.net_amount).toFixed(2)}</td>
+                                        <td className="px-6 py-4 text-right text-slate-600">{currencySymbol}{Number(line.unit_price).toFixed(2)}</td>
+                                        <td className="px-6 py-4 text-right font-bold text-slate-900">{currencySymbol}{Number(line.net_amount).toFixed(2)}</td>
                                     </tr>
                                 ))}
                             </tbody>
                             <tfoot className="bg-slate-50/80 border-t border-slate-200">
                                 <tr>
                                     <td colSpan={3} className="px-6 py-3 text-right font-medium text-slate-500">Subtotal</td>
-                                    <td className="px-6 py-3 text-right font-bold text-slate-900">₹{Number(invoice.subtotal).toFixed(2)}</td>
+                                    <td className="px-6 py-3 text-right font-bold text-slate-900">{currencySymbol}{Number(invoice.subtotal).toFixed(2)}</td>
                                 </tr>
                                 <tr>
                                     <td colSpan={3} className="px-6 py-3 text-right font-medium text-slate-500">Tax</td>
-                                    <td className="px-6 py-3 text-right font-bold text-slate-900">₹{Number(invoice.total_tax).toFixed(2)}</td>
+                                    <td className="px-6 py-3 text-right font-bold text-slate-900">{currencySymbol}{Number(invoice.total_tax).toFixed(2)}</td>
                                 </tr>
                                 <tr className="bg-slate-100 border-t border-slate-200/50">
                                     <td colSpan={3} className="px-6 py-4 text-right font-black text-slate-900 text-lg">Total</td>
-                                    <td className="px-6 py-4 text-right font-black text-indigo-600 text-lg">₹{Number(invoice.total).toFixed(2)}</td>
+                                    <td className="px-6 py-4 text-right font-black text-indigo-600 text-lg">{currencySymbol}{Number(invoice.total).toFixed(2)}</td>
                                 </tr>
                             </tfoot>
                         </table>

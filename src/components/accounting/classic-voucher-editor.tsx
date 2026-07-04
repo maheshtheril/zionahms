@@ -7,6 +7,7 @@ import {
     ArrowRight, User, Building2, Layers, HelpCircle
 } from 'lucide-react';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { useLocalization } from "@/contexts/localization-context";
 
 interface ClassicVoucherEditorProps {
     type: 'payment' | 'receipt';
@@ -31,8 +32,9 @@ export function ClassicVoucherEditor({
     accountsSearch,
     journalsSearch,
     getBills,
-    currency = '₹'
+    currency = currencySymbol
 }: ClassicVoucherEditorProps) {
+    const { currencySymbol } = useLocalization();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [voucherType, setVoucherType] = useState<'bill' | 'direct'>(type === 'payment' ? 'bill' : 'direct');
 

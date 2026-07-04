@@ -87,6 +87,7 @@ export function FinancialDashboard({
 
     // SAFE CURRENCY RENDERER
     const renderAmount = (amount: number, options: { color?: string, large?: boolean } = {}) => {
+        const { currencySymbol } = useLocalization();
         const val = formatCurrency(amount, currencySymbol);
         // Ensure symbol is always before and correct
         const cleanVal = val.replace('\u20B9', 'Rs.').replace('Γé╣', 'Rs.');
@@ -175,7 +176,7 @@ export function FinancialDashboard({
                         <div className="flex flex-col gap-4 overflow-auto max-h-[400px]">
                             {insights.length > 0 ? insights.map((insight, idx) => (
                                 <div key={idx} className="bg-secondary p-3 border-l-2 border-red-500">
-                                    <p className="text-[10px] leading-relaxed text-foreground">{insight.replace('\u20B9', 'Rs.').replace('₹', 'Rs.')}</p>
+                                    <p className="text-[10px] leading-relaxed text-foreground">{insight.replace('\u20B9', 'Rs.').replace(currencySymbol, 'Rs.')}</p>
                                 </div>
                             )) : (
                                 <div className="text-center py-10 opacity-30">

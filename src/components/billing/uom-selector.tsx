@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getProductAvailableUOMs, calculateSalePriceForUOM } from '@/app/actions/product-uom'
+import { useLocalization } from "@/contexts/localization-context";
 
 type UOMOption = {
     uom: string
@@ -29,10 +30,10 @@ type Props = {
  * Automatically calculates price based on selected UOM
  * 
  * Example:
- * - Product: Paracetamol (base: Unit @ ₹3)
+ * - Product: Paracetamol (base: Unit @ ${currencySymbol}3)
  * - UOMs: Unit (1x), Strip (15x)
- * - Select "Strip" → Price becomes ₹45 (3 × 15)
- * - Select 2 qty → Total = ₹90
+ * - Select "Strip" → Price becomes ${currencySymbol}45 (3 × 15)
+ * - Select 2 qty → Total = ${currencySymbol}90
  */
 export function UOMSelector({
     productId,
@@ -42,6 +43,7 @@ export function UOMSelector({
     onChange,
     className = ''
 }: Props) {
+    const { currencySymbol } = useLocalization();
     const [uomOptions, setUomOptions] = useState<UOMOption[]>([])
     const [selectedUOM, setSelectedUOM] = useState<string>(defaultUOM || '')
     const [quantity, setQuantity] = useState(defaultQty)
@@ -132,7 +134,7 @@ export function UOMSelector({
                     {uomOptions[0]?.uom || 'Unit'}
                 </span>
                 <span className="text-sm text-gray-700 font-medium">
-                    @ ₹{unitPrice.toFixed(2)}
+                    @ ${currencySymbol}{unitPrice.toFixed(2)}
                 </span>
             </div>
         )
@@ -169,14 +171,14 @@ export function UOMSelector({
             <div className="flex items-center gap-1 text-sm">
                 <span className="text-gray-500">@</span>
                 <span className="font-medium text-gray-900">
-                    ₹{unitPrice.toFixed(2)}
+                    ${currencySymbol}{unitPrice.toFixed(2)}
                 </span>
             </div>
 
             {/* Line Total */}
             <div className="flex items-center gap-1 text-sm font-semibold text-blue-600 ml-2">
                 <span>=</span>
-                <span>₹{(quantity * unitPrice).toFixed(2)}</span>
+                <span>{currencySymbol}{(quantity * unitPrice).toFixed(2)}</span>
             </div>
 
             {/* Conversion Info (if not base UOM) */}
@@ -203,6 +205,7 @@ export function UOMDisplay({
     unitPrice: number
     className?: string
 }) {
+    const { currencySymbol } = useLocalization();
     const total = quantity * unitPrice
 
     return (
@@ -210,9 +213,9 @@ export function UOMDisplay({
             <span className="font-medium">{quantity}</span>
             <span className="text-gray-500">{uom}</span>
             <span className="text-gray-400">×</span>
-            <span>₹{unitPrice.toFixed(2)}</span>
+            <span>{currencySymbol}{unitPrice.toFixed(2)}</span>
             <span className="text-gray-400">=</span>
-            <span className="font-semibold text-blue-600">₹{total.toFixed(2)}</span>
+            <span className="font-semibold text-blue-600">{currencySymbol}{total.toFixed(2)}</span>
         </div>
     )
 }

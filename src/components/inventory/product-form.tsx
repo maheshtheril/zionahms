@@ -10,6 +10,7 @@ import {
     Box, Tag, DollarSign, Layers, Image as ImageIcon, Barcode, Factory, Check, Zap, Info, Plus, X, Cpu, History, ArrowUpDown, TrendingUp, TrendingDown, Trash2, Pencil
 } from "lucide-react"
 import { toast } from "sonner"
+import { useLocalization } from "@/contexts/localization-context";
 
 interface ProductFormProps {
     suppliers: { id: string, name: string }[];
@@ -25,6 +26,7 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ suppliers, taxRates, uoms, categories, manufacturers, uomCategories, initialData, batches: initialBatches = [], onSuccess, onCancel }: ProductFormProps) {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -311,21 +313,21 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                             <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Std Sale Price</label>
                                 <div className="relative">
-                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">{'₹'}</span>
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">{currencySymbol}</span>
                                     <input name="price" type="number" step="0.01" required defaultValue={initialData?.price} className="w-full pl-5 pr-2 py-2 bg-white border border-gray-200 rounded-lg font-bold text-sm" />
                                 </div>
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Std Cost Price</label>
                                 <div className="relative">
-                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">{'₹'}</span>
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">{currencySymbol}</span>
                                     <input name="costPrice" type="number" step="0.01" defaultValue={initialData?.default_cost} className="w-full pl-5 pr-2 py-2 bg-white border border-gray-200 rounded-lg text-sm" />
                                 </div>
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Std MRP</label>
                                 <div className="relative">
-                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">{'₹'}</span>
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">{currencySymbol}</span>
                                     <input name="mrp" type="number" step="0.01" defaultValue={initialData?.mrp} className="w-full pl-5 pr-2 py-2 bg-white border border-gray-200 rounded-lg text-sm" />
                                 </div>
                             </div>
@@ -460,11 +462,11 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                                                         </div>
                                                         <div>
                                                             <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">MRP</span>
-                                                            <span className="text-sm font-bold text-gray-700">₹{Number(batch.mrp || 0).toFixed(2)}</span>
+                                                            <span className="text-sm font-bold text-gray-700">{currencySymbol}{Number(batch.mrp || 0).toFixed(2)}</span>
                                                         </div>
                                                         <div>
                                                             <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Sale Price</span>
-                                                            <span className="text-sm font-black text-indigo-600">₹{Number(batch.sale_price || batch.mrp || 0).toFixed(2)}</span>
+                                                            <span className="text-sm font-black text-indigo-600">{currencySymbol}{Number(batch.sale_price || batch.mrp || 0).toFixed(2)}</span>
                                                         </div>
                                                     </div>
 
@@ -657,6 +659,7 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
 }
 
 function UOMQuickCreate({ categories, uoms, onClose, onRefresh }: { categories: any[], uoms: any[], onClose: () => void, onRefresh: () => void }) {
+    const { currencySymbol } = useLocalization();
     const [catId, setCatId] = useState(categories[0]?.id || "");
     const [type, setType] = useState("reference");
     const [ratio, setRatio] = useState(1);
@@ -755,6 +758,7 @@ function UOMQuickCreate({ categories, uoms, onClose, onRefresh }: { categories: 
 // --- Batch Management Component ---
 
 function BatchEditForm({ batch, onSuccess }: { batch: any, onSuccess: () => void }) {
+    const { currencySymbol } = useLocalization();
     const [state, action, isPending] = useActionState(updateProductBatch, { error: "" });
 
     useEffect(() => {
@@ -771,7 +775,7 @@ function BatchEditForm({ batch, onSuccess }: { batch: any, onSuccess: () => void
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">MRP</label>
                     <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{currencySymbol}</span>
                         <input
                             name="mrp"
                             type="number"
@@ -784,7 +788,7 @@ function BatchEditForm({ batch, onSuccess }: { batch: any, onSuccess: () => void
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Sale Price</label>
                     <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{currencySymbol}</span>
                         <input
                             name="salePrice"
                             type="number"
@@ -822,6 +826,7 @@ function BatchEditForm({ batch, onSuccess }: { batch: any, onSuccess: () => void
 }
 
 function BatchAdjustForm({ batch, onSuccess }: { batch: any, onSuccess: () => void }) {
+    const { currencySymbol } = useLocalization();
     const [state, action, isPending] = useActionState(adjustStock, { error: "" });
     const [type, setType] = useState<'add' | 'remove'>('add');
 

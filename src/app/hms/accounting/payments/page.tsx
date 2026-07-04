@@ -9,8 +9,10 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
+import { useLocalization } from "@/contexts/localization-context";
 
 export default function PaymentsPage() {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
     const [payments, setPayments] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -122,7 +124,7 @@ export default function PaymentsPage() {
                         </div>
                         <div>
                             <span className="text-xs font-black uppercase tracking-widest text-slate-400 block mb-1">Total Register Outflow</span>
-                            <span className="text-2xl font-black font-mono text-slate-900 dark:text-white">₹{totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            <span className="text-2xl font-black font-mono text-slate-900 dark:text-white">{currencySymbol}{totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                         </div>
                     </div>
 
@@ -261,6 +263,7 @@ export default function PaymentsPage() {
                                     </tr>
                                 ) : (
                                     filtered.map((p) => {
+                                        const { currencySymbol } = useLocalization();
                                         const meta = p.metadata as any;
                                         const isVendor = !!p.partner_id || (meta?.allocations && meta.allocations.length > 0);
                                         const typeLabel = isVendor ? 'Vendor Bill Settlement' : (meta?.category_name || 'Petty Cash / Expense');
@@ -300,7 +303,7 @@ export default function PaymentsPage() {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-5 text-right font-mono font-black text-base text-slate-900 dark:text-white pr-8">
-                                                    ₹{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                    ${currencySymbol}{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                                 </td>
                                             </tr>
                                         );

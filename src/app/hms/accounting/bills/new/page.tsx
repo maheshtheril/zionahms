@@ -27,8 +27,10 @@ import { FileUpload } from "@/components/ui/file-upload";
 import { upsertPurchaseInvoice } from "@/app/actions/accounting/bills";
 import { scanInvoiceFromUrl } from "@/app/actions/scan-invoice";
 import { getSuppliers, getProductsPremium } from "@/app/actions/inventory";
+import { useLocalization } from "@/contexts/localization-context";
 
 export default function NewPurchaseBillPage() {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [scanning, setScanning] = useState(false);
@@ -317,7 +319,7 @@ export default function NewPurchaseBillPage() {
                                                         />
                                                     </td>
                                                     <td className="px-4 py-4 text-right font-semibold text-white/90">
-                                                        ₹{item.lineTotal.toLocaleString()}
+                                                        ${currencySymbol}{item.lineTotal.toLocaleString()}
                                                     </td>
                                                     <td className="px-4 py-4">
                                                         <Button
@@ -378,19 +380,19 @@ export default function NewPurchaseBillPage() {
                             <div className="space-y-3">
                                 <div className="flex justify-between text-sm text-white/40 font-medium">
                                     <span>Subtotal</span>
-                                    <span>₹{billData.subtotal.toLocaleString()}</span>
+                                    <span>{currencySymbol}{billData.subtotal.toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between text-sm text-white/40">
                                     <div className="flex items-center gap-1">
                                         <span>Estimated GST (18%)</span>
                                         <Info className="w-3 h-3 cursor-help text-indigo-400" />
                                     </div>
-                                    <span>₹{billData.taxTotal.toLocaleString()}</span>
+                                    <span>{currencySymbol}{billData.taxTotal.toLocaleString()}</span>
                                 </div>
                                 <Separator className="bg-white/5" />
                                 <div className="flex justify-between text-xl font-bold text-white pt-2">
                                     <span>Total Amount</span>
-                                    <span className="text-indigo-400">₹{billData.totalAmount.toLocaleString()}</span>
+                                    <span className="text-indigo-400">{currencySymbol}{billData.totalAmount.toLocaleString()}</span>
                                 </div>
                             </div>
 
@@ -406,15 +408,15 @@ export default function NewPurchaseBillPage() {
                                     </div>
                                     <div className="flex justify-between text-xs">
                                         <span className="text-white/60">Purchase Account</span>
-                                        <span className="text-green-400">Dr ₹{billData.subtotal.toLocaleString()}</span>
+                                        <span className="text-green-400">Dr ${currencySymbol}{billData.subtotal.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between text-xs">
                                         <span className="text-white/60">Input VAT</span>
-                                        <span className="text-green-400">Dr ₹{billData.taxTotal.toLocaleString()}</span>
+                                        <span className="text-green-400">Dr ${currencySymbol}{billData.taxTotal.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between text-xs border-t border-white/5 pt-1">
                                         <span className="text-white/60">Accounts Payable</span>
-                                        <span className="text-red-400 font-semibold">Cr ₹{billData.totalAmount.toLocaleString()}</span>
+                                        <span className="text-red-400 font-semibold">Cr ${currencySymbol}{billData.totalAmount.toLocaleString()}</span>
                                     </div>
                                 </div>
                             </div>

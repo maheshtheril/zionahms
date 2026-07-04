@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { bulkUpdateProducts } from "@/app/actions/inventory"
 import { toast } from "@/components/ui/use-toast"
 import { Loader2, AlertCircle, Layers, Settings2, Trash2 } from "lucide-react"
+import { useLocalization } from "@/contexts/localization-context";
 
 interface BulkEditModalProps {
     isOpen: boolean
@@ -32,6 +33,7 @@ export function BulkEditModal({
     selectedIds,
     categories
 }: BulkEditModalProps) {
+    const { currencySymbol } = useLocalization();
     const [loading, setLoading] = useState(false)
 
     // Updates State
@@ -172,7 +174,7 @@ export function BulkEditModal({
                             <Label htmlFor="update-price" className="text-xs font-black uppercase tracking-widest text-slate-500 select-none">Mass Price Update</Label>
                         </div>
                         <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400 italic">₹</span>
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400 italic">{currencySymbol}</span>
                             <Input
                                 type="number"
                                 disabled={!updatePrice || loading}

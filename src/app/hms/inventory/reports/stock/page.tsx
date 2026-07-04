@@ -49,8 +49,10 @@ import {
 } from '@/app/actions/stock-healer';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { useLocalization } from "@/contexts/localization-context";
 
 export default function StockReportPremium() {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
 
     // State
@@ -264,7 +266,7 @@ export default function StockReportPremium() {
                             </div>
                             <div className="text-right">
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Godown Value</p>
-                                <h3 className="text-3xl font-black mt-1">₹{meta.globalSummary.totalValue.toLocaleString('en-IN')}</h3>
+                                <h3 className="text-3xl font-black mt-1">{currencySymbol}{meta.globalSummary.totalValue.toLocaleString('en-IN')}</h3>
                                 <p className="text-[10px] font-bold text-emerald-400 mt-1 flex items-center justify-end gap-1">
                                     <TrendingUp className="h-3 w-3" /> Live Inventory Assets
                                 </p>
@@ -461,7 +463,7 @@ export default function StockReportPremium() {
                                     <TableCell className="text-right">
                                         {isEditMode ? (
                                             <div className="flex items-center justify-end">
-                                                <span className="text-[10px] text-slate-400 mr-1">₹</span>
+                                                <span className="text-[10px] text-slate-400 mr-1">{currencySymbol}</span>
                                                 <input
                                                     type="number"
                                                     defaultValue={item.costPrice}
@@ -470,13 +472,13 @@ export default function StockReportPremium() {
                                                 />
                                             </div>
                                         ) : (
-                                            <p className="text-sm font-bold text-slate-600">₹{item.costPrice.toLocaleString()}</p>
+                                            <p className="text-sm font-bold text-slate-600">{currencySymbol}{item.costPrice.toLocaleString()}</p>
                                         )}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         {isEditMode ? (
                                             <div className="flex items-center justify-end">
-                                                <span className="text-[10px] text-slate-400 mr-1">₹</span>
+                                                <span className="text-[10px] text-slate-400 mr-1">{currencySymbol}</span>
                                                 <input
                                                     type="number"
                                                     defaultValue={item.mrp}
@@ -486,13 +488,13 @@ export default function StockReportPremium() {
                                             </div>
                                         ) : (
                                             <div className="space-y-0.5">
-                                                <p className="text-sm font-black text-indigo-600">₹{item.mrp.toLocaleString()}</p>
-                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Sale: ₹{item.salePrice.toLocaleString()}</p>
+                                                <p className="text-sm font-black text-indigo-600">{currencySymbol}{item.mrp.toLocaleString()}</p>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Sale: ${currencySymbol}{item.salePrice.toLocaleString()}</p>
                                             </div>
                                         )}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <p className="text-sm font-black text-emerald-600">₹{item.totalValue.toLocaleString()}</p>
+                                        <p className="text-sm font-black text-emerald-600">{currencySymbol}{item.totalValue.toLocaleString()}</p>
                                     </TableCell>
                                     <TableCell className="text-center">
                                         <Badge

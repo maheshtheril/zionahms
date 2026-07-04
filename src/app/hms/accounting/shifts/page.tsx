@@ -19,8 +19,10 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useLocalization } from "@/contexts/localization-context";
 
 export default function ShiftAuditPage() {
+    const { currencySymbol } = useLocalization();
     const [shifts, setShifts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedShift, setSelectedShift] = useState<any>(null);
@@ -221,6 +223,7 @@ export default function ShiftAuditPage() {
                     ) : (
                         <div className="space-y-3">
                             {filteredShifts.map((shift) => {
+                                const { currencySymbol } = useLocalization();
                                 const isShort = Number(shift.difference) < 0;
                                 const isAudited = shift.notes?.includes('AUDITED');
 
@@ -255,7 +258,7 @@ export default function ShiftAuditPage() {
 
                                             <div className="text-right">
                                                 <div className={`text-xl font-black ${isShort ? 'text-rose-500' : 'text-emerald-500'}`}>
-                                                    ₹{Number(shift.closing_balance).toLocaleString()}
+                                                    ${currencySymbol}{Number(shift.closing_balance).toLocaleString()}
                                                 </div>
                                                 {isAudited ? (
                                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-500 rounded-full text-[10px] font-black uppercase tracking-tighter mt-1">
@@ -263,7 +266,7 @@ export default function ShiftAuditPage() {
                                                     </span>
                                                 ) : isShort ? (
                                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-50 text-rose-500 rounded-full text-[10px] font-black uppercase tracking-tighter mt-1 animate-pulse">
-                                                        <AlertCircle className="h-3 w-3" /> Short: ₹{Math.abs(Number(shift.difference))}
+                                                        <AlertCircle className="h-3 w-3" /> Short: ${currencySymbol}{Math.abs(Number(shift.difference))}
                                                     </span>
                                                 ) : (
                                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-tighter mt-1">
@@ -338,28 +341,28 @@ export default function ShiftAuditPage() {
                                                 <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
                                                     <span>Opening Float</span>
                                                 </div>
-                                                <p className="text-lg font-black text-slate-700 dark:text-slate-200">₹{Number(selectedShift.opening_balance).toLocaleString()}</p>
+                                                <p className="text-lg font-black text-slate-700 dark:text-slate-200">{currencySymbol}{Number(selectedShift.opening_balance).toLocaleString()}</p>
                                             </div>
 
                                             <div className="p-4 bg-emerald-50/50 dark:bg-emerald-900/20 rounded-3xl border border-emerald-100 dark:border-emerald-900/30">
                                                 <div className="flex items-center justify-between text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">
                                                     <span>Drawer Cash Income (+)</span>
                                                 </div>
-                                                <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">₹{Number(details?.summary?.cashCollected || 0).toLocaleString()}</p>
+                                                <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{currencySymbol}{Number(details?.summary?.cashCollected || 0).toLocaleString()}</p>
                                             </div>
 
                                             <div className="p-4 bg-rose-50/50 dark:bg-rose-900/20 rounded-3xl border border-rose-100 dark:border-rose-900/30">
                                                 <div className="flex items-center justify-between text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">
                                                     <span>Total Expenses (-)</span>
                                                 </div>
-                                                <p className="text-lg font-black text-rose-600 dark:text-rose-400">₹{Number(details?.summary?.totalOut || 0).toLocaleString()}</p>
+                                                <p className="text-lg font-black text-rose-600 dark:text-rose-400">{currencySymbol}{Number(details?.summary?.totalOut || 0).toLocaleString()}</p>
                                             </div>
 
                                             <div className="p-4 bg-indigo-50/50 dark:bg-indigo-900/20 rounded-3xl border border-indigo-100 dark:border-indigo-900/30">
                                                 <div className="flex items-center justify-between text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">
                                                     <span>Declared Drawer Cash</span>
                                                 </div>
-                                                <p className="text-lg font-black text-indigo-600 dark:text-indigo-400">₹{Number(selectedShift.closing_balance).toLocaleString()}</p>
+                                                <p className="text-lg font-black text-indigo-600 dark:text-indigo-400">{currencySymbol}{Number(selectedShift.closing_balance).toLocaleString()}</p>
                                             </div>
                                         </div>
 
@@ -375,7 +378,7 @@ export default function ShiftAuditPage() {
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-xl font-black">₹{Number((details?.summary?.upi || 0) + (details?.summary?.card || 0) + (details?.summary?.other || 0)).toLocaleString()}</p>
+                                                <p className="text-xl font-black">{currencySymbol}{Number((details?.summary?.upi || 0) + (details?.summary?.card || 0) + (details?.summary?.other || 0)).toLocaleString()}</p>
                                             </div>
                                         </div>
 
@@ -387,12 +390,12 @@ export default function ShiftAuditPage() {
                                                 </div>
                                                 <div>
                                                     <p className="text-xs font-bold uppercase tracking-wider opacity-80">System Expected vs Declared</p>
-                                                    <p className="text-sm font-black mt-0.5">Expected: ₹{Number(selectedShift.system_balance).toLocaleString()}</p>
+                                                    <p className="text-sm font-black mt-0.5">Expected: ${currencySymbol}{Number(selectedShift.system_balance).toLocaleString()}</p>
                                                 </div>
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-xs font-bold uppercase tracking-wider opacity-80">Shortage / Surplus</p>
-                                                <p className="text-lg font-black">₹{Number(selectedShift.difference).toLocaleString()}</p>
+                                                <p className="text-lg font-black">{currencySymbol}{Number(selectedShift.difference).toLocaleString()}</p>
                                             </div>
                                         </div>
 
@@ -402,19 +405,19 @@ export default function ShiftAuditPage() {
                                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Collections Method Breakdown</p>
                                                 <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-800">
                                                     <span className="text-slate-600 dark:text-slate-300">Physical Cash Collected</span>
-                                                    <span className="font-black text-slate-800 dark:text-white">₹{Number(details.summary.cashCollected || 0).toLocaleString()}</span>
+                                                    <span className="font-black text-slate-800 dark:text-white">{currencySymbol}{Number(details.summary.cashCollected || 0).toLocaleString()}</span>
                                                 </div>
                                                 <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-800">
                                                     <span className="text-slate-600 dark:text-slate-300">UPI / QR Scan</span>
-                                                    <span className="font-black text-slate-800 dark:text-white">₹{Number(details.summary.upi || 0).toLocaleString()}</span>
+                                                    <span className="font-black text-slate-800 dark:text-white">{currencySymbol}{Number(details.summary.upi || 0).toLocaleString()}</span>
                                                 </div>
                                                 <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-800">
                                                     <span className="text-slate-600 dark:text-slate-300">Credit / Debit Card</span>
-                                                    <span className="font-black text-slate-800 dark:text-white">₹{Number(details.summary.card || 0).toLocaleString()}</span>
+                                                    <span className="font-black text-slate-800 dark:text-white">{currencySymbol}{Number(details.summary.card || 0).toLocaleString()}</span>
                                                 </div>
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-slate-600 dark:text-slate-300">Other Methods</span>
-                                                    <span className="font-black text-slate-800 dark:text-white">₹{Number(details.summary.other || 0).toLocaleString()}</span>
+                                                    <span className="font-black text-slate-800 dark:text-white">{currencySymbol}{Number(details.summary.other || 0).toLocaleString()}</span>
                                                 </div>
                                             </div>
                                         )}
@@ -425,7 +428,7 @@ export default function ShiftAuditPage() {
                                             <textarea 
                                                 value={auditNotes}
                                                 onChange={(e) => setAuditNotes(e.target.value)}
-                                                placeholder="Enter verification remarks (e.g., Physical cash verified against counter drawer. ₹20 shortage adjusted in petty cash...)"
+                                                placeholder="Enter verification remarks (e.g., Physical cash verified against counter drawer. ${currencySymbol}20 shortage adjusted in petty cash...)"
                                                 className="w-full p-4 bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-100 dark:border-slate-800 rounded-3xl text-sm font-medium outline-none focus:border-indigo-500 transition-all min-h-[100px]"
                                             />
                                             <button 
@@ -443,7 +446,7 @@ export default function ShiftAuditPage() {
                                     <div className="space-y-4 animate-in fade-in duration-300">
                                         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 font-black text-xs text-slate-400 uppercase tracking-widest">
                                             <span>Patient Invoices Collected</span>
-                                            <span className="text-emerald-500">Total: ₹{Number(details?.summary?.totalIn || 0).toLocaleString()}</span>
+                                            <span className="text-emerald-500">Total: ${currencySymbol}{Number(details?.summary?.totalIn || 0).toLocaleString()}</span>
                                         </div>
 
                                         {details ? (
@@ -465,7 +468,7 @@ export default function ShiftAuditPage() {
                                                         </div>
                                                         <div className="text-right">
                                                             <div className="font-black text-emerald-600 dark:text-emerald-400 text-sm">
-                                                                + ₹{Number(item.amount).toLocaleString()}
+                                                                + ${currencySymbol}{Number(item.amount).toLocaleString()}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -486,7 +489,7 @@ export default function ShiftAuditPage() {
                                     <div className="space-y-4 animate-in fade-in duration-300">
                                         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 font-black text-xs text-slate-400 uppercase tracking-widest">
                                             <span>Outbound Petty Cash / F5 Vouchers</span>
-                                            <span className="text-rose-500">Total: ₹{Number(details?.summary?.totalOut || 0).toLocaleString()}</span>
+                                            <span className="text-rose-500">Total: ${currencySymbol}{Number(details?.summary?.totalOut || 0).toLocaleString()}</span>
                                         </div>
 
                                         {details ? (
@@ -508,7 +511,7 @@ export default function ShiftAuditPage() {
                                                         </div>
                                                         <div className="text-right">
                                                             <div className="font-black text-rose-600 dark:text-rose-400 text-sm">
-                                                                - ₹{Number(item.amount).toLocaleString()}
+                                                                - ${currencySymbol}{Number(item.amount).toLocaleString()}
                                                             </div>
                                                         </div>
                                                     </div>

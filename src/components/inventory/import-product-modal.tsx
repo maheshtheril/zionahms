@@ -12,8 +12,10 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog"
+import { useLocalization } from "@/contexts/localization-context";
 
 export function ImportProductModal({ defaultOpen = false }: { defaultOpen?: boolean }) {
+    const { currencySymbol } = useLocalization();
     const [isOpen, setIsOpen] = useState(defaultOpen)
     const [isPending, setIsPending] = useState(false)
     const [result, setResult] = useState<any>(null)
@@ -300,7 +302,7 @@ export function ImportProductModal({ defaultOpen = false }: { defaultOpen?: bool
                                                         <td className="px-6 py-5">
                                                             <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-black">{item.gst || '0'}%</span>
                                                         </td>
-                                                        <td className="px-6 py-5 font-black text-indigo-600">₹{item.mrp?.toLocaleString() || '0'}</td>
+                                                        <td className="px-6 py-5 font-black text-indigo-600">{currencySymbol}{item.mrp?.toLocaleString() || '0'}</td>
                                                         <td className="px-6 py-5 text-right">
                                                             <button 
                                                                 onClick={() => removeScannedItem(idx)}

@@ -21,6 +21,7 @@ import { getPatientById } from "@/app/actions/patient-v10"
 import { CreditCard as CardIcon, X, Printer, Plus, Receipt } from "lucide-react"
 import { OpSlipDialog } from "@/components/hms/reception/op-slip-dialog"
 import { DEFAULT_REGISTRATION_FEE } from "@/lib/hms-constants"
+import { useLocalization } from "@/contexts/localization-context";
 
 interface AppointmentFormProps {
     patients: any[]
@@ -48,13 +49,14 @@ export function AppointmentForm({
     billableItems = [],
     taxConfig = { defaultTax: null, taxRates: [] },
     uoms = [],
-    currency = '₹',
+    currency = currencySymbol,
     initialData = {},
     editingAppointment,
     onClose,
     onMinimize,
     hospitalInfo = null
 }: AppointmentFormProps) {
+    const { currencySymbol } = useLocalization();
     const { toast } = useToast()
     console.log("DEBUG: Appointment Form Component Loaded - VERSION-FIX-APPLIED");
     const router = useRouter()

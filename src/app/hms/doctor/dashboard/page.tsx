@@ -48,6 +48,21 @@ export default async function DoctorDashboardPage({
     }
 
     if (!clinician) {
+        if (session.user.role?.toLowerCase() !== 'doctor') {
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+                    <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden text-center p-8">
+                        <div className="h-16 w-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <Stethoscope className="h-8 w-8 text-red-600" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-slate-800">Access Denied</h2>
+                        <p className="mt-4 text-slate-600">The Clinician Portal is exclusively for users with the Doctor role.</p>
+                        <p className="mt-2 text-slate-500 text-sm">As an admin or staff member, please use the Reception or Management dashboards to view clinical schedules.</p>
+                    </div>
+                </div>
+            )
+        }
+
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
                 <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden text-center">

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getPurchaseReturns } from '@/app/actions/returns';
 import { ArrowLeft, Loader2, Undo2, Calendar, Box, Search, FileText, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { useLocalization } from "@/contexts/localization-context";
 
 type PurchaseReturn = {
     id: string;
@@ -18,6 +19,7 @@ type PurchaseReturn = {
 };
 
 export default function PurchaseReturnsPage() {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
     const [returns, setReturns] = useState<PurchaseReturn[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -124,7 +126,7 @@ export default function PurchaseReturnsPage() {
                                     {ret.itemCount} items returned
                                 </div>
                                 <div className="col-span-2 text-right text-sm font-black text-foreground font-mono">
-                                    ₹{ret.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                    ${currencySymbol}{ret.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                 </div>
                                 <div className="col-span-1 text-right">
                                     <span className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${ret.status === 'posted'

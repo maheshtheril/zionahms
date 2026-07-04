@@ -13,8 +13,10 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocalization } from "@/contexts/localization-context";
 
 export default function JournalsPage() {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
     const [entries, setEntries] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -131,7 +133,7 @@ export default function JournalsPage() {
                         </div>
                         <div>
                             <span className="text-xs font-black uppercase tracking-widest text-slate-400 block mb-1">Total Register Volume</span>
-                            <span className="text-2xl font-black font-mono text-slate-900 dark:text-white">₹{totalVolume.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            <span className="text-2xl font-black font-mono text-slate-900 dark:text-white">{currencySymbol}{totalVolume.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                         </div>
                     </div>
 
@@ -245,10 +247,10 @@ export default function JournalsPage() {
                                                         {line.description || '—'}
                                                     </td>
                                                     <td className="px-6 py-4 text-right font-mono font-black text-sm text-slate-900 dark:text-white">
-                                                        {Number(line.debit) > 0 ? `₹${Number(line.debit).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '—'}
+                                                        {Number(line.debit) > 0 ? `${currencySymbol}${Number(line.debit).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '—'}
                                                     </td>
                                                     <td className="px-6 py-4 text-right font-mono font-black text-sm text-slate-900 dark:text-white">
-                                                        {Number(line.credit) > 0 ? `₹${Number(line.credit).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '—'}
+                                                        {Number(line.credit) > 0 ? `${currencySymbol}${Number(line.credit).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '—'}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -256,10 +258,10 @@ export default function JournalsPage() {
                                             <tr className="bg-slate-50/80 dark:bg-slate-800/50 border-t-2 border-slate-200 dark:border-slate-800 font-mono font-black text-sm text-slate-900 dark:text-white">
                                                 <td colSpan={3} className="px-6 py-4 text-right text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 font-sans font-bold">Balanced Voucher Total :</td>
                                                 <td className="px-6 py-4 text-right text-indigo-600 dark:text-indigo-400">
-                                                    ₹{entry.journal_entry_lines?.reduce((s: number, l: any) => s + Number(l.debit || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                    ${currencySymbol}{entry.journal_entry_lines?.reduce((s: number, l: any) => s + Number(l.debit || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                                 </td>
                                                 <td className="px-6 py-4 text-right text-indigo-600 dark:text-indigo-400">
-                                                    ₹{entry.journal_entry_lines?.reduce((s: number, l: any) => s + Number(l.credit || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                    ${currencySymbol}{entry.journal_entry_lines?.reduce((s: number, l: any) => s + Number(l.credit || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                                 </td>
                                             </tr>
                                         </tbody>

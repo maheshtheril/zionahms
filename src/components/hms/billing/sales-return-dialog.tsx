@@ -10,6 +10,7 @@ import { RotateCcw, AlertCircle, ShoppingBag, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { createSalesReturn } from '@/app/actions/returns';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocalization } from "@/contexts/localization-context";
 
 type SalesReturnItem = {
     invoiceLineId: string;
@@ -39,6 +40,7 @@ export function SalesReturnDialog({
     initialItems,
     onSuccess
 }: SalesReturnDialogProps) {
+    const { currencySymbol } = useLocalization();
     const { toast } = useToast();
     const [items, setItems] = useState<SalesReturnItem[]>([]);
     const [reason, setReason] = useState('Patient Return / Change of mind');
@@ -169,7 +171,7 @@ export function SalesReturnDialog({
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="text-sm font-bold text-foreground truncate">{item.description}</p>
-                                                    <p className="text-[10px] text-muted-foreground">₹{item.unitPrice.toFixed(2)} / unit</p>
+                                                    <p className="text-[10px] text-muted-foreground">{currencySymbol}{item.unitPrice.toFixed(2)} / unit</p>
                                                 </div>
                                             </div>
 
@@ -193,7 +195,7 @@ export function SalesReturnDialog({
                                             </div>
 
                                             <div className="col-span-2 text-right">
-                                                <p className="text-sm font-bold text-foreground">₹{(item.returnQty * item.unitPrice).toFixed(2)}</p>
+                                                <p className="text-sm font-bold text-foreground">{currencySymbol}{(item.returnQty * item.unitPrice).toFixed(2)}</p>
                                             </div>
                                         </motion.div>
                                     ))}
@@ -211,7 +213,7 @@ export function SalesReturnDialog({
                         </div>
                         <div className="text-right">
                             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Total Refund</p>
-                            <p className="text-xl font-black text-emerald-600">₹{totalReturnAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                            <p className="text-xl font-black text-emerald-600">{currencySymbol}{totalReturnAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                         </div>
                     </div>
                 </div>

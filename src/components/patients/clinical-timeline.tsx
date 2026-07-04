@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useLocalization } from "@/contexts/localization-context";
 
 const EVENT_ICONS: Record<string, any> = {
     'REGISTRATION': { icon: UserPlus, color: 'bg-blue-500', text: 'text-blue-500' },
@@ -29,6 +30,7 @@ const EVENT_ICONS: Record<string, any> = {
 }
 
 export function ClinicalTimeline({ patientId }: { patientId: string }) {
+    const { currencySymbol } = useLocalization();
     const [events, setEvents] = useState<TimelineEvent[]>([])
     const [loading, setLoading] = useState(true)
     const [filter, setFilter] = useState<string>('ALL')
@@ -128,6 +130,7 @@ export function ClinicalTimeline({ patientId }: { patientId: string }) {
             <div className="relative pl-10 md:pl-24 space-y-12 after:absolute after:inset-y-0 after:left-[1.8rem] md:after:left-[4.45rem] after:w-1 after:bg-slate-100 dark:after:bg-slate-800 after:rounded-full">
                 <AnimatePresence mode="popLayout">
                     {filteredEvents.map((event, index) => {
+                        const { currencySymbol } = useLocalization();
                         const IconConfig = EVENT_ICONS[event.type]
                         const Icon = IconConfig?.icon || Clock
 
@@ -213,7 +216,7 @@ export function ClinicalTimeline({ patientId }: { patientId: string }) {
                                                 <Badge className={event.metadata.status === 'paid' ? 'bg-emerald-500' : 'bg-amber-500'}>
                                                     {event.metadata.status}
                                                 </Badge>
-                                                <span className="text-lg font-black text-slate-900 dark:text-white tracking-widest">₹{event.metadata.total}</span>
+                                                <span className="text-lg font-black text-slate-900 dark:text-white tracking-widest">{currencySymbol}{event.metadata.total}</span>
                                             </div>
                                             <Button variant="ghost" size="sm" className="rounded-xl text-indigo-600 font-black h-8 px-4 hover:bg-slate-100">
                                                 Print Reciept <ExternalLink className="ml-2 h-3 w-3" />

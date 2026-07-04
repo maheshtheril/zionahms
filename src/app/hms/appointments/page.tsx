@@ -7,8 +7,10 @@ import SearchInput from "@/components/search-input"
 import AppointmentsCalendar from "@/components/appointments/appointments-calendar"
 import { AppointmentDialog, MobileAppointmentFab } from "@/components/appointments/appointment-dialog"
 import { getBillableItems, getTaxConfiguration, getUoms } from "@/app/actions/billing";
+import { useLocalization } from "@/contexts/localization-context";
 
 export default async function AppointmentsPage() {
+    const { currencySymbol } = useLocalization();
     const session = await auth()
     const tenantId = session?.user?.tenantId
 
@@ -64,7 +66,7 @@ export default async function AppointmentsPage() {
     const billableItems = itemsRes.success ? itemsRes.data : [];
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
     const uoms = (uomsRes as any).success ? (uomsRes as any).data : [];
-    const currency = companySettings?.currencies?.symbol || session?.user?.currencySymbol || '₹';
+    const currency = companySettings?.currencies?.symbol || session?.user?.currencySymbol || currencySymbol;
 
     // Fetch Patients and Doctors for the Modal
     const [patients, doctors] = await Promise.all([

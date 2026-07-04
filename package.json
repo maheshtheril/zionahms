@@ -58,6 +58,7 @@
     "lucide-react": "^0.559.0",
     "next": "16.0.8",
     "next-auth": "^5.0.0-beta.30",
+    "nextjs-toploader": "^3.9.17",
     "pdfkit": "^0.17.2",
     "pg": "^8.18.0",
     "qrcode.react": "^4.2.0",

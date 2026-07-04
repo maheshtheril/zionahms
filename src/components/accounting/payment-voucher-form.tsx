@@ -31,6 +31,7 @@ import { searchSuppliers, getOutstandingPurchaseBills } from "@/app/actions/acco
 import { getAccounts, upsertAccount } from "@/app/actions/accounting/chart-of-accounts";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useLocalization } from "@/contexts/localization-context";
 
 // Tally Style Schema
 const lineItemSchema = z.object({
@@ -60,6 +61,7 @@ interface PaymentVoucherFormProps {
 }
 
 export function PaymentVoucherForm({ onClose, className, onSuccess, headerActions, initialData, simplified }: PaymentVoucherFormProps) {
+    const { currencySymbol } = useLocalization();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isCreateLedgerOpen, setIsCreateLedgerOpen] = useState(false);
@@ -280,7 +282,7 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                     <CheckCircle2 className="h-12 w-12" />
                 </div>
                 <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white mb-2">Voucher Saved Successfully!</h2>
-                <p className="text-slate-500 dark:text-slate-400 font-medium mb-12 text-lg">Voucher <span className="font-bold text-slate-700 dark:text-slate-300">#{successVoucher.number}</span> • Amount: <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">₹ {successVoucher.amount.toLocaleString()}</span></p>
+                <p className="text-slate-500 dark:text-slate-400 font-medium mb-12 text-lg">Voucher <span className="font-bold text-slate-700 dark:text-slate-300">#{successVoucher.number}</span> • Amount: <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{currencySymbol}{successVoucher.amount.toLocaleString()}</span></p>
                 
                 <div className="flex flex-wrap justify-center items-center gap-4">
                     <Button 
@@ -631,8 +633,8 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                                                     <tr key={bill.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                                                         <td className="p-4 px-6 font-mono font-black">{bill.number}</td>
                                                         <td className="p-4 px-6 text-slate-400">{new Date(bill.date).toLocaleDateString()}</td>
-                                                        <td className="p-4 px-6 text-right font-mono">₹{bill.total.toLocaleString()}</td>
-                                                        <td className="p-4 px-6 text-right font-mono font-black text-rose-500 dark:text-rose-400">₹{bill.outstanding.toLocaleString()}</td>
+                                                        <td className="p-4 px-6 text-right font-mono">{currencySymbol}{bill.total.toLocaleString()}</td>
+                                                        <td className="p-4 px-6 text-right font-mono font-black text-rose-500 dark:text-rose-400">{currencySymbol}{bill.outstanding.toLocaleString()}</td>
                                                         <td className="p-3 px-6 text-right bg-amber-50/30 dark:bg-amber-950/10">
                                                             <Input
                                                                 type="number"
@@ -658,7 +660,7 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                         <div className="flex flex-col gap-6 pt-6">
                             <div className="flex justify-end items-center gap-16 px-8 py-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm">
                                 <span className="text-xs font-black uppercase tracking-widest text-slate-400">Total Voucher Payment</span>
-                                <span className="text-3xl font-black font-mono bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">₹ {mode === 'GENERAL' ? generalTotal.toFixed(2) : totalAllocated.toLocaleString()}</span>
+                                <span className="text-3xl font-black font-mono bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">{currencySymbol}{mode === 'GENERAL' ? generalTotal.toFixed(2) : totalAllocated.toLocaleString()}</span>
                             </div>
 
                             <div className="flex items-start gap-6 p-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm">

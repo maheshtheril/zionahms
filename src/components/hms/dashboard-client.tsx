@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import { AppointmentForm } from "@/components/appointments/appointment-form"
 import { CreatePatientForm } from "@/components/hms/create-patient-form"
+import { useLocalization } from "@/contexts/localization-context";
 
 interface DashboardClientProps {
     user: any
@@ -26,6 +27,7 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ user, stats, appointments, patients, doctors, tenant, company }: DashboardClientProps) {
+    const { currencySymbol } = useLocalization();
     const [showAppointmentModal, setShowAppointmentModal] = useState(false)
     const [mounted, setMounted] = useState(false)
     
@@ -106,7 +108,7 @@ export function DashboardClient({ user, stats, appointments, patients, doctors, 
                     <Link href="/hms/billing" className="block transition-transform hover:scale-[1.02]">
                         <StatsCard
                             title="Total Revenue"
-                            value={mounted ? `₹${stats.revenue.toLocaleString('en-IN')}` : `₹${stats.revenue}`}
+                            value={mounted ? `${currencySymbol}${stats.revenue.toLocaleString('en-IN')}` : `${currencySymbol}${stats.revenue}`}
                             icon={IndianRupee}
                             trend="Monthly collection"
                             color="green"
@@ -309,6 +311,7 @@ export function DashboardClient({ user, stats, appointments, patients, doctors, 
 }
 
 function StatsCard({ title, value, icon: Icon, trend, color, highlight = false }: any) {
+    const { currencySymbol } = useLocalization();
     const colors = {
         blue: 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400',
         indigo: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400',
@@ -345,6 +348,7 @@ function StatsCard({ title, value, icon: Icon, trend, color, highlight = false }
 }
 
 function StatusBadge({ status }: { status?: string }) {
+    const { currencySymbol } = useLocalization();
     const safeStatus = status?.toLowerCase() || 'pending'
     const styles = {
         scheduled: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",

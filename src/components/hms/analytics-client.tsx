@@ -10,10 +10,12 @@ import {
     ArrowUpRight, ArrowDownRight, Activity, Filter, Download
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useLocalization } from "@/contexts/localization-context";
 
 const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1']
 
 export function AnalyticsClient({ data }: { data: any }) {
+    const { currencySymbol } = useLocalization();
     const { revenueData, appointmentData, topDoctors, genderData, categoryData, stats } = data
 
     const handleExportCSV = () => {
@@ -96,7 +98,7 @@ export function AnalyticsClient({ data }: { data: any }) {
                 />
                 <MetricCard
                     title="Total Revenue"
-                    value={`₹${stats.totalRevenue.toLocaleString()}`}
+                    value={`${currencySymbol}${stats.totalRevenue.toLocaleString()}`}
                     icon={IndianRupee}
                     trend="+18%"
                     isUp={true}
@@ -136,11 +138,11 @@ export function AnalyticsClient({ data }: { data: any }) {
                                     axisLine={false}
                                     tickLine={false}
                                     tick={{ fill: '#94a3b8', fontSize: 12 }}
-                                    tickFormatter={(value) => `₹${value / 1000}k`}
+                                    tickFormatter={(value) => `${currencySymbol}${value / 1000}k`}
                                 />
                                 <Tooltip
                                     contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
-                                    formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, 'Revenue']}
+                                    formatter={(value: any) => [`${currencySymbol}${Number(value).toLocaleString()}`, 'Revenue']}
                                 />
                                 <Area
                                     type="monotone"
@@ -193,7 +195,7 @@ export function AnalyticsClient({ data }: { data: any }) {
                                 </Pie>
                                 <Tooltip 
                                     contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
-                                    formatter={(val: any) => `₹${Number(val).toLocaleString()}`}
+                                    formatter={(val: any) => `${currencySymbol}${Number(val).toLocaleString()}`}
                                 />
                             </PieChart>
                         </ResponsiveContainer>
@@ -213,6 +215,7 @@ export function AnalyticsClient({ data }: { data: any }) {
                     
                     <div className="mt-8 space-y-4 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
                         {categoryData.map((entry: any, index: number) => {
+                            const { currencySymbol } = useLocalization();
                             const total = categoryData.reduce((sum: number, i: any) => sum + i.value, 0);
                             const percent = Math.round((entry.value / (total || 1)) * 100);
                             
@@ -226,7 +229,7 @@ export function AnalyticsClient({ data }: { data: any }) {
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <span className="text-xs font-black text-slate-900 dark:text-white block">₹{entry.value.toLocaleString()}</span>
+                                        <span className="text-xs font-black text-slate-900 dark:text-white block">{currencySymbol}{entry.value.toLocaleString()}</span>
                                         <span className="text-[10px] font-bold text-emerald-500">{percent}% Share</span>
                                     </div>
                                 </div>
@@ -297,6 +300,7 @@ export function AnalyticsClient({ data }: { data: any }) {
 }
 
 function MetricCard({ title, value, customValue, icon: Icon, trend, isUp, color }: any) {
+    const { currencySymbol } = useLocalization();
     const bgColors = {
         blue: 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400',
         indigo: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400',

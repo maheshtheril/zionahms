@@ -63,6 +63,7 @@ interface ReceptionActionCenterProps {
 }
 
 import { DashboardDateFilter } from "../dashboard-date-filter"
+import { useLocalization } from "@/contexts/localization-context";
 
 const getInitials = (firstName?: string, lastName?: string) => {
     const f = firstName?.trim() || "";
@@ -89,9 +90,10 @@ export function ReceptionActionCenter({
     billableItems = [],
     taxConfig = { defaultTax: null, taxRates: [] },
     uoms = [],
-    currency = '₹',
+    currency = currencySymbol,
     hospitalInfo = null
 }: ReceptionActionCenterProps) {
+    const { currencySymbol } = useLocalization();
     const router = useRouter()
     const { toast } = useToast()
     const [viewMode, setViewMode] = useState<'board' | 'list'>('list')
@@ -806,6 +808,7 @@ export function ReceptionActionCenter({
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                         {filteredAppointments.map((apt) => {
+                                            const { currencySymbol } = useLocalization();
                                             const isEmergency = apt.type === 'emergency' || apt.tags?.includes('EMERGENCY');
                                             const isUrgent = apt.priority === 'urgent';
                                             const isHigh = apt.priority === 'high';
@@ -1105,7 +1108,7 @@ export function ReceptionActionCenter({
                                     <IndianRupee className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <div className="text-3xl font-black italic tracking-tighter bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">₹{dailyCollection.toLocaleString()}</div>
+                                    <div className="text-3xl font-black italic tracking-tighter bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">{currencySymbol}{dailyCollection.toLocaleString()}</div>
                                     <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Today's Gross Flow</div>
                                 </div>
                             </div>
@@ -1378,7 +1381,7 @@ export function ReceptionActionCenter({
                             </div>
                             <div className="text-right">
                                 <p className="text-[10px] font-black uppercase text-emerald-100 tracking-widest">Total Collection</p>
-                                <p className="text-3xl font-black italic tracking-tighter">₹{dailyCollection.toLocaleString()}</p>
+                                <p className="text-3xl font-black italic tracking-tighter">{currencySymbol}{dailyCollection.toLocaleString()}</p>
                             </div>
                         </div>
                     </div>
@@ -1424,7 +1427,7 @@ export function ReceptionActionCenter({
                                                 </Badge>
                                             </td>
                                             <td className="py-5 px-2 font-black text-slate-900 dark:text-white">
-                                                ₹{Number(p.amount).toLocaleString()}
+                                                ${currencySymbol}{Number(p.amount).toLocaleString()}
                                             </td>
                                             <td className="py-5 px-2 text-right">
                                                 <div className="flex justify-end gap-2">
@@ -1504,6 +1507,7 @@ const getSmartStatus = (apt: any) => {
 };
 
 const StatusBadge = ({ apt }: { apt: any }) => {
+    const { currencySymbol } = useLocalization();
     const status = getSmartStatus(apt);
     const Icon = status.icon;
     return (
@@ -1541,6 +1545,7 @@ function PatientCard({
     statusLoading: string | null,
     hospitalInfo?: any
 }) {
+    const { currencySymbol } = useLocalization();
     const isEmergency = apt.type === 'emergency' || apt.tags?.includes('EMERGENCY');
     const isUrgent = apt.priority === 'urgent';
     const isHigh = apt.priority === 'high';

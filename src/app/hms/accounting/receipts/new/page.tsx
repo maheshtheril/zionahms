@@ -16,8 +16,10 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 import { TallyPaymentForm } from '@/components/accounting/tally-voucher-form';
+import { useLocalization } from "@/contexts/localization-context";
 
 export default function NewReceiptPage() {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,7 +45,7 @@ export default function NewReceiptPage() {
         } else {
             toast({
                 title: "Receipt Saved",
-                description: `Successfully recorded receipt for ₹${payload.amount}`,
+                description: `Successfully recorded receipt for ${currencySymbol}${payload.amount}`,
                 className: "bg-emerald-900 border-emerald-800 text-white"
             });
 
@@ -91,7 +93,7 @@ export default function NewReceiptPage() {
                     const res = await getAccounts(q);
                     return res.success ? res.data : [];
                 }}
-                currency="₹"
+                currency={currencySymbol}
             />
         );
     }
@@ -187,7 +189,7 @@ export default function NewReceiptPage() {
                                     </label>
                                     <div className="relative group/amount">
                                         <div className="absolute inset-0 bg-emerald-500/5 blur-2xl rounded-xl opacity-0 group-focus-within/amount:opacity-100 transition-opacity duration-500" />
-                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-emerald-500 font-medium text-4xl">₹</span>
+                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-emerald-500 font-medium text-4xl">{currencySymbol}</span>
                                         <input
                                             type="number"
                                             value={amount}

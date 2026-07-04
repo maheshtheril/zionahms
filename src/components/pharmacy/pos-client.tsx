@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { processPOSCheckout, POSCartItem } from '@/app/actions/pos-checkout'
 import { getActivePOSPrintConfig } from '@/app/actions/print-settings'
 import { useRouter } from 'next/navigation'
+import { useLocalization } from "@/contexts/localization-context";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -87,6 +88,7 @@ function UOMPicker({
     uomOptions: UomOption[]
     onSelect: (opt: UomOption) => void
 }) {
+    const { currencySymbol } = useLocalization();
     const [open, setOpen] = useState(false)
     const ref = useRef<HTMLDivElement>(null)
     const hasOptions = uomOptions.length > 1
@@ -141,7 +143,7 @@ function UOMPicker({
                                     )}
                                 </span>
                                 <span className={currentUom === opt.uom ? 'text-violet-200' : 'text-indigo-600 dark:text-indigo-400'}>
-                                    ₹{opt.price.toFixed(2)}
+                                    ${currencySymbol}{opt.price.toFixed(2)}
                                 </span>
                             </button>
                         ))}
@@ -163,6 +165,7 @@ function BatchPickerDialog({
     onSelect: (product: Product, batch: Batch) => void
     onClose: () => void 
 }) {
+    const { currencySymbol } = useLocalization();
     const validBatches = product.batches.filter(b => !isExpired(b.expiryDate))
 
     return (
@@ -199,6 +202,7 @@ function BatchPickerDialog({
                         </div>
                     ) : (
                         validBatches.map((batch, idx) => {
+                            const { currencySymbol } = useLocalization();
                             const nearExpiry = isNearExpiry(batch.expiryDate)
                             const sellPrice  = batch.salePrice ?? batch.mrp ?? product.price
 
@@ -242,7 +246,7 @@ function BatchPickerDialog({
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">₹{sellPrice.toFixed(2)}</p>
+                                            <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{currencySymbol}{sellPrice.toFixed(2)}</p>
                                             <ChevronRight className="h-5 w-5 text-slate-300 dark:text-zinc-600 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" />
                                         </div>
                                     </div>
@@ -267,6 +271,7 @@ function BatchPickerDialog({
 // ─── Main POS Client ─────────────────────────────────────────────────────────
 
 export function POSClient({ products, availableTaxes = [] }: Props) {
+    const { currencySymbol } = useLocalization();
     const router = useRouter()
     const [search,          setSearch]          = useState('')
     const [activeCategory,  setActiveCategory]  = useState<string>('All')
@@ -530,6 +535,7 @@ export function POSClient({ products, availableTaxes = [] }: Props) {
                         {viewMode === 'grid' ? (
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                 {filteredProducts.map((p, idx) => {
+                                    const { currencySymbol } = useLocalization();
                                 const active        = p.batches.filter(b => !isExpired(b.expiryDate) && b.qtyOnHand > 0)
                                 const hasMultiBatch = active.length > 1
                                 const hasSingleBatch= active.length === 1
@@ -580,7 +586,7 @@ export function POSClient({ products, availableTaxes = [] }: Props) {
                                         <div className="mt-auto space-y-1">
                                             <div className="flex justify-between items-end">
                                                 <span className="text-xl font-black text-indigo-600 dark:text-indigo-400">
-                                                    ₹{p.price.toFixed(2)}
+                                                    ${currencySymbol}{p.price.toFixed(2)}
                                                 </span>
                                                 <div className="flex flex-col items-end">
                                                     <span className="text-[10px] font-bold text-slate-400 uppercase">{p.uom}</span>
@@ -629,6 +635,7 @@ export function POSClient({ products, availableTaxes = [] }: Props) {
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/50">
                                         {filteredProducts.map((p, idx) => {
+                                            const { currencySymbol } = useLocalization();
                                             const active        = p.batches.filter(b => !isExpired(b.expiryDate) && b.qtyOnHand > 0)
                                             const outOfStock    = p.batches.length > 0 && active.length === 0
                                             const isFocused     = focusedIndex === idx
@@ -650,7 +657,7 @@ export function POSClient({ products, availableTaxes = [] }: Props) {
                                                     </td>
                                                     <td className="p-4 text-slate-500 font-medium">{p.category}</td>
                                                     <td className="p-4">
-                                                        <span className="font-black text-indigo-600 dark:text-indigo-400 text-lg">₹{p.price.toFixed(2)}</span>
+                                                        <span className="font-black text-indigo-600 dark:text-indigo-400 text-lg">{currencySymbol}{p.price.toFixed(2)}</span>
                                                         <span className="text-[10px] text-slate-400 font-bold ml-1 uppercase">/{p.uom}</span>
                                                     </td>
                                                     <td className="p-4">
@@ -728,10 +735,10 @@ export function POSClient({ products, availableTaxes = [] }: Props) {
                                 <div className="flex items-center justify-between mt-1.5">
                                     <div className="flex items-baseline gap-1.5">
                                         <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">
-                                            ₹{(item.unitPrice * item.quantity).toFixed(2)}
+                                            ${currencySymbol}{(item.unitPrice * item.quantity).toFixed(2)}
                                         </span>
                                         <span className="text-[10px] text-slate-400">
-                                            @₹{item.unitPrice.toFixed(2)}/{item.uom}
+                                            @${currencySymbol}{item.unitPrice.toFixed(2)}/{item.uom}
                                         </span>
                                     </div>
 
@@ -780,14 +787,14 @@ export function POSClient({ products, availableTaxes = [] }: Props) {
                     <div className="p-6 bg-white dark:bg-zinc-900 border-t border-slate-200 dark:border-zinc-800 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
                         <div className="space-y-2 mb-6">
                             <div className="flex justify-between text-slate-500 font-semibold text-lg">
-                                <span>Subtotal</span><span>₹{cartTotals.subtotal.toFixed(2)}</span>
+                                <span>Subtotal</span><span>{currencySymbol}{cartTotals.subtotal.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-slate-500 font-semibold text-lg">
-                                <span>Tax (Est)</span><span>₹{cartTotals.tax.toFixed(2)}</span>
+                                <span>Tax (Est)</span><span>{currencySymbol}{cartTotals.tax.toFixed(2)}</span>
                             </div>
                             <div className="border-t border-slate-200 dark:border-zinc-800 my-2 pt-2" />
                             <div className="flex justify-between text-slate-900 dark:text-white font-black text-4xl tracking-tight">
-                                <span>Total</span><span>₹{cartTotals.total.toFixed(2)}</span>
+                                <span>Total</span><span>{currencySymbol}{cartTotals.total.toFixed(2)}</span>
                             </div>
                         </div>
 
@@ -840,6 +847,7 @@ export function POSClient({ products, availableTaxes = [] }: Props) {
                         </thead>
                         <tbody>
                             {receiptData.items.map((item, idx) => {
+                                const { currencySymbol } = useLocalization();
                                 const cols = printConfig?.columns || { showTax: true, showUOM: true };
                                 return (
                                     <tr key={idx}>

@@ -8,6 +8,7 @@ import { ArrowLeft, Loader2, RotateCcw, Calendar, Search, ArrowRight, FileText, 
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
+import { useLocalization } from "@/contexts/localization-context";
 
 type SalesReturn = {
     id: string;
@@ -23,6 +24,7 @@ type SalesReturn = {
 };
 
 export default function SalesReturnsPage() {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
     const [returns, setReturns] = useState<SalesReturn[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -175,7 +177,7 @@ export default function SalesReturnsPage() {
                                     {ret.itemCount} items
                                 </div>
                                 <div className="col-span-2 text-right text-sm font-black text-foreground font-mono">
-                                    ₹{ret.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                    ${currencySymbol}{ret.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                 </div>
                                 <div className="col-span-1 text-[10px] font-mono flex items-center gap-2">
                                     {ret.invoiceNumber || 'AD-HOC'}

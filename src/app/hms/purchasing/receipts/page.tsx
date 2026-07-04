@@ -13,6 +13,7 @@ import {
     DropdownMenuItem,
     DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import { useLocalization } from "@/contexts/localization-context";
 
 type Receipt = {
     id: string;
@@ -27,6 +28,7 @@ type Receipt = {
 };
 
 export default function PurchaseReceiptsPage() {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
     const [receipts, setReceipts] = useState<Receipt[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -139,7 +141,7 @@ export default function PurchaseReceiptsPage() {
                             <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-6 shadow-sm">
                                 <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-1">Total Purchase Value</p>
                                 <div className="flex items-baseline gap-1">
-                                    <span className="text-sm font-bold text-indigo-500/70">₹</span>
+                                    <span className="text-sm font-bold text-indigo-500/70">{currencySymbol}</span>
                                     <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
                                         {filteredReceipts.reduce((sum, r) => sum + (r.totalAmount || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </p>
@@ -197,7 +199,7 @@ export default function PurchaseReceiptsPage() {
                                         {receipt.itemCount}
                                     </div>
                                     <div className="col-span-1 text-right text-sm font-bold text-foreground font-mono whitespace-nowrap">
-                                        ₹{receipt.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        ${currencySymbol}{receipt.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </div>
                                     <div className="col-span-1 flex items-center justify-center">
                                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wide">

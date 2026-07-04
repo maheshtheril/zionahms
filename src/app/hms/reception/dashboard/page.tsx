@@ -6,6 +6,7 @@ import { Suspense } from "react"
 import { getBranches, getCurrentCompany } from "@/app/actions/company"
 import { getBillableItems, getTaxConfiguration, getUoms } from "@/app/actions/billing"
 import { Loader2 } from "lucide-react"
+import { useLocalization } from "@/contexts/localization-context";
 
 export const dynamic = 'force-dynamic'
 
@@ -27,6 +28,7 @@ export default async function ReceptionDashboardPage({
 }: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+    const { currencySymbol } = useLocalization();
     const params = await searchParams
     const dateStr = params.date as string
 
@@ -223,7 +225,7 @@ export default async function ReceptionDashboardPage({
         const billableItems = itemsRes.success ? itemsRes.data : [];
         const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
         const uoms = (uomsRes as any).success ? (uomsRes as any).data : [];
-        const currency = companySettings?.currencies?.symbol || session.user.currencySymbol || '₹';
+        const currency = companySettings?.currencies?.symbol || session.user.currencySymbol || currencySymbol;
 
 
         // Fetch Vitals, Tags, and Clinical Integrity Status (Pending Nursing Consumption)

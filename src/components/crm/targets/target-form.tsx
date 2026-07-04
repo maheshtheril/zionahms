@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { useLocalization } from "@/contexts/localization-context";
 
 interface Milestone {
     id?: string;
@@ -38,6 +39,7 @@ interface TargetFormProps {
 }
 
 export function TargetForm(props: TargetFormProps) {
+    const { currencySymbol } = useLocalization();
     const [loading, setLoading] = useState(false)
     const { toast } = useToast()
     const router = useRouter()
@@ -158,6 +160,7 @@ export function TargetForm(props: TargetFormProps) {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                                 {props.assignees.map(user => {
+                                    const { currencySymbol } = useLocalization();
                                     const isSelected = selectedAssignees.includes(user.id)
                                     return (
                                         <div
@@ -349,7 +352,7 @@ export function TargetForm(props: TargetFormProps) {
                         <div className="space-y-6">
                             <Label htmlFor="incentive_amount" className="text-xs font-black uppercase tracking-widest text-slate-500">Achievement Reward Pool</Label>
                             <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500">₹</div>
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500">{currencySymbol}</div>
                                 <Input
                                     id="incentive_amount"
                                     name="incentive_amount"

@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { AnimatePresence, motion } from "framer-motion"
+import { useLocalization } from "@/contexts/localization-context";
 
 interface UsageFormProps {
     patientId: string
@@ -42,6 +43,7 @@ type CartItem = ConsumptionItem & {
 }
 
 export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuccess, isModal = false }: UsageFormProps) {
+    const { currencySymbol } = useLocalization();
     const [searchQuery, setSearchQuery] = useState('')
     const [searchResults, setSearchResults] = useState<any[]>([])
     const [isSearching, setIsSearching] = useState(false)
@@ -64,7 +66,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                     setSearchResults(res.data.map((p: any) => ({
                         id: p.id,
                         label: p.name,
-                        subLabel: `S: ${p.totalStock} ${p.uom} | ₹${Number(p.price || 0).toFixed(2)}`,
+                        subLabel: `S: ${p.totalStock} ${p.uom} | ${currencySymbol}${Number(p.price || 0).toFixed(2)}`,
                         ...p
                     })));
                 } else {
@@ -368,7 +370,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                                             />
                                         </div>
                                         <div className="space-y-1.5">
-                                            <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Rate (₹)</Label>
+                                            <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Rate (${currencySymbol})</Label>
                                             <Input 
                                                 type="number"
                                                 value={itemPrice}
@@ -405,6 +407,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                                                 {/* [WORLD CLASS] Interactive Batch Picker List */}
                                                 <div className="grid grid-cols-1 gap-2">
                                                     {availableBatches.slice(0, 3).map((b, idx) => {
+                                                        const { currencySymbol } = useLocalization();
                                                         const isSelected = selectedBatchId === b.id;
                                                         const isExpired = b.expiry_date && new Date(b.expiry_date) < new Date();
                                                         const daysToExpiry = b.expiry_date ? Math.ceil((new Date(b.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 999;
@@ -454,7 +457,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                                                                 {/* Price context indicator */}
                                                                 {Number(b.sale_price) > 0 && (
                                                                     <div className="absolute bottom-1 right-2 text-[8px] font-black text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                        RATE: ₹{Number(b.sale_price).toFixed(2)}
+                                                                        RATE: ${currencySymbol}{Number(b.sale_price).toFixed(2)}
                                                                     </div>
                                                                 )}
                                                             </button>
@@ -540,11 +543,11 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                                                         <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors shadow-sm"><PackageMinus className="h-5 w-5" /></div>
                                                         <div>
                                                             <div className="text-xs font-black uppercase text-slate-900">{item.productName}</div>
-                                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{item.quantity} {item.uom} @ ₹{item.price.toFixed(2)}</div>
+                                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{item.quantity} {item.uom} @ ${currencySymbol}{item.price.toFixed(2)}</div>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-4">
-                                                        <div className="text-sm font-black text-slate-900 font-mono">₹{(item.price * item.quantity).toFixed(2)}</div>
+                                                        <div className="text-sm font-black text-slate-900 font-mono">{currencySymbol}{(item.price * item.quantity).toFixed(2)}</div>
                                                         <button onClick={() => removeItem(item.id)} className="p-2 text-slate-300 hover:text-red-500 rounded-full hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
                                                     </div>
                                                 </motion.div>
@@ -557,7 +560,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                             <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 shadow-xl">
                                 <div className="flex justify-between items-center mb-6 px-2">
                                     <div className="text-xs font-black uppercase text-slate-400">Total Charges</div>
-                                    <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">₹{cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</div>
+                                    <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">{currencySymbol}{cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</div>
                                 </div>
                                 <Button 
                                     disabled={isSubmitting || cart.length === 0}
@@ -607,7 +610,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                                                     <span className="text-[10px] font-bold text-indigo-500 italic uppercase">Charge Confirmed</span>
                                                 </div>
                                                 <div className="text-right">
-                                                    <div className="text-xs font-black font-mono">₹{Number(item.price * item.quantity).toFixed(2)}</div>
+                                                    <div className="text-xs font-black font-mono">{currencySymbol}{Number(item.price * item.quantity).toFixed(2)}</div>
                                                     <div className="text-[10px] text-slate-400 font-bold">{item.quantity} {item.uom}</div>
                                                 </div>
                                             </div>

@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { recordPatientConsumption } from '@/app/actions/billing';
 import { SearchableSelect, Option } from "@/components/ui/searchable-select";
 import { getBillableItems } from '@/app/actions/billing';
+import { useLocalization } from "@/contexts/localization-context";
 
 interface PatientConsumptionDialogProps {
     patientId: string;
@@ -17,6 +18,7 @@ interface PatientConsumptionDialogProps {
 }
 
 export function PatientConsumptionDialog({ patientId, patientName }: PatientConsumptionDialogProps) {
+    const { currencySymbol } = useLocalization();
     const { toast } = useToast();
     const [isOpen, setIsOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,7 +51,7 @@ export function PatientConsumptionDialog({ patientId, patientName }: PatientCons
                 .map((i: any) => ({
                     id: i.id,
                     label: i.label,
-                    subLabel: i.description ? `₹${i.price} • ${i.description}` : `₹${i.price}`,
+                    subLabel: i.description ? `${currencySymbol}${i.price} • ${i.description}` : `${currencySymbol}${i.price}`,
                     price: i.price, // Ensure this exists
                     original: i
                 }));
@@ -187,7 +189,7 @@ export function PatientConsumptionDialog({ patientId, patientName }: PatientCons
                                         <tr key={idx} className="group hover:bg-gray-50">
                                             <td className="px-3 py-2">{item.label}</td>
                                             <td className="px-3 py-2 font-medium">{item.quantity}</td>
-                                            <td className="px-3 py-2 text-right">₹{item.price * item.quantity}</td>
+                                            <td className="px-3 py-2 text-right">{currencySymbol}{item.price * item.quantity}</td>
                                             <td className="px-3 py-2 text-right">
                                                 <button
                                                     onClick={() => setAddedItems(addedItems.filter((_, i) => i !== idx))}
@@ -202,7 +204,7 @@ export function PatientConsumptionDialog({ patientId, patientName }: PatientCons
                                         <td className="px-3 py-2 text-blue-900">Total</td>
                                         <td className="px-3 py-2 text-blue-900">{addedItems.reduce((s, i) => s + i.quantity, 0)}</td>
                                         <td className="px-3 py-2 text-right text-blue-900">
-                                            ₹{addedItems.reduce((s, i) => s + (i.price * i.quantity), 0)}
+                                            ${currencySymbol}{addedItems.reduce((s, i) => s + (i.price * i.quantity), 0)}
                                         </td>
                                         <td></td>
                                     </tr>

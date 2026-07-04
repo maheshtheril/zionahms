@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import { seedPharmacyUOMs } from '@/app/actions/uom'
+import { useLocalization } from "@/contexts/localization-context";
 
 export function UOMQuickSetup() {
+    const { currencySymbol } = useLocalization();
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState('')
 
@@ -65,9 +67,9 @@ export function UOMQuickSetup() {
                             <li>Base UOM: <code>Unit</code> (individual tablet)</li>
                             <li>Purchase UOM: <code>Strip</code> (15 tablets)</li>
                             <li>Conversion: 1 Strip = 15 Units</li>
-                            <li>Purchase Price: ₹30/strip</li>
-                            <li>Sale Price (Strip): ₹45/strip</li>
-                            <li>Sale Price (Unit): ₹3/tablet</li>
+                            <li>Purchase Price: ${currencySymbol}30/strip</li>
+                            <li>Sale Price (Strip): ${currencySymbol}45/strip</li>
+                            <li>Sale Price (Unit): ${currencySymbol}3/tablet</li>
                         </ul>
                     </div>
                 </div>

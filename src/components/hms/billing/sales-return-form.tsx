@@ -20,8 +20,10 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { useLocalization } from "@/contexts/localization-context";
 
 export default function SalesReturnForm() {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
@@ -173,7 +175,7 @@ export default function SalesReturnForm() {
                                 className="flex flex-col p-6 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-white hover:border-emerald-300 hover:shadow-lg transition-all text-left group"
                             >
                                 <span className="text-xs font-black uppercase tracking-widest text-slate-400 group-hover:text-emerald-500 transition-colors">{inv.invoice_number}</span>
-                                <span className="text-lg font-bold text-slate-900 mt-1">₹{Number(inv.total).toFixed(2)}</span>
+                                <span className="text-lg font-bold text-slate-900 mt-1">{currencySymbol}{Number(inv.total).toFixed(2)}</span>
                                 <span className="text-sm text-slate-500 mt-2">{new Date(inv.created_at).toLocaleDateString()}</span>
                             </button>
                         )) : (
@@ -211,7 +213,7 @@ export default function SalesReturnForm() {
                                             <tr key={idx} className={item.returnQty > 0 ? 'bg-emerald-50/30' : ''}>
                                                 <td className="px-6 py-4">
                                                     <p className="font-bold text-slate-900">{item.description}</p>
-                                                    <p className="text-[10px] font-mono text-slate-400">₹{item.unitPrice.toFixed(2)} / unit</p>
+                                                    <p className="text-[10px] font-mono text-slate-400">{currencySymbol}{item.unitPrice.toFixed(2)} / unit</p>
                                                 </td>
                                                 <td className="px-6 py-4 text-center font-mono text-slate-600">{item.soldQty}</td>
                                                 <td className="px-6 py-4">
@@ -224,7 +226,7 @@ export default function SalesReturnForm() {
                                                     />
                                                 </td>
                                                 <td className="px-6 py-4 text-right font-bold text-slate-900">
-                                                    ₹{(item.returnQty * item.unitPrice).toFixed(2)}
+                                                    ${currencySymbol}{(item.returnQty * item.unitPrice).toFixed(2)}
                                                 </td>
                                             </tr>
                                         ))}
@@ -242,7 +244,7 @@ export default function SalesReturnForm() {
                             
                             <div className="space-y-2">
                                 <Label className="text-slate-400 text-xs font-black uppercase tracking-widest">Total Refund</Label>
-                                <div className="text-5xl font-black tracking-tighter">₹{totalRefund.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                                <div className="text-5xl font-black tracking-tighter">{currencySymbol}{totalRefund.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
                             </div>
 
                             <div className="space-y-4 pt-4 border-t border-white/10">

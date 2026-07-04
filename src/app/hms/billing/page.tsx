@@ -8,6 +8,7 @@ import SearchInput from "@/components/search-input"
 import { BillingActions } from "@/components/billing/billing-actions"
 import { BillingDateRangeFilter } from "@/components/billing/billing-date-range-filter"
 import { BillingMethodFilter } from "@/components/billing/billing-method-filter"
+import { useLocalization } from "@/contexts/localization-context";
 
 export default async function BillingPage({
     searchParams
@@ -20,6 +21,7 @@ export default async function BillingPage({
         method?: string
     }>
 }) {
+    const { currencySymbol } = useLocalization();
     const session = await auth();
     if (!session?.user?.companyId) return <div>Unauthorized</div>;
 
@@ -163,7 +165,7 @@ export default async function BillingPage({
                     </div>
                     <div className="relative z-10">
                         <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Total Revenue</p>
-                        <h3 className="text-3xl font-black text-slate-900 mt-2 tracking-tight">₹{totalRevenue.toLocaleString('en-IN')}</h3>
+                        <h3 className="text-3xl font-black text-slate-900 mt-2 tracking-tight">{currencySymbol}{totalRevenue.toLocaleString('en-IN')}</h3>
                         <p className="text-xs text-emerald-600 mt-2 font-bold flex items-center gap-1 bg-emerald-50 w-fit px-2 py-1 rounded-lg">
                             <CheckCircle2 className="h-3 w-3" />
                             Collected
@@ -177,7 +179,7 @@ export default async function BillingPage({
                     </div>
                     <div>
                         <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Outstanding</p>
-                        <h3 className="text-3xl font-black text-slate-900 mt-2 tracking-tight">₹{totalOutstanding.toLocaleString('en-IN')}</h3>
+                        <h3 className="text-3xl font-black text-slate-900 mt-2 tracking-tight">{currencySymbol}{totalOutstanding.toLocaleString('en-IN')}</h3>
                         <p className="text-xs text-orange-600 mt-2 font-bold flex items-center gap-1 bg-orange-50 w-fit px-2 py-1 rounded-lg">
                             <Clock className="h-3 w-3" />
                             Pending Collection
@@ -326,13 +328,13 @@ export default async function BillingPage({
                                         </span>
                                     </td>
                                     <td className="p-5 text-right font-mono text-sm font-bold text-slate-400">
-                                        ₹{Number(inv.total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        ${currencySymbol}{Number(inv.total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </td>
                                     <td className="p-5 text-right font-mono text-sm font-black text-emerald-600">
                                         {inv.status === 'cancelled' ? (
-                                            <span className="text-slate-400 line-through decoration-red-400">₹{Number(inv.total_paid || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                            <span className="text-slate-400 line-through decoration-red-400">{currencySymbol}{Number(inv.total_paid || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                         ) : (
-                                            `₹${Number(inv.total_paid || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                            `${currencySymbol}${Number(inv.total_paid || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                                         )}
                                     </td>
                                     <td className="p-5 text-right">
@@ -349,10 +351,10 @@ export default async function BillingPage({
                                     Total for visible records
                                 </td>
                                 <td className="p-5 text-right font-black text-slate-400 text-sm tracking-tight">
-                                    ₹{invoices.reduce((sum, inv) => sum + (inv.status === 'cancelled' ? 0 : Number(inv.total || 0)), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                    ${currencySymbol}{invoices.reduce((sum, inv) => sum + (inv.status === 'cancelled' ? 0 : Number(inv.total || 0)), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                 </td>
                                 <td className="p-5 text-right font-black text-emerald-600 text-lg tracking-tight">
-                                    ₹{invoices.reduce((sum, inv) => sum + (inv.status === 'cancelled' ? 0 : Number(inv.total_paid || 0)), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                    ${currencySymbol}{invoices.reduce((sum, inv) => sum + (inv.status === 'cancelled' ? 0 : Number(inv.total_paid || 0)), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                 </td>
                                 <td></td>
                             </tr>

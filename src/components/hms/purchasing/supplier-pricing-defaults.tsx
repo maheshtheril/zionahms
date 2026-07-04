@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { useLocalization } from "@/contexts/localization-context";
 
 type SupplierPricingDefaultsProps = {
     isOpen: boolean;
@@ -28,6 +29,7 @@ export function SupplierPricingDefaults({
     currentDefaults,
     onSave
 }: SupplierPricingDefaultsProps) {
+    const { currencySymbol } = useLocalization();
     const { toast } = useToast();
     const [strategy, setStrategy] = useState(currentDefaults?.defaultPricingStrategy || 'mrp_discount');
     const [mrpDiscountPct, setMrpDiscountPct] = useState(currentDefaults?.defaultMrpDiscountPct || 10);
@@ -141,7 +143,7 @@ export function SupplierPricingDefaults({
                                 <span className="text-sm text-neutral-400">%</span>
                             </div>
                             <p className="text-xs text-neutral-500">
-                                Example: MRP ₹150 - {mrpDiscountPct}% = ₹{(150 * (1 - mrpDiscountPct / 100)).toFixed(2)} sale price
+                                Example: MRP ${currencySymbol}150 - {mrpDiscountPct}% = ${currencySymbol}{(150 * (1 - mrpDiscountPct / 100)).toFixed(2)} sale price
                             </p>
                             {/* Quick Presets */}
                             <div className="flex gap-2 mt-2">
@@ -197,7 +199,7 @@ export function SupplierPricingDefaults({
                                 <span className="text-sm text-neutral-400">%</span>
                             </div>
                             <p className="text-xs text-neutral-500">
-                                Example: Cost ₹100 + {markupPct}% = ₹{(100 * (1 + markupPct / 100)).toFixed(2)} sale price
+                                Example: Cost ${currencySymbol}100 + {markupPct}% = ${currencySymbol}{(100 * (1 + markupPct / 100)).toFixed(2)} sale price
                             </p>
                             {/* Quick Presets */}
                             <div className="flex gap-2 mt-2">

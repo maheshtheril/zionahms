@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Save, Loader2, Search, X, Check } from 'lucide-react';
+import { useLocalization } from "@/contexts/localization-context";
 
 interface TallyPaymentFormProps {
     type: 'payment' | 'receipt';
@@ -37,6 +38,7 @@ function TallySelect({
     onChange: (id: string, label: string) => void;
     autoFocus?: boolean;
 }) {
+    const { currencySymbol } = useLocalization();
     const [query, setQuery] = useState(label || '');
     const [results, setResults] = useState<any[]>([]);
     const [open, setOpen] = useState(false);
@@ -168,8 +170,9 @@ export function TallyPaymentForm({
     accountsSearch,
     journalsSearch,
     getBills,
-    currency = '₹'
+    currency = currencySymbol
 }: TallyPaymentFormProps) {
+    const { currencySymbol } = useLocalization();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [voucherType, setVoucherType] = useState<'bill' | 'direct'>(type === 'payment' ? 'bill' : 'direct');
     const [showAcceptPrompt, setShowAcceptPrompt] = useState(false);

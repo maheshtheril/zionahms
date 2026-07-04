@@ -23,8 +23,10 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 import { getPurchaseInvoices } from "@/app/actions/accounting/bills";
+import { useLocalization } from "@/contexts/localization-context";
 
 export default function PurchaseBillsPage() {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [bills, setBills] = useState<any[]>([]);
@@ -46,6 +48,7 @@ export default function PurchaseBillsPage() {
     }, []);
 
     const getStatusBadge = (status: string) => {
+        const { currencySymbol } = useLocalization();
         switch (status?.toLowerCase()) {
             case 'posted':
                 return <Badge className="bg-green-500/10 text-green-400 border-green-500/20 px-3 py-1">
@@ -130,9 +133,9 @@ export default function PurchaseBillsPage() {
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {[
-                    { label: "Total Outstanding", value: "₹4,25,000", delta: "+12%", color: "indigo" },
+                    { label: "Total Outstanding", value: "${currencySymbol}4,25,000", delta: "+12%", color: "indigo" },
                     { label: "Pending Approval", value: "12 Bills", delta: "Updated now", color: "purple" },
-                    { label: "Monthly Purchases", value: "₹1,82,400", delta: "-5%", color: "blue" }
+                    { label: "Monthly Purchases", value: "${currencySymbol}1,82,400", delta: "-5%", color: "blue" }
                 ].map((stat, i) => (
                     <Card key={i} className="bg-black/40 border-white/10 backdrop-blur-md overflow-hidden relative group">
                         <div className={`absolute top-0 left-0 w-1 h-full bg-${stat.color}-500 opacity-50 group-hover:opacity-100 transition-all`} />
@@ -203,7 +206,7 @@ export default function PurchaseBillsPage() {
                                         <CardHeader className="flex flex-row items-center justify-between pb-2 bg-white/5">
                                             <div className="space-y-1">
                                                 <p className="text-xs font-mono text-white/40">{bill.name}</p>
-                                                <CardTitle className="text-lg text-white/90">₹{Number(bill.total_amount).toLocaleString()}</CardTitle>
+                                                <CardTitle className="text-lg text-white/90">{currencySymbol}{Number(bill.total_amount).toLocaleString()}</CardTitle>
                                             </div>
                                             {getStatusBadge(bill.status)}
                                         </CardHeader>
@@ -249,7 +252,7 @@ export default function PurchaseBillsPage() {
                                         </div>
                                         <div className="flex items-center gap-8">
                                             <div className="text-right">
-                                                <p className="text-lg font-bold text-white">₹{Number(bill.total_amount).toLocaleString()}</p>
+                                                <p className="text-lg font-bold text-white">{currencySymbol}{Number(bill.total_amount).toLocaleString()}</p>
                                                 <p className="text-[10px] uppercase tracking-widest text-white/20 font-medium">Auto-Allocated</p>
                                             </div>
                                             <DropdownMenu>

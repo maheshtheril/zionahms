@@ -5,12 +5,14 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, Printer, Download, CreditCard, Calendar, User, FileText, ExternalLink, Edit } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useLocalization } from "@/contexts/localization-context";
 
 export default async function SalesReturnDetailsPage({ 
     params 
 }: { 
     params: Promise<{ id: string }>
 }) {
+    const { currencySymbol } = useLocalization();
     const session = await auth();
     const { id } = await params;
 
@@ -142,15 +144,15 @@ export default async function SalesReturnDetailsPage({
                                     <div className="text-[10px] text-slate-400 font-mono">{(line.metadata as any)?.batch_id?.slice(0,8) || "NO-BATCH"}</div>
                                 </td>
                                 <td className="px-6 py-4 text-right text-slate-600 font-mono">{Number(line.qty)}</td>
-                                <td className="px-6 py-4 text-right text-slate-600 font-mono">₹{Number(line.unit_price).toFixed(2)}</td>
-                                <td className="px-6 py-4 text-right text-slate-900 font-bold font-mono">₹{Number(line.line_total).toFixed(2)}</td>
+                                <td className="px-6 py-4 text-right text-slate-600 font-mono">{currencySymbol}{Number(line.unit_price).toFixed(2)}</td>
+                                <td className="px-6 py-4 text-right text-slate-900 font-bold font-mono">{currencySymbol}{Number(line.line_total).toFixed(2)}</td>
                             </tr>
                         ))}
                     </tbody>
                     <tfoot className="bg-slate-50/80">
                         <tr>
                             <td colSpan={3} className="px-6 py-6 text-right font-black text-slate-500 uppercase tracking-widest text-[10px]">Total Refund Amount</td>
-                            <td className="px-6 py-6 text-right text-xl font-black text-emerald-600 font-mono">₹{Number(sReturn.total_amount).toFixed(2)}</td>
+                            <td className="px-6 py-6 text-right text-xl font-black text-emerald-600 font-mono">{currencySymbol}{Number(sReturn.total_amount).toFixed(2)}</td>
                         </tr>
                     </tfoot>
                 </table>

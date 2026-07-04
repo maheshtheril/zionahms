@@ -1,4 +1,5 @@
 import { Building2, Mail, Phone, Globe, MapPin, Landmark, QrCode } from "lucide-react";
+import { useLocalization } from "@/contexts/localization-context";
 
 interface PremiumPrintHeaderProps {
     company: {
@@ -73,6 +74,7 @@ export function PremiumPrintHeader({
     logoLayout = 'beside', logoPosition = 'left', logoPositionVal = 'left', logoSize = 80,
     coordinates, patient, invoice, prescription
 }: PremiumPrintHeaderProps & { logoPositionVal?: string }) {
+    const { currencySymbol } = useLocalization();
     if (hide) return null;
     
     const metadata = company.metadata || {};
@@ -339,14 +341,14 @@ export function PremiumPrintHeader({
                 {coordinates.subtotal && (
                     <div className="absolute min-w-[200px] flex justify-between items-center z-[100]" style={{ left: `${coordinates.subtotal.x}px`, top: `${coordinates.subtotal.y}px`, color: coordinates.subtotal.color || '#64748b' }}>
                         <span className="font-bold uppercase tracking-widest" style={{ fontSize: `${(coordinates.subtotal.fontSize || 10) - 2}px` }}>{coordinates.subtotal.label || 'Subtotal:'}</span>
-                        <span className="font-black" style={{ fontSize: `${coordinates.subtotal.fontSize || 10}px` }}>₹{Number(invoice?.subtotal || 1450).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        <span className="font-black" style={{ fontSize: `${coordinates.subtotal.fontSize || 10}px` }}>{currencySymbol}{Number(invoice?.subtotal || 1450).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                 )}
 
                 {coordinates.tax && (
                     <div className="absolute min-w-[200px] flex justify-between items-center z-[100]" style={{ left: `${coordinates.tax.x}px`, top: `${coordinates.tax.y}px`, color: coordinates.tax.color || '#64748b' }}>
                         <span className="font-bold uppercase tracking-widest" style={{ fontSize: `${(coordinates.tax.fontSize || 10) - 2}px` }}>{coordinates.tax.label || 'Tax:'}</span>
-                        <span className="font-black" style={{ fontSize: `${coordinates.tax.fontSize || 10}px` }}>₹{Number(invoice?.total_tax || 72).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        <span className="font-black" style={{ fontSize: `${coordinates.tax.fontSize || 10}px` }}>{currencySymbol}{Number(invoice?.total_tax || 72).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                 )}
 
@@ -359,7 +361,7 @@ export function PremiumPrintHeader({
                         borderRadius: `${coordinates.total.borderRadius || 4}px`
                     }}>
                         <span className="font-black uppercase tracking-widest" style={{ fontSize: `${(coordinates.total.fontSize || 14) - 4}px` }}>{coordinates.total.label || 'Payable'}</span>
-                        <span className="font-black" style={{ fontSize: `${coordinates.total.fontSize || 14}px` }}>₹{Number(invoice?.total || 1522).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        <span className="font-black" style={{ fontSize: `${coordinates.total.fontSize || 14}px` }}>{currencySymbol}{Number(invoice?.total || 1522).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                 )}
 

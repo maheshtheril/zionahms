@@ -12,8 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowLeft, ArrowRight, RefreshCw, FileText, Calendar, Filter, Database, Tag, Printer, CreditCard, Landmark } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useLocalization } from "@/contexts/localization-context";
 
 export default function GeneralLedgerPage() {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [entries, setEntries] = useState<any[]>([]);
@@ -183,12 +185,12 @@ export default function GeneralLedgerPage() {
                                         </TableCell>
                                         <TableCell className="text-right">
                                             {Number(e.debit) > 0 ? (
-                                                <span className="text-[14px] font-black text-emerald-500">₹{Number(e.debit).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                                <span className="text-[14px] font-black text-emerald-500">{currencySymbol}{Number(e.debit).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                             ) : <span className="opacity-10">-</span>}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             {Number(e.credit) > 0 ? (
-                                                <span className="text-[14px] font-black text-rose-500">₹{Number(e.credit).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                                <span className="text-[14px] font-black text-rose-500">{currencySymbol}{Number(e.credit).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                             ) : <span className="opacity-10">-</span>}
                                         </TableCell>
                                         <TableCell className="text-right pr-8">
@@ -197,7 +199,7 @@ export default function GeneralLedgerPage() {
                                                     "text-[14px] font-black",
                                                     e.runningBalance >= 0 ? "text-slate-900" : "text-rose-500"
                                                 )}>
-                                                    ₹{Math.abs(e.runningBalance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                    ${currencySymbol}{Math.abs(e.runningBalance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                                 </span>
                                                 <span className={cn(
                                                     "text-[9px] font-black text-right uppercase",
@@ -226,8 +228,8 @@ export default function GeneralLedgerPage() {
                             <div className="flex flex-col">
                                 <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Total Flow</span>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-sm font-bold text-emerald-400">⊕ ₹{entries.reduce((sum, e) => sum + Number(e.debit), 0).toLocaleString()}</span>
-                                    <span className="text-sm font-bold text-rose-500">⊖ ₹{entries.reduce((sum, e) => sum + Number(e.credit), 0).toLocaleString()}</span>
+                                    <span className="text-sm font-bold text-emerald-400">⊕ ${currencySymbol}{entries.reduce((sum, e) => sum + Number(e.debit), 0).toLocaleString()}</span>
+                                    <span className="text-sm font-bold text-rose-500">⊖ ${currencySymbol}{entries.reduce((sum, e) => sum + Number(e.credit), 0).toLocaleString()}</span>
                                 </div>
                             </div>
                         </div>
@@ -239,7 +241,7 @@ export default function GeneralLedgerPage() {
                              <div className="flex flex-col">
                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">Closing Balance</span>
                                 <span className="text-[12px] font-black text-white uppercase tracking-tighter">
-                                    ₹{Math.abs(entries[entries.length - 1]?.runningBalance || 0).toLocaleString()} {entries[entries.length - 1]?.runningBalance >= 0 ? 'DR' : 'CR'}
+                                    ${currencySymbol}{Math.abs(entries[entries.length - 1]?.runningBalance || 0).toLocaleString()} {entries[entries.length - 1]?.runningBalance >= 0 ? 'DR' : 'CR'}
                                 </span>
                              </div>
                         </div>

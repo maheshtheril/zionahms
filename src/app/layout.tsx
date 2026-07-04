@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "sonner";
+import NextTopLoader from 'nextjs-toploader';
 import { ThemeProvider } from "@/contexts/theme-context";
 import { AuthProvider } from "@/components/auth-provider";
 import { LocalizationProvider } from "@/contexts/localization-context";
@@ -78,6 +79,17 @@ export default async function RootLayout({
       <body
         className={`${inter.variable} ${robotoMono.variable} antialiased`}
       >
+        <NextTopLoader
+            color="#2563eb"
+            initialPosition={0.08}
+            crawlSpeed={200}
+            height={3}
+            crawl={true}
+            showSpinner={false}
+            easing="ease"
+            speed={200}
+            shadow="0 0 10px #2563eb,0 0 5px #2563eb"
+        />
         <ThemeProvider>
           <AuthProvider session={session}>
             <LocalizationProvider>

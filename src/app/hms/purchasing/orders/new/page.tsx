@@ -8,8 +8,10 @@ import { Loader2, Sparkles, Plus, Trash2, Calendar, Save, ArrowLeft, ArrowUpRigh
 import { SearchableSelect, type Option } from '@/components/ui/searchable-select';
 import { useToast } from '@/components/ui/use-toast';
 import { Toaster } from '@/components/ui/toaster';
+import { useLocalization } from "@/contexts/localization-context";
 
 export default function NewPurchaseOrderPage() {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
     const { toast } = useToast();
     const [isScanning, setIsScanning] = useState(false);
@@ -247,7 +249,7 @@ export default function NewPurchaseOrderPage() {
                                 <option value="USD" className="bg-neutral-900">USD ($)</option>
                                 <option value="EUR" className="bg-neutral-900">EUR (€)</option>
                                 <option value="GBP" className="bg-neutral-900">GBP (£)</option>
-                                <option value="INR" className="bg-neutral-900">INR (₹)</option>
+                                <option value="INR" className="bg-neutral-900">INR (${currencySymbol})</option>
                             </select>
                         </div>
                     </div>

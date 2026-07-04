@@ -1,4 +1,5 @@
-'use client'
+'use client';
+import { useLocalization } from '@/contexts/localization-context';
 
 import { useState, useTransition } from "react"
 import Link from "next/link"
@@ -77,8 +78,9 @@ export function ProductTableClient({
         }
     };
 
-    const rawCurrency = meta?.currencySymbol || session?.user?.currencySymbol || '₹';
-    const currencySymbol = (rawCurrency && (rawCurrency.includes('Γé╣') || rawCurrency.length > 3)) ? '₹' : (rawCurrency || '₹');
+    const { currencySymbol: locCurrency } = useLocalization();
+    const rawCurrency = meta?.currencySymbol || session?.user?.currencySymbol || locCurrency;
+    const currencySymbol = (rawCurrency && (rawCurrency.includes('Γé╣') || rawCurrency.length > 3)) ? locCurrency : (rawCurrency || locCurrency);
 
     return (
         <div className="space-y-4 relative">

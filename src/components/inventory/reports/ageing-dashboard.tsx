@@ -7,6 +7,7 @@ import {
 import { 
     AlertTriangle, PackageSearch, Search, Download, TrendingUp, Clock
 } from 'lucide-react';
+import { useLocalization } from "@/contexts/localization-context";
 
 interface AgeingData {
     totalValue: number;
@@ -17,6 +18,7 @@ interface AgeingData {
 }
 
 export function AgeingDashboard({ data }: { data: AgeingData }) {
+    const { currencySymbol } = useLocalization();
     const [searchTerm, setSearchTerm] = useState('');
     const [ageBracketFilter, setAgeBracketFilter] = useState('ALL');
 
@@ -127,7 +129,7 @@ export function AgeingDashboard({ data }: { data: AgeingData }) {
                             <YAxis 
                                 axisLine={false} 
                                 tickLine={false} 
-                                tickFormatter={(val) => `₹${(val/1000).toFixed(0)}k`}
+                                tickFormatter={(val) => `${currencySymbol}${(val/1000).toFixed(0)}k`}
                                 tick={{ fill: '#6b7280', fontSize: 12 }} 
                             />
                             <RechartsTooltip 

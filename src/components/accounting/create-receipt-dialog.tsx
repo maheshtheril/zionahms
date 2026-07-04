@@ -13,6 +13,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useLocalization } from "@/contexts/localization-context";
 
 interface CreateReceiptDialogProps {
     open: boolean;
@@ -21,6 +22,7 @@ interface CreateReceiptDialogProps {
 }
 
 export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateReceiptDialogProps) {
+    const { currencySymbol } = useLocalization();
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -98,7 +100,7 @@ export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateRec
         } else {
             toast({
                 title: "Receipt Saved",
-                description: `Successfully recorded receipt for ₹${amount}`,
+                description: `Successfully recorded receipt for ${currencySymbol}${amount}`,
                 className: "bg-black border-emerald-900 text-white"
             });
             setIsSubmitting(false);
@@ -202,11 +204,11 @@ export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateRec
                                                     <div key={inv.id} className="group relative bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 rounded-xl p-4 transition-all flex items-center justify-between">
                                                         <div className="flex flex-col">
                                                             <span className="text-xs font-bold text-white tracking-tight">{inv.number}</span>
-                                                            <span className="text-[10px] text-neutral-500 font-medium">Outstanding: ₹{inv.outstanding.toLocaleString()}</span>
+                                                            <span className="text-[10px] text-neutral-500 font-medium">Outstanding: ${currencySymbol}{inv.outstanding.toLocaleString()}</span>
                                                         </div>
                                                         <div className="flex items-center gap-3">
                                                             <div className="relative">
-                                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-emerald-500/50">₹</span>
+                                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-emerald-500/50">{currencySymbol}</span>
                                                                 <input
                                                                     type="number"
                                                                     value={allocations[inv.id] || ''}
@@ -244,7 +246,7 @@ export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateRec
                                     Total Amount
                                 </label>
                                 <div className="relative group/amount">
-                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-emerald-500 font-bold text-4xl select-none">₹</span>
+                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-emerald-500 font-bold text-4xl select-none">{currencySymbol}</span>
                                     <input
                                         type="number"
                                         value={amount}
