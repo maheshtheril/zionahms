@@ -4,7 +4,6 @@ import { seedStandardDepartments, quickAddDepartment } from '@/app/actions/hms-s
 import { WORLD_CLASS_DESIGNATIONS, WORLD_CLASS_QUALIFICATIONS } from '@/app/hms/doctors/constants'
 import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2, Clock, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle, Hash, CreditCard, UserCheck, UserCog, Image, FileText, Fingerprint, Camera, FileCheck } from 'lucide-react'
 import { FileUpload } from '@/components/ui/file-upload'
-import { useLocalization } from "@/contexts/localization-context";
 
 interface Department {
     id: string
@@ -59,7 +58,6 @@ interface EditDoctorDialogProps {
 }
 
 function renderDepartmentOptions(departments: Department[] = [], parentId: string | null = null, depth = 0): any {
-    const { currencySymbol } = useLocalization();
     if (!Array.isArray(departments)) return [];
     return departments
         .filter(dept => {
@@ -67,7 +65,6 @@ function renderDepartmentOptions(departments: Department[] = [], parentId: strin
             return normalizedParentId === parentId;
         })
         .map(dept => {
-            const { currencySymbol } = useLocalization();
             const hasChildren = departments.some(d => (d.parent_id || null) === dept.id);
             return (
                 <React.Fragment key={dept.id}>
@@ -85,7 +82,6 @@ function renderDepartmentOptions(departments: Department[] = [], parentId: strin
 }
 
 export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initialDepartments, roles, specializations, employees = [] }: EditDoctorDialogProps) {
-    const { currencySymbol } = useLocalization();
     const [departments, setDepartments] = useState(initialDepartments)
     const [isSeeding, setIsSeeding] = useState(false)
     const [isAddingDept, setIsAddingDept] = useState(false)
@@ -378,7 +374,7 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
                                             Financial Integration
                                         </h3>
                                         <div>
-                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Consultation Fee (${currencySymbol})</label>
+                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Consultation Fee (${"$"})</label>
                                             <input type="number" name="consultation_fee" defaultValue={Number(doctor.consultation_fee) || 0} className="w-full p-4 bg-emerald-50 border-2 border-emerald-100 text-emerald-700 rounded-2xl font-black text-lg outline-none" />
                                         </div>
                                         <div className="bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl relative overflow-hidden group">

@@ -4,14 +4,12 @@ import { auth } from "@/auth"
 import { notFound } from "next/navigation"
 import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 import { getPDFConfig } from "@/app/actions/settings"
-import { useLocalization } from "@/contexts/localization-context";
 
 export default async function EditSalesReturnPage({ 
     params 
 }: { 
     params: Promise<{ id: string }>
 }) {
-    const { currencySymbol } = useLocalization();
     const session = await auth();
     const { id } = await params;
 
@@ -76,7 +74,7 @@ export default async function EditSalesReturnPage({
                 }}
                 initialInvoice={JSON.parse(JSON.stringify(sReturn.hms_invoice))}
                 initialReturn={JSON.parse(JSON.stringify(sReturn))}
-                currency={pdfConfig.currencySymbol || currencySymbol}
+                currency={pdfConfig."$" || "$"}
             />
         </div>
     );

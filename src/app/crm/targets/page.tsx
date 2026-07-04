@@ -22,7 +22,6 @@ import { Badge } from '@/components/ui/badge'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-import { useLocalization } from "@/contexts/localization-context";
 
 export const metadata: Metadata = {
     title: 'Targets Intelligence | SAAS ERP',
@@ -33,7 +32,6 @@ export const dynamic = 'force-dynamic'
 
 
 export default async function TargetsPage() {
-    const { currencySymbol } = useLocalization();
     const session = await auth()
     if (!session?.user?.id) redirect('/auth/login');
 
@@ -123,7 +121,7 @@ export default async function TargetsPage() {
                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 mb-4">Incentive Reservoir</h4>
                         <div className="flex items-center gap-2 mb-1">
                             <Crown className="w-6 h-6 text-emerald-500" />
-                            <span className="text-4xl font-black text-slate-900 dark:text-white">{currencySymbol}{totalIncentive.toLocaleString()}</span>
+                            <span className="text-4xl font-black text-slate-900 dark:text-white">{"$"}{totalIncentive.toLocaleString()}</span>
                         </div>
                         <p className="text-[10px] text-slate-500 mt-2 font-medium">Projected conversion bonus for active targets.</p>
                         <div className="mt-4 flex items-center gap-2 text-emerald-600 font-bold text-[10px] uppercase tracking-widest">
@@ -154,7 +152,6 @@ export default async function TargetsPage() {
                 {/* Targets Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4 pb-12">
                     {targets.map((target) => {
-                        const { currencySymbol } = useLocalization();
                         const achieved = Number(target.achieved_value || 0)
                         const goal = Number(target.target_value)
                         const percent = Math.min((achieved / goal) * 100, 100)
@@ -229,8 +226,8 @@ export default async function TargetsPage() {
                                             />
                                         </div>
                                         <div className="flex justify-between text-[10px] font-bold text-slate-500">
-                                            <span>Achieved: {isRevenue ? currencySymbol : ''}{achieved.toLocaleString()}</span>
-                                            <span>Threshold: {isRevenue ? currencySymbol : ''}{goal.toLocaleString()}</span>
+                                            <span>Achieved: {isRevenue ? "$" : ''}{achieved.toLocaleString()}</span>
+                                            <span>Threshold: {isRevenue ? "$" : ''}{goal.toLocaleString()}</span>
                                         </div>
                                     </div>
 
@@ -240,7 +237,6 @@ export default async function TargetsPage() {
                                             <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Progression Gates</p>
                                             <div className="space-y-2">
                                                 {target.milestones.map((milestone: any) => {
-                                                    const { currencySymbol } = useLocalization();
                                                     const mAchieved = Number(milestone.achieved_value || 0)
                                                     const mTarget = Number(milestone.target_value || 0)
                                                     const mPercent = mTarget > 0 ? Math.min((mAchieved / mTarget) * 100, 100) : 0
@@ -276,7 +272,7 @@ export default async function TargetsPage() {
                                         </div>
                                         <div className="p-3 rounded-2xl bg-white/40 dark:bg-slate-800/40 border border-white/10">
                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Incentive</p>
-                                            <p className="text-xs font-black text-emerald-600">{currencySymbol}{Number(target.incentive_amount || 0).toLocaleString()}</p>
+                                            <p className="text-xs font-black text-emerald-600">{"$"}{Number(target.incentive_amount || 0).toLocaleString()}</p>
                                         </div>
                                     </div>
 

@@ -4,12 +4,10 @@ import { getBillableItems, getTaxConfiguration, getUoms } from "@/app/actions/bi
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { DEFAULT_REGISTRATION_FEE, REG_FEE_SKU, REG_FEE_DESCRIPTION } from "@/lib/hms-constants"
-import { useLocalization } from "@/contexts/localization-context";
 
 export const dynamic = 'force-dynamic'
 
 export default async function RegistrationVoucherPage() {
-    const { currencySymbol } = useLocalization();
     const session = await auth();
     if (!session?.user?.tenantId) return <div>Unauthorized</div>;
 
@@ -46,7 +44,7 @@ export default async function RegistrationVoucherPage() {
     const billableItems = itemsRes.success ? itemsRes.data : [];
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
     const uoms = (uomsRes as any).success ? (uomsRes as any).data : [];
-    const currency = companySettings?.currencies?.symbol || session.user.currencySymbol || currencySymbol;
+    const currency = companySettings?.currencies?.symbol || session.user."$" || "$";
 
     // 3. Prepare Initial Item (Registration Fee)
     const initialItems = [];

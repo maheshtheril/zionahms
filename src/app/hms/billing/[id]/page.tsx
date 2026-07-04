@@ -7,7 +7,6 @@ import { ArrowLeft, Printer, Download, CreditCard, Calendar, User, Building2, Pe
 import { Button } from "@/components/ui/button"
 import { InvoiceControlPanel } from "@/components/billing/invoice-control-panel";
 import { InvoiceReturnClient } from "./invoice-return-client";
-import { useLocalization } from "@/contexts/localization-context";
 
 export default async function InvoiceDetailsPage({ 
     params, 
@@ -16,7 +15,6 @@ export default async function InvoiceDetailsPage({
     params: Promise<{ id: string }>,
     searchParams: Promise<{ action?: string }>
 }) {
-    const { currencySymbol } = useLocalization();
     const session = await auth();
     const { id } = await params;
     const { action } = await searchParams;
@@ -136,9 +134,9 @@ export default async function InvoiceDetailsPage({
                 </div>
                 <div className="font-mono font-black text-xl">
                     {invoice.status === 'cancelled' ? (
-                        <span className="text-slate-400 line-through">Outstanding: ${currencySymbol}{Number(invoice.outstanding_amount || 0).toFixed(2)}</span>
+                        <span className="text-slate-400 line-through">Outstanding: ${"$"}{Number(invoice.outstanding_amount || 0).toFixed(2)}</span>
                     ) : (
-                        `Outstanding: ${currencySymbol}${Number(invoice.outstanding_amount || 0).toFixed(2)}`
+                        `Outstanding: ${"$"}${Number(invoice.outstanding_amount || 0).toFixed(2)}`
                     )}
                 </div>
             </div>
@@ -157,8 +155,7 @@ export default async function InvoiceDetailsPage({
                             <div className="text-slate-500 text-sm">{invoice.hms_patient.patient_number}</div>
                         </div>
                     ) : (() => {
-                            const { currencySymbol } = useLocalization();
-                        const m = invoice.billing_metadata;
+                            const m = invoice.billing_metadata;
                         const bMeta = typeof m === 'string' ? (JSON.parse(m || '{}')) : (m || {});
                         const walkInName = bMeta.patient_name || bMeta.name || bMeta.customer_name || (invoice as any).patient_name;
                         const walkInPhone = bMeta.patient_phone || bMeta.phone || bMeta.mobile || (invoice as any).patient_phone;
@@ -218,23 +215,23 @@ export default async function InvoiceDetailsPage({
                                     )}
                                 </td>
                                 <td className="px-6 py-4 text-right text-slate-600">{Number(line.quantity)}</td>
-                                <td className="px-6 py-4 text-right text-slate-600">{currencySymbol}{Number(line.unit_price).toFixed(2)}</td>
-                                <td className="px-6 py-4 text-right font-medium text-slate-900">{currencySymbol}{Number(line.net_amount).toFixed(2)}</td>
+                                <td className="px-6 py-4 text-right text-slate-600">{"$"}{Number(line.unit_price).toFixed(2)}</td>
+                                <td className="px-6 py-4 text-right font-medium text-slate-900">{"$"}{Number(line.net_amount).toFixed(2)}</td>
                             </tr>
                         ))}
                     </tbody>
                     <tfoot className="bg-slate-50 border-t border-slate-200">
                         <tr>
                             <td colSpan={3} className="px-6 py-3 text-right font-medium text-slate-500">Subtotal</td>
-                            <td className="px-6 py-3 text-right font-medium text-slate-900">{currencySymbol}{Number(invoice.subtotal).toFixed(2)}</td>
+                            <td className="px-6 py-3 text-right font-medium text-slate-900">{"$"}{Number(invoice.subtotal).toFixed(2)}</td>
                         </tr>
                         <tr>
                             <td colSpan={3} className="px-6 py-3 text-right font-medium text-slate-500">Tax</td>
-                            <td className="px-6 py-3 text-right font-medium text-slate-900">{currencySymbol}{Number(invoice.total_tax).toFixed(2)}</td>
+                            <td className="px-6 py-3 text-right font-medium text-slate-900">{"$"}{Number(invoice.total_tax).toFixed(2)}</td>
                         </tr>
                         <tr>
                             <td colSpan={3} className="px-6 py-3 text-right font-bold text-slate-900 text-lg">Total</td>
-                            <td className="px-6 py-3 text-right font-bold text-slate-900 text-lg">{currencySymbol}{Number(invoice.total).toFixed(2)}</td>
+                            <td className="px-6 py-3 text-right font-bold text-slate-900 text-lg">{"$"}{Number(invoice.total).toFixed(2)}</td>
                         </tr>
                     </tfoot>
                 </table>

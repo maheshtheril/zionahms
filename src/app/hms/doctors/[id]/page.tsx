@@ -6,11 +6,9 @@ import { ArrowLeft, Mail, Phone, Award, Briefcase, Calendar, Clock, User } from 
 import { DoctorProfileActions } from "@/components/hms/doctors/doctor-profile-actions"
 import { ClinicianDeleteButton } from "@/components/hms/doctors/clinician-delete-button"
 import { getEmployees } from "@/app/actions/crm/employees"
-import { useLocalization } from "@/contexts/localization-context";
 
 export default async function DoctorDetailPage(props: { params: Promise<any> }) {
     const params = await props.params;
-    const { currencySymbol } = useLocalization();
     const { id } = await params
     const doctor = await prisma.hms_clinicians.findUnique({
         where: { id },
@@ -153,7 +151,6 @@ export default async function DoctorDetailPage(props: { params: Promise<any> }) 
                                 <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-2">Weekly Cadence</p>
                                 <div className="flex gap-1.5">
                                     {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => {
-                                        const { currencySymbol } = useLocalization();
                                         const isActive = (doctor as any).working_days?.includes(day);
                                         return (
                                             <div
@@ -184,7 +181,7 @@ export default async function DoctorDetailPage(props: { params: Promise<any> }) 
 
                             <div className="pt-2 border-t border-gray-50 flex items-center justify-between">
                                 <span className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Fee Per Session</span>
-                                <span className="text-lg font-black text-emerald-600">{currencySymbol}{Number(doctor.consultation_fee)}</span>
+                                <span className="text-lg font-black text-emerald-600">{"$"}{Number(doctor.consultation_fee)}</span>
                             </div>
                         </div>
                     </div>

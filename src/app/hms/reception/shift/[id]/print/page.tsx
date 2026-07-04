@@ -2,11 +2,9 @@ import { auth } from "@/auth";
 import { getShiftSummary } from "@/app/actions/shift";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
-import { useLocalization } from "@/contexts/localization-context";
 
 export default async function PrintShiftReport(props: { params: Promise<any> }) {
     const params = await props.params;
-    const { currencySymbol } = useLocalization();
     const session = await auth();
     if (!session?.user?.id) return notFound();
 
@@ -36,30 +34,30 @@ export default async function PrintShiftReport(props: { params: Promise<any> }) 
                 <h2 className="text-lg font-bold border-b border-black mb-2 uppercase">Cash Drawer Summary</h2>
                 <div className="flex justify-between py-1">
                     <span>Opening Float</span>
-                    <span className="font-bold">{currencySymbol}{Number(shift.opening_balance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="font-bold">{"$"}{Number(shift.opening_balance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between py-1">
                     <span>Cash Collected</span>
-                    <span className="font-bold text-green-700">+ ${currencySymbol}{summary.cashCollected.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="font-bold text-green-700">+ ${"$"}{summary.cashCollected.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between py-1">
                     <span>Petty Cash Expenses</span>
-                    <span className="font-bold text-red-700">- ${currencySymbol}{summary.cashExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="font-bold text-red-700">- ${"$"}{summary.cashExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between py-2 border-t-2 border-black mt-2 font-black text-xl">
                     <span>Expected System Cash</span>
-                    <span>{currencySymbol}{(Number(shift.opening_balance) + summary.netCash).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span>{"$"}{(Number(shift.opening_balance) + summary.netCash).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 {shift.status === 'closed' && (
                     <div className="flex justify-between py-1 mt-2 text-lg">
                         <span className="font-bold text-slate-600">Actual Declared Cash</span>
-                        <span className="font-bold">{currencySymbol}{Number(shift.closing_balance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        <span className="font-bold">{"$"}{Number(shift.closing_balance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                 )}
                 {shift.status === 'closed' && (
                     <div className={`flex justify-between py-1 font-bold ${Number(shift.difference) === 0 ? 'text-green-700' : 'text-red-700'}`}>
                         <span>Variance / Discrepancy</span>
-                        <span>{currencySymbol}{Number(shift.difference).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        <span>{"$"}{Number(shift.difference).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                 )}
             </div>
@@ -68,15 +66,15 @@ export default async function PrintShiftReport(props: { params: Promise<any> }) 
                 <h2 className="text-lg font-bold border-b border-black mb-2 uppercase">Non-Cash Collections</h2>
                 <div className="flex justify-between py-1">
                     <span>UPI / Digital</span>
-                    <span className="font-bold">{currencySymbol}{summary.upi.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="font-bold">{"$"}{summary.upi.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between py-1">
                     <span>Card (POS)</span>
-                    <span className="font-bold">{currencySymbol}{summary.card.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="font-bold">{"$"}{summary.card.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between py-1 border-t border-dashed border-black mt-1 font-bold">
                     <span>Total Non-Cash</span>
-                    <span>{currencySymbol}{(summary.upi + summary.card + summary.other).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span>{"$"}{(summary.upi + summary.card + summary.other).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
             </div>
 
@@ -99,7 +97,7 @@ export default async function PrintShiftReport(props: { params: Promise<any> }) 
                                     <div className="text-xs text-slate-500">{tx.method.toUpperCase()}</div>
                                 </td>
                                 <td className="py-2 text-right font-bold text-red-600">
-                                    - ${currencySymbol}{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                    - ${"$"}{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                 </td>
                             </tr>
                         ))}

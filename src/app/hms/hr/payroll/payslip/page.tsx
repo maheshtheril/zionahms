@@ -3,10 +3,8 @@ import { prisma } from "@/lib/prisma"
 import { notFound, redirect } from "next/navigation"
 import { format } from "date-fns"
 import { Printer } from "lucide-react"
-import { useLocalization } from "@/contexts/localization-context";
 
 export default async function PayslipPage({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
-    const { currencySymbol } = useLocalization();
     const session = await auth()
     if (!session?.user?.id) redirect("/login")
 
@@ -123,18 +121,18 @@ export default async function PayslipPage({ searchParams }: { searchParams: Prom
                             <div className="p-4 space-y-3 min-h-[200px]">
                                 <div className="flex justify-between">
                                     <span className="font-medium text-slate-700">Basic Salary</span>
-                                    <span className="font-bold">{currencySymbol}{Number(slip.base_salary).toLocaleString('en-IN', {minimumFractionDigits:2})}</span>
+                                    <span className="font-bold">{"$"}{Number(slip.base_salary).toLocaleString('en-IN', {minimumFractionDigits:2})}</span>
                                 </div>
                                 {Object.entries(allowances).map(([name, amount]) => (
                                     <div key={name} className="flex justify-between">
                                         <span className="font-medium text-slate-700">{name}</span>
-                                        <span className="font-bold">{currencySymbol}{Number(amount).toLocaleString('en-IN', {minimumFractionDigits:2})}</span>
+                                        <span className="font-bold">{"$"}{Number(amount).toLocaleString('en-IN', {minimumFractionDigits:2})}</span>
                                     </div>
                                 ))}
                             </div>
                             <div className="bg-slate-50 p-3 font-black flex justify-between border-t border-slate-900 text-lg">
                                 <span>Gross Earnings</span>
-                                <span>{currencySymbol}{Number(attData.gross_salary || slip.base_salary).toLocaleString('en-IN', {minimumFractionDigits:2})}</span>
+                                <span>{"$"}{Number(attData.gross_salary || slip.base_salary).toLocaleString('en-IN', {minimumFractionDigits:2})}</span>
                             </div>
                         </div>
 
@@ -147,19 +145,19 @@ export default async function PayslipPage({ searchParams }: { searchParams: Prom
                                 {Object.entries(deductions).map(([name, amount]) => (
                                     <div key={name} className="flex justify-between">
                                         <span className="font-medium text-slate-700">{name}</span>
-                                        <span className="font-bold text-red-600">{currencySymbol}{Number(amount).toLocaleString('en-IN', {minimumFractionDigits:2})}</span>
+                                        <span className="font-bold text-red-600">{"$"}{Number(amount).toLocaleString('en-IN', {minimumFractionDigits:2})}</span>
                                     </div>
                                 ))}
                                 {attData.lwp_deduction > 0 && (
                                     <div className="flex justify-between">
                                         <span className="font-medium text-slate-700">LWP Deduction ({attData.lwp_days} days)</span>
-                                        <span className="font-bold text-red-600">{currencySymbol}{Number(attData.lwp_deduction).toLocaleString('en-IN', {minimumFractionDigits:2})}</span>
+                                        <span className="font-bold text-red-600">{"$"}{Number(attData.lwp_deduction).toLocaleString('en-IN', {minimumFractionDigits:2})}</span>
                                     </div>
                                 )}
                             </div>
                             <div className="bg-slate-50 p-3 font-black flex justify-between border-t border-slate-900 text-lg">
                                 <span>Total Deductions</span>
-                                <span className="text-red-600">{currencySymbol}{Number(slip.total_deduction).toLocaleString('en-IN', {minimumFractionDigits:2})}</span>
+                                <span className="text-red-600">{"$"}{Number(slip.total_deduction).toLocaleString('en-IN', {minimumFractionDigits:2})}</span>
                             </div>
                         </div>
                     </div>
@@ -172,7 +170,7 @@ export default async function PayslipPage({ searchParams }: { searchParams: Prom
                             <div className="text-xs font-medium text-slate-300 mt-1 italic">Transfer to bank account</div>
                         </div>
                         <div className="text-4xl font-black tracking-tight">
-                            ${currencySymbol}{Number(slip.net_pay).toLocaleString('en-IN', {minimumFractionDigits:2})}
+                            ${"$"}{Number(slip.net_pay).toLocaleString('en-IN', {minimumFractionDigits:2})}
                         </div>
                     </div>
 
