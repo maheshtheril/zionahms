@@ -62,7 +62,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                     setSearchResults(res.data.map((p: any) => ({
                         id: p.id,
                         label: p.name,
-                        subLabel: `S: ${p.totalStock} ${p.uom} | ${currencySymbol}${Number(p.price || 0).toFixed(2)}`,
+                        subLabel: `S: ${p.totalStock} ${p.uom} | {currencySymbol}${Number(p.price || 0).toFixed(2)}`,
                         ...p
                     })));
                 } else {
@@ -366,7 +366,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                                             />
                                         </div>
                                         <div className="space-y-1.5">
-                                            <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Rate (${currencySymbol})</Label>
+                                            <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Rate ({currencySymbol})</Label>
                                             <Input 
                                                 type="number"
                                                 value={itemPrice}
@@ -453,7 +453,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                                                                 {/* Price context indicator */}
                                                                 {Number(b.sale_price) > 0 && (
                                                                     <div className="absolute bottom-1 right-2 text-[8px] font-black text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                        RATE: ${currencySymbol}{Number(b.sale_price).toFixed(2)}
+                                                                        RATE: {currencySymbol}{Number(b.sale_price).toFixed(2)}
                                                                     </div>
                                                                 )}
                                                             </button>
@@ -539,7 +539,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                                                         <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors shadow-sm"><PackageMinus className="h-5 w-5" /></div>
                                                         <div>
                                                             <div className="text-xs font-black uppercase text-slate-900">{item.productName}</div>
-                                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{item.quantity} {item.uom} @ ${currencySymbol}{item.price.toFixed(2)}</div>
+                                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{item.quantity} {item.uom} @ {currencySymbol}{item.price.toFixed(2)}</div>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-4">

@@ -369,12 +369,12 @@ function NewDirectReturnContent() {
                                             </div>
 
                                             <div className="col-span-1 text-right font-mono text-xs font-bold text-muted-foreground">
-                                                ${currencySymbol}{((item.qty * item.unitPrice) * ((item.taxRate || 0) / 100)).toFixed(2)}
+                                                {currencySymbol}{((item.qty * item.unitPrice) * ((item.taxRate || 0) / 100)).toFixed(2)}
                                             </div>
 
                                             <div className="col-span-1 flex items-center justify-end gap-2">
                                                 <span className="font-bold text-sm text-foreground font-mono">
-                                                    ${currencySymbol}{((item.qty * item.unitPrice) * (1 + (item.taxRate || 0) / 100)).toFixed(2)}
+                                                    {currencySymbol}{((item.qty * item.unitPrice) * (1 + (item.taxRate || 0) / 100)).toFixed(2)}
                                                 </span>
                                                 <Button
                                                     variant="ghost" size="icon"
@@ -410,19 +410,19 @@ function NewDirectReturnContent() {
                         <div className="text-right border-r border-border pr-6">
                             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Subtotal</p>
                             <p className="text-lg font-bold font-mono">
-                                ${currencySymbol}{totalSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                {currencySymbol}{totalSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                             </p>
                         </div>
                         <div className="text-right border-r border-border pr-6">
                             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">GST Reversal</p>
                             <p className="text-lg font-bold font-mono text-amber-500">
-                                ${currencySymbol}{totalTaxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                {currencySymbol}{totalTaxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                             </p>
                         </div>
                         <div className="text-right">
                             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Debit Note</p>
                             <p className="text-2xl font-black text-red-600 font-mono">
-                                ${currencySymbol}{totalReturnAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                {currencySymbol}{totalReturnAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                             </p>
                         </div>
 

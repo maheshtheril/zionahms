@@ -106,7 +106,7 @@ export function InvoiceControlPanel({
             if (res.success) {
                 toast({
                     title: "Payment Recorded",
-                    description: `Received ${currencySymbol}${paymentAmount} via ${paymentMethod.toUpperCase()}`,
+                    description: `Received {currencySymbol}${paymentAmount} via ${paymentMethod.toUpperCase()}`,
                     variant: "default"
                 });
                 router.refresh();
@@ -259,16 +259,16 @@ export function InvoiceControlPanel({
                             <div className="flex justify-between items-center text-xs font-medium pt-2 border-t border-slate-200">
                                 <span className="text-slate-500">Invoice Due: <span className="font-bold text-slate-700">{currencySymbol}{outstandingAmount.toFixed(2)}</span></span>
                                 {balanceDifference < 0 ? (
-                                    <span className="text-orange-600 font-bold">Remaining Due: ${currencySymbol}{Math.abs(balanceDifference).toFixed(2)}</span>
+                                    <span className="text-orange-600 font-bold">Remaining Due: {currencySymbol}{Math.abs(balanceDifference).toFixed(2)}</span>
                                 ) : (
-                                    <span className="text-emerald-600 font-bold">Change / Advance: ${currencySymbol}{balanceDifference.toFixed(2)}</span>
+                                    <span className="text-emerald-600 font-bold">Change / Advance: {currencySymbol}{balanceDifference.toFixed(2)}</span>
                                 )}
                             </div>
 
                             {balanceDifference > 0 && (
                                 <div className="bg-emerald-50 text-emerald-700 text-[10px] p-2 rounded border border-emerald-100 flex items-center gap-2">
                                     <CheckCircle2 className="h-3 w-3" />
-                                    <span>Excess amount of ${currencySymbol}{balanceDifference.toFixed(2)} will be recorded as <strong>Advance Payment</strong>.</span>
+                                    <span>Excess amount of {currencySymbol}{balanceDifference.toFixed(2)} will be recorded as <strong>Advance Payment</strong>.</span>
                                 </div>
                             )}
                         </div>

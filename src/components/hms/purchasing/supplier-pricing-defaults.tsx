@@ -143,7 +143,7 @@ export function SupplierPricingDefaults({
                                 <span className="text-sm text-neutral-400">%</span>
                             </div>
                             <p className="text-xs text-neutral-500">
-                                Example: MRP ${currencySymbol}150 - {mrpDiscountPct}% = ${currencySymbol}{(150 * (1 - mrpDiscountPct / 100)).toFixed(2)} sale price
+                                Example: MRP {currencySymbol}150 - {mrpDiscountPct}% = {currencySymbol}{(150 * (1 - mrpDiscountPct / 100)).toFixed(2)} sale price
                             </p>
                             {/* Quick Presets */}
                             <div className="flex gap-2 mt-2">
@@ -199,7 +199,7 @@ export function SupplierPricingDefaults({
                                 <span className="text-sm text-neutral-400">%</span>
                             </div>
                             <p className="text-xs text-neutral-500">
-                                Example: Cost ${currencySymbol}100 + {markupPct}% = ${currencySymbol}{(100 * (1 + markupPct / 100)).toFixed(2)} sale price
+                                Example: Cost {currencySymbol}100 + {markupPct}% = {currencySymbol}{(100 * (1 + markupPct / 100)).toFixed(2)} sale price
                             </p>
                             {/* Quick Presets */}
                             <div className="flex gap-2 mt-2">

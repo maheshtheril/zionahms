@@ -143,7 +143,7 @@ function UOMPicker({
                                     )}
                                 </span>
                                 <span className={currentUom === opt.uom ? 'text-violet-200' : 'text-indigo-600 dark:text-indigo-400'}>
-                                    ${currencySymbol}{opt.price.toFixed(2)}
+                                    {currencySymbol}{opt.price.toFixed(2)}
                                 </span>
                             </button>
                         ))}
@@ -586,7 +586,7 @@ export function POSClient({ products, availableTaxes = [] }: Props) {
                                         <div className="mt-auto space-y-1">
                                             <div className="flex justify-between items-end">
                                                 <span className="text-xl font-black text-indigo-600 dark:text-indigo-400">
-                                                    ${currencySymbol}{p.price.toFixed(2)}
+                                                    {currencySymbol}{p.price.toFixed(2)}
                                                 </span>
                                                 <div className="flex flex-col items-end">
                                                     <span className="text-[10px] font-bold text-slate-400 uppercase">{p.uom}</span>
@@ -735,10 +735,10 @@ export function POSClient({ products, availableTaxes = [] }: Props) {
                                 <div className="flex items-center justify-between mt-1.5">
                                     <div className="flex items-baseline gap-1.5">
                                         <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">
-                                            ${currencySymbol}{(item.unitPrice * item.quantity).toFixed(2)}
+                                            {currencySymbol}{(item.unitPrice * item.quantity).toFixed(2)}
                                         </span>
                                         <span className="text-[10px] text-slate-400">
-                                            @${currencySymbol}{item.unitPrice.toFixed(2)}/{item.uom}
+                                            @{currencySymbol}{item.unitPrice.toFixed(2)}/{item.uom}
                                         </span>
                                     </div>
 

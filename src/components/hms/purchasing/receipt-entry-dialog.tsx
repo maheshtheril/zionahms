@@ -303,7 +303,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
         const item = newItems[index];
         if (item.mrp && salePrice > item.mrp) {
             // Keep it but show a toast warning (non-blocking)
-            toast({ title: "Price Warning", description: `Sale price (${currencySymbol}${salePrice}) is higher than MRP (${currencySymbol}${item.mrp})`, variant: "destructive" });
+            toast({ title: "Price Warning", description: `Sale price ({currencySymbol}${salePrice}) is higher than MRP ({currencySymbol}${item.mrp})`, variant: "destructive" });
         }
         item.salePrice = salePrice;
         item.pricingStrategy = 'manual';
@@ -825,7 +825,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                                                 <Sparkles className="h-3.5 w-3.5" /> Proportional Recalculation Preview:
                                             </div>
                                             <p className="text-[11px] opacity-80">
-                                                Rates & MRP will be divided by the quantity ratio so the scanned line total remains exactly ${currencySymbol}{currentTotal}.
+                                                Rates & MRP will be divided by the quantity ratio so the scanned line total remains exactly {currencySymbol}{currentTotal}.
                                             </p>
                                         </div>
 
@@ -859,7 +859,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                                                 n[idx] = updateLineItemCalcs(n[idx]);
                                                 setItems(n);
                                                 setConversionModalIndex(null);
-                                                toast({ title: "Conversion Applied", description: `Converted to ${newQ} ${newUOM}. Line total ${currencySymbol}${currentTotal} unchanged. Saved to Vendor Memory.` });
+                                                toast({ title: "Conversion Applied", description: `Converted to ${newQ} ${newUOM}. Line total {currencySymbol}${currentTotal} unchanged. Saved to Vendor Memory.` });
                                             }}>
                                                 Confirm & Save to Memory
                                             </Button>
@@ -1429,7 +1429,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                                 <div className="flex items-center gap-2">
                                     <p className="text-sm font-mono font-bold text-muted-foreground/80">{currencySymbol}{scannedTotal.toFixed(2)}</p>
                                     <Badge className={Math.abs(scannedTotal - netTotal) < 0.01 ? 'bg-emerald-500/10 text-emerald-500 border-none' : 'bg-rose-500/10 text-rose-500 border-none animate-pulse'}>
-                                        {Math.abs(scannedTotal - netTotal) < 0.01 ? 'Matched' : `Mismatch: ${currencySymbol}${(netTotal - scannedTotal).toFixed(2)}`}
+                                        {Math.abs(scannedTotal - netTotal) < 0.01 ? 'Matched' : `Mismatch: {currencySymbol}${(netTotal - scannedTotal).toFixed(2)}`}
                                     </Badge>
                                 </div>
                             </div>

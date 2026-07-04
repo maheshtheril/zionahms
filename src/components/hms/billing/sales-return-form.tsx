@@ -226,7 +226,7 @@ export default function SalesReturnForm() {
                                                     />
                                                 </td>
                                                 <td className="px-6 py-4 text-right font-bold text-slate-900">
-                                                    ${currencySymbol}{(item.returnQty * item.unitPrice).toFixed(2)}
+                                                    {currencySymbol}{(item.returnQty * item.unitPrice).toFixed(2)}
                                                 </td>
                                             </tr>
                                         ))}

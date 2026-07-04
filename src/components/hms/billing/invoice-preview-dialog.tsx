@@ -51,7 +51,7 @@ export function InvoicePreviewDialog({ invoice, trigger, open, onOpenChange }: I
                             <span className="font-bold capitalize">{invoice.status}</span>
                         </div>
                         <div className="font-mono font-bold text-lg">
-                            Balance: ${currencySymbol}{Number(invoice.outstanding_amount || 0).toFixed(2)}
+                            Balance: {currencySymbol}{Number(invoice.outstanding_amount || 0).toFixed(2)}
                         </div>
                     </div>
 

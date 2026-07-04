@@ -94,7 +94,7 @@ export function DealForm({
                                         ))
                                     ) : (
                                         <>
-                                            <option value="INR">INR (${currencySymbol})</option>
+                                            <option value="INR">INR ({currencySymbol})</option>
                                             <option value="USD">USD ($)</option>
                                             <option value="EUR">EUR (€)</option>
                                             <option value="GBP">GBP (£)</option>

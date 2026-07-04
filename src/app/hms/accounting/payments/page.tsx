@@ -303,7 +303,7 @@ export default function PaymentsPage() {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-5 text-right font-mono font-black text-base text-slate-900 dark:text-white pr-8">
-                                                    ${currencySymbol}{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                    {currencySymbol}{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                                 </td>
                                             </tr>
                                         );

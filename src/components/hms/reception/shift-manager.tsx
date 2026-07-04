@@ -317,7 +317,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                                         <TableCell>{currencySymbol}{Number(s.system_balance).toLocaleString()}</TableCell>
                                         <TableCell>{currencySymbol}{Number(s.closing_balance).toLocaleString()}</TableCell>
                                         <TableCell className={Number(s.difference) === 0 ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
-                                            ${currencySymbol}{Number(s.difference).toLocaleString()}
+                                            {currencySymbol}{Number(s.difference).toLocaleString()}
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
@@ -392,7 +392,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                                             onFocus={(e) => e.target.select()}
                                         />
                                         <div className="flex-1 text-right font-mono font-bold text-indigo-600 dark:text-indigo-400 text-xs">
-                                            = ${currencySymbol}{(parseInt(startQuantities[d.value] || "0") * d.value).toLocaleString('en-IN')}
+                                            = {currencySymbol}{(parseInt(startQuantities[d.value] || "0") * d.value).toLocaleString('en-IN')}
                                         </div>
                                     </div>
                                 ))}
@@ -407,7 +407,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                                 </div>
 
                                 <div className="space-y-2 pt-2">
-                                    <Label htmlFor="flat-opening" className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Or Manual Flat Entry (${currencySymbol})</Label>
+                                    <Label htmlFor="flat-opening" className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Or Manual Flat Entry ({currencySymbol})</Label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-sm">{currencySymbol}</span>
                                         <Input
@@ -445,7 +445,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="exp-amount">Amount (${currencySymbol})</Label>
+                            <Label htmlFor="exp-amount">Amount ({currencySymbol})</Label>
                             <Input
                                 id="exp-amount"
                                 type="number"
@@ -508,7 +508,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                                             onFocus={(e) => e.target.select()}
                                         />
                                         <div className="flex-1 text-right font-mono font-bold text-slate-700">
-                                            = ${currencySymbol}{(parseInt(quantities[d.value] || "0") * d.value).toLocaleString()}
+                                            = {currencySymbol}{(parseInt(quantities[d.value] || "0") * d.value).toLocaleString()}
                                         </div>
                                     </div>
                                 ))}
@@ -546,11 +546,11 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                                           </div>
                                         <div className="flex justify-between text-sm">
                                             <span>Cash Collected</span>
-                                            <span className="font-bold text-green-600">+ ${currencySymbol}{summary.cashCollected.toLocaleString()}</span>
+                                            <span className="font-bold text-green-600">+ {currencySymbol}{summary.cashCollected.toLocaleString()}</span>
                                         </div>
                                         <div className="flex justify-between text-sm">
                                             <span>Expenses (Cash)</span>
-                                            <span className="font-bold text-red-600">- ${currencySymbol}{summary.cashExpenses.toLocaleString()}</span>
+                                            <span className="font-bold text-red-600">- {currencySymbol}{summary.cashExpenses.toLocaleString()}</span>
                                         </div>
 
                                         <div className="flex justify-between text-lg border-t-2 pt-2 font-black">
@@ -590,7 +590,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                                     <div className="text-sm font-bold uppercase tracking-wider">Cash Variance</div>
                                     <div className="text-3xl font-black">
                                         {totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.netCash) > 0 ? "+" : ""}
-                                        ${currencySymbol}{(totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.netCash)).toLocaleString()}
+                                        {currencySymbol}{(totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.netCash)).toLocaleString()}
                                     </div>
                                     <div className="flex items-center gap-1 text-xs">
                                         {Math.abs(totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.netCash)) < 0.1 ? (
@@ -671,7 +671,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className={`text-right font-bold ${tx.type === 'IN' ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {tx.type === 'IN' ? '+' : '-'} ${currencySymbol}{tx.amount.toLocaleString()}
+                                                    {tx.type === 'IN' ? '+' : '-'} {currencySymbol}{tx.amount.toLocaleString()}
                                                 </TableCell>
                                             </TableRow>
                                         ))}

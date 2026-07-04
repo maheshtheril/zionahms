@@ -177,7 +177,7 @@ export default function SalesReturnsPage() {
                                     {ret.itemCount} items
                                 </div>
                                 <div className="col-span-2 text-right text-sm font-black text-foreground font-mono">
-                                    ${currencySymbol}{ret.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                    {currencySymbol}{ret.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                 </div>
                                 <div className="col-span-1 text-[10px] font-mono flex items-center gap-2">
                                     {ret.invoiceNumber || 'AD-HOC'}

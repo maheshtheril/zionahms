@@ -312,7 +312,7 @@ export default function EditPurchaseReceiptPage() {
         if (item.mrp && salePrice > item.mrp) {
             toast({
                 title: "Invalid Price",
-                description: `Sale price (${currencySymbol}${salePrice}) cannot exceed MRP (${currencySymbol}${item.mrp}). This violates India's Legal Metrology Act.`,
+                description: `Sale price ({currencySymbol}${salePrice}) cannot exceed MRP ({currencySymbol}${item.mrp}). This violates India's Legal Metrology Act.`,
                 variant: "destructive"
             });
             return;
@@ -378,7 +378,7 @@ export default function EditPurchaseReceiptPage() {
         if (item.mrp && item.salePrice > item.mrp) {
             toast({
                 title: "Exceeds MRP",
-                description: `Calculated sale price (${currencySymbol}${item.salePrice}) exceeds MRP (${currencySymbol}${item.mrp}). Adjusting to MRP.`,
+                description: `Calculated sale price ({currencySymbol}${item.salePrice}) exceeds MRP ({currencySymbol}${item.mrp}). Adjusting to MRP.`,
                 variant: "default"
             });
             item.salePrice = item.mrp;
@@ -1192,7 +1192,7 @@ export default function EditPurchaseReceiptPage() {
                                         </div>
                                         <div className="text-right">
                                             <span className="text-4xl font-black text-foreground font-mono tracking-tighter block">
-                                                ${currencySymbol}{netTotal.toFixed(2)}
+                                                {currencySymbol}{netTotal.toFixed(2)}
                                             </span>
                                         </div>
                                     </div>

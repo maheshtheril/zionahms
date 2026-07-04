@@ -231,7 +231,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         const item = newItems[index];
         if (item.mrp && salePrice > item.mrp) {
             // Keep it but show a toast warning (non-blocking)
-            toast({ title: "Price Warning", description: `Sale price (${currencySymbol}${salePrice}) is higher than MRP (${currencySymbol}${item.mrp})`, variant: "destructive" });
+            toast({ title: "Price Warning", description: `Sale price ({currencySymbol}${salePrice}) is higher than MRP ({currencySymbol}${item.mrp})`, variant: "destructive" });
         }
         item.salePrice = salePrice;
         item.pricingStrategy = 'manual';
@@ -1068,7 +1068,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 <div className="flex items-center gap-2">
                                     <p className="text-sm font-mono font-bold text-muted-foreground/80">{currencySymbol}{scannedTotal.toFixed(2)}</p>
                                     <Badge className={Math.abs(scannedTotal - netTotal) < 0.01 ? 'bg-emerald-500/10 text-emerald-500 border-none' : 'bg-rose-500/10 text-rose-500 border-none animate-pulse'}>
-                                        {Math.abs(scannedTotal - netTotal) < 0.01 ? 'Matched' : `Mismatch: ${currencySymbol}${(netTotal - scannedTotal).toFixed(2)}`}
+                                        {Math.abs(scannedTotal - netTotal) < 0.01 ? 'Matched' : `Mismatch: {currencySymbol}${(netTotal - scannedTotal).toFixed(2)}`}
                                     </Badge>
                                 </div>
                             </div>

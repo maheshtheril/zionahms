@@ -45,7 +45,7 @@ export default function NewReceiptPage() {
         } else {
             toast({
                 title: "Receipt Saved",
-                description: `Successfully recorded receipt for ${currencySymbol}${payload.amount}`,
+                description: `Successfully recorded receipt for {currencySymbol}${payload.amount}`,
                 className: "bg-emerald-900 border-emerald-800 text-white"
             });
 

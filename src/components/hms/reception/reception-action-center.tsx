@@ -1421,7 +1421,7 @@ export function ReceptionActionCenter({
                                                 </Badge>
                                             </td>
                                             <td className="py-5 px-2 font-black text-slate-900 dark:text-white">
-                                                ${currencySymbol}{Number(p.amount).toLocaleString()}
+                                                {currencySymbol}{Number(p.amount).toLocaleString()}
                                             </td>
                                             <td className="py-5 px-2 text-right">
                                                 <div className="flex justify-end gap-2">

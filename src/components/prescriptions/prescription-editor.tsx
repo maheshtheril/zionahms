@@ -1546,7 +1546,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                                                                 <div className={`text-xs font-black ${
                                                                     modalBatchId === b.id ? 'text-white' : 'text-slate-300'
                                                                 }`}>
-                                                                    ${currencySymbol}{Number(b.sale_price || 0)}
+                                                                    {currencySymbol}{Number(b.sale_price || 0)}
                                                                 </div>
                                                                 {modalBatchId === b.id && (
                                                                     <div className="h-1.5 w-1.5 rounded-full bg-white ml-auto mt-1 animate-pulse" />

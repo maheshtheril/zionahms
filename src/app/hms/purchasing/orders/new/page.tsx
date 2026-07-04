@@ -249,7 +249,7 @@ export default function NewPurchaseOrderPage() {
                                 <option value="USD" className="bg-neutral-900">USD ($)</option>
                                 <option value="EUR" className="bg-neutral-900">EUR (€)</option>
                                 <option value="GBP" className="bg-neutral-900">GBP (£)</option>
-                                <option value="INR" className="bg-neutral-900">INR (${currencySymbol})</option>
+                                <option value="INR" className="bg-neutral-900">INR ({currencySymbol})</option>
                             </select>
                         </div>
                     </div>

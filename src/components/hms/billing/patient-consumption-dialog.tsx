@@ -204,7 +204,7 @@ export function PatientConsumptionDialog({ patientId, patientName }: PatientCons
                                         <td className="px-3 py-2 text-blue-900">Total</td>
                                         <td className="px-3 py-2 text-blue-900">{addedItems.reduce((s, i) => s + i.quantity, 0)}</td>
                                         <td className="px-3 py-2 text-right text-blue-900">
-                                            ${currencySymbol}{addedItems.reduce((s, i) => s + (i.price * i.quantity), 0)}
+                                            {currencySymbol}{addedItems.reduce((s, i) => s + (i.price * i.quantity), 0)}
                                         </td>
                                         <td></td>
                                     </tr>

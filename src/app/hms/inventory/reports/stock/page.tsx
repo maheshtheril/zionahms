@@ -489,7 +489,7 @@ export default function StockReportPremium() {
                                         ) : (
                                             <div className="space-y-0.5">
                                                 <p className="text-sm font-black text-indigo-600">{currencySymbol}{item.mrp.toLocaleString()}</p>
-                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Sale: ${currencySymbol}{item.salePrice.toLocaleString()}</p>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Sale: {currencySymbol}{item.salePrice.toLocaleString()}</p>
                                             </div>
                                         )}
                                     </TableCell>

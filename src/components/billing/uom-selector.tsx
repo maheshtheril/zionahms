@@ -30,10 +30,10 @@ type Props = {
  * Automatically calculates price based on selected UOM
  * 
  * Example:
- * - Product: Paracetamol (base: Unit @ ${currencySymbol}3)
+ * - Product: Paracetamol (base: Unit @ {currencySymbol}3)
  * - UOMs: Unit (1x), Strip (15x)
- * - Select "Strip" → Price becomes ${currencySymbol}45 (3 × 15)
- * - Select 2 qty → Total = ${currencySymbol}90
+ * - Select "Strip" → Price becomes {currencySymbol}45 (3 × 15)
+ * - Select 2 qty → Total = {currencySymbol}90
  */
 export function UOMSelector({
     productId,
@@ -134,7 +134,7 @@ export function UOMSelector({
                     {uomOptions[0]?.uom || 'Unit'}
                 </span>
                 <span className="text-sm text-gray-700 font-medium">
-                    @ ${currencySymbol}{unitPrice.toFixed(2)}
+                    @ {currencySymbol}{unitPrice.toFixed(2)}
                 </span>
             </div>
         )
@@ -171,7 +171,7 @@ export function UOMSelector({
             <div className="flex items-center gap-1 text-sm">
                 <span className="text-gray-500">@</span>
                 <span className="font-medium text-gray-900">
-                    ${currencySymbol}{unitPrice.toFixed(2)}
+                    {currencySymbol}{unitPrice.toFixed(2)}
                 </span>
             </div>
 

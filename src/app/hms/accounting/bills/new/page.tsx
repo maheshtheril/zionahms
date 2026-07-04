@@ -319,7 +319,7 @@ export default function NewPurchaseBillPage() {
                                                         />
                                                     </td>
                                                     <td className="px-4 py-4 text-right font-semibold text-white/90">
-                                                        ${currencySymbol}{item.lineTotal.toLocaleString()}
+                                                        {currencySymbol}{item.lineTotal.toLocaleString()}
                                                     </td>
                                                     <td className="px-4 py-4">
                                                         <Button
@@ -408,15 +408,15 @@ export default function NewPurchaseBillPage() {
                                     </div>
                                     <div className="flex justify-between text-xs">
                                         <span className="text-white/60">Purchase Account</span>
-                                        <span className="text-green-400">Dr ${currencySymbol}{billData.subtotal.toLocaleString()}</span>
+                                        <span className="text-green-400">Dr {currencySymbol}{billData.subtotal.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between text-xs">
                                         <span className="text-white/60">Input VAT</span>
-                                        <span className="text-green-400">Dr ${currencySymbol}{billData.taxTotal.toLocaleString()}</span>
+                                        <span className="text-green-400">Dr {currencySymbol}{billData.taxTotal.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between text-xs border-t border-white/5 pt-1">
                                         <span className="text-white/60">Accounts Payable</span>
-                                        <span className="text-red-400 font-semibold">Cr ${currencySymbol}{billData.totalAmount.toLocaleString()}</span>
+                                        <span className="text-red-400 font-semibold">Cr {currencySymbol}{billData.totalAmount.toLocaleString()}</span>
                                     </div>
                                 </div>
                             </div>

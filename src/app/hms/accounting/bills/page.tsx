@@ -133,9 +133,9 @@ export default function PurchaseBillsPage() {
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {[
-                    { label: "Total Outstanding", value: "${currencySymbol}4,25,000", delta: "+12%", color: "indigo" },
+                    { label: "Total Outstanding", value: "{currencySymbol}4,25,000", delta: "+12%", color: "indigo" },
                     { label: "Pending Approval", value: "12 Bills", delta: "Updated now", color: "purple" },
-                    { label: "Monthly Purchases", value: "${currencySymbol}1,82,400", delta: "-5%", color: "blue" }
+                    { label: "Monthly Purchases", value: "{currencySymbol}1,82,400", delta: "-5%", color: "blue" }
                 ].map((stat, i) => (
                     <Card key={i} className="bg-black/40 border-white/10 backdrop-blur-md overflow-hidden relative group">
                         <div className={`absolute top-0 left-0 w-1 h-full bg-${stat.color}-500 opacity-50 group-hover:opacity-100 transition-all`} />

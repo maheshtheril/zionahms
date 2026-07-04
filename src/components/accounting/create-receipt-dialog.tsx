@@ -100,7 +100,7 @@ export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateRec
         } else {
             toast({
                 title: "Receipt Saved",
-                description: `Successfully recorded receipt for ${currencySymbol}${amount}`,
+                description: `Successfully recorded receipt for {currencySymbol}${amount}`,
                 className: "bg-black border-emerald-900 text-white"
             });
             setIsSubmitting(false);
@@ -204,7 +204,7 @@ export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateRec
                                                     <div key={inv.id} className="group relative bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 rounded-xl p-4 transition-all flex items-center justify-between">
                                                         <div className="flex flex-col">
                                                             <span className="text-xs font-bold text-white tracking-tight">{inv.number}</span>
-                                                            <span className="text-[10px] text-neutral-500 font-medium">Outstanding: ${currencySymbol}{inv.outstanding.toLocaleString()}</span>
+                                                            <span className="text-[10px] text-neutral-500 font-medium">Outstanding: {currencySymbol}{inv.outstanding.toLocaleString()}</span>
                                                         </div>
                                                         <div className="flex items-center gap-3">
                                                             <div className="relative">

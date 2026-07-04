@@ -129,7 +129,7 @@ export function PayrollDashboardClient({ initialMonth, availableMonths, staffDat
                                     <tr key={staff.id} className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/50 transition-colors">
                                         <td className="p-4">
                                             <div className="font-bold text-slate-900 dark:text-white">{staff.name}</div>
-                                            <div className="text-xs text-slate-500 mt-0.5">Base: ${currencySymbol}{staff.base_salary.toLocaleString('en-IN')}</div>
+                                            <div className="text-xs text-slate-500 mt-0.5">Base: {currencySymbol}{staff.base_salary.toLocaleString('en-IN')}</div>
                                         </td>
                                         
                                         {!staff.slip ? (
@@ -139,19 +139,19 @@ export function PayrollDashboardClient({ initialMonth, availableMonths, staffDat
                                         ) : (
                                             <>
                                                 <td className="p-4 font-semibold text-slate-700 dark:text-slate-300">
-                                                    ${currencySymbol}{staff.slip.attendance_data?.gross_salary?.toLocaleString('en-IN') || staff.slip.base_salary.toLocaleString('en-IN')}
+                                                    {currencySymbol}{staff.slip.attendance_data?.gross_salary?.toLocaleString('en-IN') || staff.slip.base_salary.toLocaleString('en-IN')}
                                                 </td>
                                                 <td className="p-4">
                                                     <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
                                                         {staff.slip.attendance_data?.days_present || 0} / {staff.slip.attendance_data?.calculation_basis === 'working_days' ? staff.slip.attendance_data.working_days_in_month : staff.slip.attendance_data?.days_in_month || 30} Days
                                                     </div>
                                                     <div className="text-xs text-red-500 font-semibold mt-0.5">
-                                                        -{staff.slip.attendance_data?.lwp_days || 0} LWP (${currencySymbol}{staff.slip.attendance_data?.lwp_deduction?.toLocaleString('en-IN') || 0})
+                                                        -{staff.slip.attendance_data?.lwp_days || 0} LWP ({currencySymbol}{staff.slip.attendance_data?.lwp_deduction?.toLocaleString('en-IN') || 0})
                                                     </div>
                                                 </td>
                                                 <td className="p-4">
                                                     <div className="text-lg font-black text-emerald-600 dark:text-emerald-400">
-                                                        ${currencySymbol}{staff.slip.net_pay.toLocaleString('en-IN')}
+                                                        {currencySymbol}{staff.slip.net_pay.toLocaleString('en-IN')}
                                                     </div>
                                                 </td>
                                                 <td className="p-4">

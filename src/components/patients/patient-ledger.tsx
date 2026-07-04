@@ -205,14 +205,14 @@ export function PatientLedger({ patientId }: { patientId: string }) {
                     <td className="px-6 py-5 text-right">
                       {Number(entry.debit) > 0 ? (
                         <span className="text-sm font-black text-rose-600 italic">
-                           ${currencySymbol}{Number(entry.debit).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                           {currencySymbol}{Number(entry.debit).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
                       ) : <span className="text-slate-200 dark:text-slate-800">-</span>}
                     </td>
                     <td className="px-6 py-5 text-right">
                       {Number(entry.credit) > 0 ? (
                         <span className="text-sm font-black text-emerald-600 italic">
-                          ${currencySymbol}{Number(entry.credit).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          {currencySymbol}{Number(entry.credit).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
                       ) : <span className="text-slate-200 dark:text-slate-800">-</span>}
                     </td>
@@ -225,7 +225,7 @@ export function PatientLedger({ patientId }: { patientId: string }) {
                             ? "bg-emerald-50 text-emerald-700 border-emerald-100" 
                             : "bg-slate-50 text-slate-400 border-slate-100"
                       )}>
-                        ${currencySymbol}{Math.abs(entry.runningBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        {currencySymbol}{Math.abs(entry.runningBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         {entry.runningBalance > 0.1 ? <ArrowUpRight className="h-3 w-3" /> : entry.runningBalance < -0.1 ? <ArrowDownLeft className="h-3 w-3" /> : null}
                       </div>
                     </td>
@@ -267,7 +267,7 @@ export function PatientLedger({ patientId }: { patientId: string }) {
                 "text-2xl font-black tracking-tighter text-right",
                 netBalance > 0.1 ? "text-rose-600" : netBalance < -0.1 ? "text-emerald-600" : "text-slate-400"
               )}>
-                ${currencySymbol}{Math.abs(netBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                {currencySymbol}{Math.abs(netBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 <span className="ml-2 text-xs font-bold uppercase tracking-tighter">
                   {netBalance > 0.1 ? 'DR' : netBalance < -0.1 ? 'CR' : ''}
                 </span>

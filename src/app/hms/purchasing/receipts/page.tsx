@@ -199,7 +199,7 @@ export default function PurchaseReceiptsPage() {
                                         {receipt.itemCount}
                                     </div>
                                     <div className="col-span-1 text-right text-sm font-bold text-foreground font-mono whitespace-nowrap">
-                                        ${currencySymbol}{receipt.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        {currencySymbol}{receipt.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </div>
                                     <div className="col-span-1 flex items-center justify-center">
                                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wide">
