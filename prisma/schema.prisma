@@ -500,7 +500,7 @@ model company_tax_maps {
   tax_rates         tax_rates @relation(fields: [tax_rate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   tax_types         tax_types @relation(fields: [tax_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([company_id, tax_type_id], map: "company_tax_maps_company_tax_type_uniq")
+  @@unique([company_id, tax_rate_id], map: "company_tax_maps_company_tax_rate_uniq")
   @@index([company_id], map: "idx_company_tax_maps_company")
   @@index([company_id], map: "idx_company_tax_maps_company_id")
   @@index([tenant_id], map: "idx_company_tax_maps_tenant")
@@ -1920,8 +1920,8 @@ model hms_uom {
   category_id       String              @db.Uuid
   name              String
   uom_type          String              @default("reference")
-  ratio             Decimal             @default(1.0) @db.Decimal(10, 4)
-  rounding          Decimal?            @default(0.01) @db.Decimal(10, 4)
+  ratio             Decimal             @default(1.0) @db.Decimal(16, 6)
+  rounding          Decimal?            @default(0.01) @db.Decimal(16, 6)
   is_active         Boolean             @default(true)
   created_at        DateTime            @default(now()) @db.Timestamptz(6)
   hms_product       hms_product[]
