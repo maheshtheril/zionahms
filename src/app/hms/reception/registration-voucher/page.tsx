@@ -44,7 +44,7 @@ export default async function RegistrationVoucherPage() {
     const billableItems = itemsRes.success ? itemsRes.data : [];
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
     const uoms = (uomsRes as any).success ? (uomsRes as any).data : [];
-    const currency = companySettings?.currencies?.symbol || session.user."$" || "$";
+    const currency = companySettings?.currencies?.symbol || session.user.currencySymbol || "$";
 
     // 3. Prepare Initial Item (Registration Fee)
     const initialItems = [];

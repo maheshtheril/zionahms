@@ -61,7 +61,7 @@ export default async function PharmacyBillingPage({
     const billableItems = itemsRes.success ? itemsRes.data : [];
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
     const uoms = (uomsRes as any).success ? (uomsRes as any).data : [];
-    const currency = companySettings?.currencies?.symbol || session.user."$" || "$";
+    const currency = companySettings?.currencies?.symbol || session.user.currencySymbol || "$";
 
     // 1. Fetch prescription if patientId is provided
     let initialItems: Array<{ id: string; name: string; price: number; quantity: number; type: string }> = [];

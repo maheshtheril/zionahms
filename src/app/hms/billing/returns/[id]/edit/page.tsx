@@ -74,7 +74,7 @@ export default async function EditSalesReturnPage({
                 }}
                 initialInvoice={JSON.parse(JSON.stringify(sReturn.hms_invoice))}
                 initialReturn={JSON.parse(JSON.stringify(sReturn))}
-                currency={pdfConfig."$" || "$"}
+                currency={pdfConfig.currencySymbol || "$"}
             />
         </div>
     );
