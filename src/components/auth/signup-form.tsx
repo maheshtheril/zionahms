@@ -3,6 +3,7 @@
 import { useActionState, useState, useEffect } from "react"
 import { signIn } from "next-auth/react"
 import { signup } from "@/app/actions/auth"
+import countryToCurrency from 'country-to-currency';
 import { getCountries, getCurrencies, getModules } from "@/app/actions/public"
 import { currenciesList, countriesList, modulesList } from "@/lib/static-data"
 import { Check, ChevronRight, Building, Layers } from "lucide-react"
@@ -169,13 +170,14 @@ export function SignupForm({
     useEffect(() => {
         if (formData.countryId && currencies.length > 0) {
             const country = countries.find(c => c.id === formData.countryId);
-            if (country) {
-                if (country.iso2 === 'IN') {
-                    const inr = currencies.find(c => c.code === 'INR');
-                    if (inr) setFormData(p => ({ ...p, currencyId: inr.id }))
-                } else if (country.iso2 === 'US') {
-                    const usd = currencies.find(c => c.code === 'USD');
-                    if (usd) setFormData(p => ({ ...p, currencyId: usd.id }))
+            if (country && country.iso2) {
+                // @ts-ignore - countryToCurrency is a dictionary
+                const currencyCode = countryToCurrency[country.iso2];
+                if (currencyCode) {
+                    const match = currencies.find(c => c.code === currencyCode);
+                    if (match) {
+                        setFormData(p => ({ ...p, currencyId: match.id }));
+                    }
                 }
             }
         }
