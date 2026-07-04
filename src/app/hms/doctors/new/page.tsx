@@ -1,8 +1,11 @@
 import { createDoctor } from "@/app/actions/doctor"
+import { getEmployees } from "@/app/actions/crm/employees"
 import Link from "next/link"
-import { ArrowLeft, User, Mail, FileBadge, Stethoscope, Briefcase } from "lucide-react"
+import { ArrowLeft, User, Mail, FileBadge, Stethoscope, Briefcase, Link as LinkIcon } from "lucide-react"
 
-export default function NewDoctorPage() {
+export default async function NewDoctorPage() {
+    const employees = await getEmployees()
+
     return (
         <div className="max-w-2xl mx-auto space-y-6">
             <div className="flex items-center gap-4">
@@ -88,8 +91,26 @@ export default function NewDoctorPage() {
                                 <p className="text-xs text-gray-400 mt-1">New specializations will be auto-added.</p>
                             </div>
                         </div>
+                    </div>                    <div className="grid grid-cols-1 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Link HR Employee (Optional)</label>
+                            <div className="relative">
+                                <LinkIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                                <select 
+                                    name="employee_id" 
+                                    className="w-full pl-10 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none bg-white"
+                                >
+                                    <option value="">-- No HR Profile Linked --</option>
+                                    {employees.map(emp => (
+                                        <option key={emp.id} value={emp.id}>
+                                            {emp.first_name} {emp.last_name} ({emp.email})
+                                        </option>
+                                    ))}
+                                </select>
+                                <p className="text-xs text-gray-400 mt-1">Links clinical profile to payroll.</p>
+                            </div>
+                        </div>
                     </div>
-
 
                     <div className="pt-4 flex gap-4">
                         <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">

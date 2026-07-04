@@ -10,14 +10,12 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { uploadFile } from "@/app/actions/upload-file";
+import { getDynamicAIModels } from "@/lib/ai-models";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || "");
 
-// 2026 UPDATED MODELS - Gemini 1.5 is now legacy. 
-// Using 2.5 and 2.0 as primary stables.
-const AI_MODEL_PRIMARY = "gemini-2.5-flash";
-const AI_MODEL_FALLBACK = "gemini-2.0-flash";
-const AI_MODEL_LATESTStable = "gemini-2.5-flash";
+// 2026 UPDATED MODELS - Using Dynamic Resolution
+// See src/lib/ai-models.ts
 
 
 export async function scanInvoiceAction(input: FormData | string, supplierId?: string): Promise<{ success?: boolean; data?: any; error?: string }> {
@@ -184,10 +182,8 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
                 - "packing": Packing format (e.g., "1x10", "10 TAB", "15 CAP").
         `;
 
-        const configurations = [
-            { name: "gemini-2.5-flash", version: "v1beta", useJsonMode: true },
-            { name: "gemini-2.0-flash", version: "v1beta", useJsonMode: true },
-        ];
+        const dynamicModels = await getDynamicAIModels(finalApiKey);
+        const configurations = dynamicModels.map(mName => ({ name: mName, version: "v1beta", useJsonMode: true }));
 
 
         for (const config of configurations) {
@@ -358,14 +354,23 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
         console.error("AI Scan Error Detailed:", error);
 
         let msg = error.message || String(error);
+        if (msg.includes("403") || msg.includes("denied access")) {
+            return { error: "API Key Permission Denied. Please ensure your Google AI Studio API Key is valid and has billing enabled for newer models." };
+        }
+        if (msg.includes("429") && msg.includes("limit: 0")) {
+            return { error: "API Key Quota Exhausted. Your Google Cloud Free Tier limits have been reached. Please enable billing or use a new key." };
+        }
         if (msg.includes("429") || msg.includes("Too Many Requests") || msg.includes("Quota exceeded")) {
-            return { error: "AI Server Busy (Rate Limit). Please wait 30-60 seconds and try again." };
+            return { error: "AI Rate Limit Reached. Your API Key has sent too many requests. Please wait 1-2 minutes or check your quota." };
         }
         if (msg.includes("503") || msg.includes("Overloaded")) {
-            return { error: "AI Server Overloaded. Please try again in 1 minute." };
+            return { error: "AI Server Overloaded. Google's servers are currently busy. Please try again in 1 minute." };
+        }
+        if (msg.includes("API_KEY_INVALID")) {
+            return { error: "Invalid API Key. Please verify your Gemini API key in Global Settings." };
         }
 
-        return { error: `AI Scan Failed: ${msg}` };
+        return { error: `AI Processing Failed: ${msg}` };
     }
 }
 
@@ -498,6 +503,9 @@ async function processInvoiceData(session: any, data: any) {
             };
 
             const matchResult = findBestMatch(item.productName, allProducts);
+            
+            let vendorUomConv = 1;
+            let vendorUomName = "";
 
             if (matchResult.product) {
                 const p = matchResult.product;
@@ -529,8 +537,6 @@ async function processInvoiceData(session: any, data: any) {
                 let lastMarginPct = 0;
                 let lastMarkupPct = 0;
                 let pricingStrategy = 'manual';
-                let vendorUomConv = 1;
-                let vendorUomName = "";
 
                 if (accepted) {
                     productId = p.id;

@@ -589,7 +589,8 @@ export async function getPurchaseReceipts() {
                     reference: (r.metadata as any)?.reference || 'N/A',
                     itemCount: r.hms_purchase_receipt_line.length,
                     totalAmount: Number(totalAmount.toFixed(2)),
-                    status: r.status
+                    status: r.status,
+                    createdAt: r.created_at
                 };
             })
         };

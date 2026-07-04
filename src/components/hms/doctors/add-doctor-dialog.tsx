@@ -27,6 +27,7 @@ interface AddDocFormProps {
     departments: Department[]
     roles: Role[]
     specializations: Specialization[]
+    employees?: any[]
 }
 
 function renderDepartmentOptions(departments: Department[] = [], parentId: string | null = null, depth = 0): any {
@@ -53,7 +54,7 @@ function renderDepartmentOptions(departments: Department[] = [], parentId: strin
         });
 }
 
-export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartments, roles, specializations }: AddDocFormProps) {
+export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartments, roles, specializations, employees = [] }: AddDocFormProps) {
     const [departments, setDepartments] = useState(initialDepartments)
     const [isSeeding, setIsSeeding] = useState(false)
     const [isAddingDept, setIsAddingDept] = useState(false)
@@ -76,14 +77,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
         )
     }
 
-    // Auto-generate world-class Employee ID
-    useEffect(() => {
-        if (isOpen && !empId) {
-            const date = new Date().toISOString().slice(2, 10).replace(/-/g, '')
-            const random = Math.floor(1000 + Math.random() * 9000)
-            setEmpId(`EMP-${date}-${random}`)
-        }
-    }, [isOpen])
+    // Removed auto-generate logic as we now link to CRM employees
 
     if (!isOpen) return null
 
@@ -117,17 +111,16 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-slate-900/60 backdrop-blur-md">
-            <div className="relative w-full max-w-[95vw] lg:max-w-7xl bg-white rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.3)] max-h-[92vh] flex flex-col overflow-hidden border border-white/20">
-                {/* Header - Compact & Premium */}
-                <div className="relative bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 p-6 flex items-center justify-between border-b border-indigo-500/20">
-                    <div>
-                        <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
-                            <div className="h-12 w-12 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg border border-white/10 shrink-0">
-                                <UserCog className="h-6 w-6 text-white" />
-                            </div>
+            <div className="relative w-[98vw] h-[98vh] max-w-none max-h-none bg-white rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden border border-white/20">
+                {/* Header - Ultra Compact */}
+                <div className="relative bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 px-4 py-2 flex items-center justify-between border-b border-indigo-500/20">
+                    <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 bg-slate-900 rounded-lg flex items-center justify-center shadow-lg border border-white/10 shrink-0">
+                            <UserCog className="h-4 w-4 text-white" />
+                        </div>
+                        <h2 className="text-lg font-black text-white tracking-tight">
                             New Staff Registration
                         </h2>
-                        <p className="text-indigo-200/60 text-xs font-bold uppercase tracking-widest mt-1">Personnel Management & Compliance</p>
                     </div>
                     <button
                         onClick={onClose}
@@ -160,7 +153,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                     finally { setIsSubmitting(false); }
                 }} className="flex-1 overflow-hidden flex flex-col bg-slate-50/30">
 
-                    <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                    <div className="flex-1 overflow-y-auto p-2 scrollbar-hide">
                         {message && (
                             <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-4 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm shadow-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-200 shadow-sm'
                                 }`}>
@@ -173,7 +166,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                         )}
 
                         {/* World-Class Tablet Navigation */}
-                        <div className="flex items-center gap-2 mb-8 bg-slate-100 p-1.5 rounded-[1.5rem] w-fit border border-slate-200 shadow-inner">
+                        <div className="flex items-center gap-2 mb-4 bg-slate-100 p-1.5 rounded-2xl w-fit border border-slate-200 shadow-inner">
                             <button
                                 type="button"
                                 onClick={() => setActiveTab('general')}
@@ -204,7 +197,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                             <div className={activeTab === 'general' ? 'block' : 'hidden'}>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                     {/* Column 1: Core Identity */}
-                                    <div className="space-y-6 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                                    <div className="space-y-3 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
                                         <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
                                             <GraduationCap className="h-4 w-4 text-indigo-500" />
                                             Professional Profile
@@ -212,7 +205,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                         <div className="grid grid-cols-3 gap-4">
                                             <div className="col-span-1">
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider text-indigo-500">Salutation</label>
-                                                <select name="salutation" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-black text-sm text-indigo-600 appearance-none">
+                                                <select name="salutation" className="w-full p-2 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-black text-sm text-indigo-600 appearance-none">
                                                     <option value="Dr.">Dr.</option>
                                                     <option value="Mr.">Mr.</option>
                                                     <option value="Ms.">Ms.</option>
@@ -225,23 +218,23 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                             </div>
                                             <div className="col-span-1">
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">First Name <span className="text-red-500">*</span></label>
-                                                <input type="text" name="first_name" required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" />
+                                                <input type="text" name="first_name" required className="w-full p-2 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" />
                                             </div>
                                             <div className="col-span-1">
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Last Name <span className="text-red-500">*</span></label>
-                                                <input type="text" name="last_name" required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" />
+                                                <input type="text" name="last_name" required className="w-full p-2 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" />
                                             </div>
                                         </div>
                                         <div>
                                             <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Professional Email <span className="text-red-500">*</span></label>
                                             <div className="relative">
                                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                <input type="email" name="email" required className="w-full pl-12 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" />
+                                                <input type="email" name="email" required className="w-full pl-12 p-2 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" />
                                             </div>
                                         </div>
                                         <div>
                                             <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Qualification</label>
-                                            <select name="qualification" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm">
+                                            <select name="qualification" className="w-full p-2 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm">
                                                 <option value="">Select Qualification</option>
                                                 {WORLD_CLASS_QUALIFICATIONS.map(q => <option key={q} value={q}>{q}</option>)}
                                             </select>
@@ -250,32 +243,39 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                             <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Medical License No.</label>
                                             <div className="relative">
                                                 <Shield className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                <input type="text" name="license_no" className="w-full pl-12 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" />
+                                                <input type="text" name="license_no" className="w-full pl-12 p-2 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" />
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Column 2: Organizational Logic */}
-                                    <div className="space-y-6 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                                    <div className="space-y-3 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
                                         <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
                                             <Building2 className="h-4 w-4 text-emerald-500" />
                                             Organizational Alignment
                                         </h3>
                                         <div>
-                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider flex items-center gap-2"><Hash className="h-3 w-3" /> Employee ID</label>
-                                            <input type="text" name="employee_id" value={empId} onChange={(e) => setEmpId(e.target.value)} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm" />
+                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider flex items-center gap-2"><Hash className="h-3 w-3" /> Link HR Employee (Optional)</label>
+                                            <select name="employee_id" value={empId} onChange={(e) => setEmpId(e.target.value)} className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
+                                                <option value="">-- No HR Profile Linked --</option>
+                                                {employees?.map(emp => (
+                                                    <option key={emp.id} value={emp.id}>
+                                                        {emp.first_name} {emp.last_name} ({emp.email})
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Designation</label>
-                                                <select name="designation" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
+                                                <select name="designation" className="w-full p-2 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
                                                     <option value="">Select</option>
                                                     {WORLD_CLASS_DESIGNATIONS.map(d => <option key={d} value={d}>{d}</option>)}
                                                 </select>
                                             </div>
                                             <div>
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Institutional Role <span className="text-red-500">*</span></label>
-                                                <select name="role_id" required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
+                                                <select name="role_id" required className="w-full p-2 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
                                                     <option value="">Select Role</option>
                                                     {(roles || []).map(role => <option key={role.id} value={role.id}>{role.name}</option>)}
                                                 </select>
@@ -283,14 +283,14 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                         </div>
                                         <div>
                                             <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Specialization</label>
-                                            <select name="specialization_id" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
+                                            <select name="specialization_id" className="w-full p-2 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
                                                 <option value="">None / General</option>
                                                 {(specializations || []).map(spec => <option key={spec.id} value={spec.id}>{spec.name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Functional Unit</label>
-                                            <select name="department_id" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
+                                            <select name="department_id" className="w-full p-2 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
                                                 <option value="">Select Department</option>
                                                 {renderDepartmentOptions(departments || [])}
                                             </select>
@@ -301,7 +301,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
 
                             <div className={activeTab === 'clinical' ? 'block' : 'hidden'}>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    <div className="space-y-6 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                                    <div className="space-y-3 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
                                         <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
                                             <Clock className="h-4 w-4 text-indigo-500" />
                                             Consultation Logistics
@@ -309,21 +309,21 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Shift Start</label>
-                                                <input type="time" name="consultation_start_time" defaultValue="09:00" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
+                                                <input type="time" name="consultation_start_time" defaultValue="09:00" className="w-full p-2 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
                                             </div>
                                             <div>
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Shift End</label>
-                                                <input type="time" name="consultation_end_time" defaultValue="17:00" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
+                                                <input type="time" name="consultation_end_time" defaultValue="17:00" className="w-full p-2 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Slot (Min)</label>
-                                                <input type="number" name="consultation_slot_duration" defaultValue="30" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm" />
+                                                <input type="number" name="consultation_slot_duration" defaultValue="30" className="w-full p-2 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm" />
                                             </div>
                                             <div>
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Experience (Yrs)</label>
-                                                <input type="number" name="experience_years" defaultValue="0" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm" />
+                                                <input type="number" name="experience_years" defaultValue="0" className="w-full p-2 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm" />
                                             </div>
                                         </div>
                                         <div>
@@ -356,7 +356,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                         </div>
                                     </div>
 
-                                    <div className="space-y-6 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                                    <div className="space-y-3 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
                                         <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
                                             <CreditCard className="h-4 w-4 text-emerald-500" />
                                             Financial Integration
@@ -381,7 +381,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                             <div className={activeTab === 'documents' ? 'block' : 'hidden'}>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                     {/* Visual Persona */}
-                                    <div className="space-y-6 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                                    <div className="space-y-3 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
                                         <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
                                             <Camera className="h-4 w-4 text-indigo-500" />
                                             Visual Persona
@@ -412,7 +412,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                     </div>
 
                                     {/* Document Vault */}
-                                    <div className="space-y-6 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                                    <div className="space-y-3 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
                                         <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
                                             <FileText className="h-4 w-4 text-purple-500" />
                                             Document Repository

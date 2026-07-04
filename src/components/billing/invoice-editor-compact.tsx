@@ -11,7 +11,8 @@ import { cn } from "@/lib/utils"
 import { QRCodeSVG } from 'qrcode.react'
 import { createInvoice, updateInvoice, cancelInvoice, restoreInvoice, createQuickPatient, getPatientBalance, getPatientLedger, getNextVoucherNumber, shareInvoiceWhatsapp } from '@/app/actions/billing'
 import { getInitialInvoiceData, getPatientActiveAppointmentForBilling } from "@/app/actions/clinical"
-import { getPDFConfig, getHMSSettings } from '@/app/actions/settings';
+import { getActiveGeneralBillingConfig } from "@/app/actions/print-settings";
+import { NotificationService } from "@/lib/notification-service";
 import { getBestBatch, getProductBatches, getProductsPremium, getProduct } from '@/app/actions/inventory'
 import { createProductQuick } from '@/app/actions/purchase'
 import { createSalesReturn, updateSalesReturn } from '@/app/actions/returns'
@@ -156,7 +157,7 @@ export function CompactInvoiceEditor({
               quantity: Number(l.qty || l.quantity || 1),
               uom: l.uom || l.hms_product?.uom || 'PCS',
               unit_price: Number(l.unit_price || 0),
-              tax_rate_id: l.tax_rate_id || defaultTaxId,
+              tax_rate_id: l.tax_rate_id || '',
               tax_amount: Number(l.tax_amount || 0),
               discount_amount: 0,
               base_price: Number(l.unit_price || 0),
@@ -209,10 +210,11 @@ export function CompactInvoiceEditor({
                     quantity: Number(m.quantity || 1),
                     unit_price: Number(m.price || m.unit_price || 0),
                     uom: m.uom || 'PCS',
-                    tax_rate_id: m.tax_rate_id || defaultTaxId,
+                    tax_rate_id: m.tax_rate_id || '',
                     tax_amount: 0,
                     discount_amount: 0,
                     item_type: m.type || 'item',
+                    sourceId: m.sourceId || '',
                     fromSource: true
                 }));
                 
@@ -339,9 +341,8 @@ export function CompactInvoiceEditor({
   const finalizeButtonRef = useRef<HTMLButtonElement>(null)
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false)
   const [errorDetails, setErrorDetails] = useState({ title: '', message: '' })
-  const [hmsConfig, setHmsConfig] = useState<any>(null)
-
-  const [pdfConfig, setPdfConfig] = useState<any>(null);
+  const [printProfile, setPrintProfile] = useState<any>(null);
+  const [hmsConfig, setHmsConfig] = useState<any>(null);
   const [posStatus, setPosStatus] = useState<'connected' | 'offline' | 'searching'>('searching')
   const [isPOSLoading, setIsPOSLoading] = useState(false)
 
@@ -406,11 +407,19 @@ export function CompactInvoiceEditor({
     };
   }), [safePatients]);
 
-  const itemOptions = useMemo(() => localBillableItems.filter(Boolean).map(i => ({
-    id: i.id,
-    label: i.label || i.name,
-    subLabel: `${i.sku ? `SKU: ${i.sku} • ` : ''}${safeCurrency}${i.price || 0}${i.type !== 'service' ? ` • Stock: ${Number(i.totalStock || 0).toLocaleString()}` : ''}`
-  })), [localBillableItems, safeCurrency]);
+  const itemOptions = useMemo(() => localBillableItems.filter(Boolean).map(i => {
+    const m = (i as any).metadata || {};
+    const loc = m.storageLocation;
+    const salePrice = m.last_sale_price || m.salePrice || i.price || 0;
+    const expStr = m.expiryDate || m.expiry_date || m.best_before;
+    const expText = expStr ? ` • Exp: ${new Date(expStr).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })}` : '';
+    const compositionText = m.composition ? ` • [${m.composition}]` : '';
+    return {
+      id: i.id,
+      label: i.label || i.name,
+      subLabel: `${i.sku ? `SKU: ${i.sku} • ` : ''}${safeCurrency}${salePrice}${i.type !== 'service' ? ` • Stock: ${Number(i.totalStock || 0).toLocaleString()}` : ''}${expText}${loc ? ` • Loc: ${loc}` : ''}${compositionText}`
+    };
+  }), [localBillableItems, safeCurrency]);
 
   // Auto-select patient from URL if coming back from registration
   const [hasAutoSelectedPatient, setHasAutoSelectedPatient] = useState(false);
@@ -526,7 +535,7 @@ export function CompactInvoiceEditor({
                                         quantity: i.quantity || 1,
                                         unit_price: Number(i.price || i.unit_price || 0),
                                         uom: i.uom || 'PCS',
-                                        tax_rate_id: i.tax_rate_id || defaultTaxId,
+                                        tax_rate_id: i.tax_rate_id || '',
                                         tax_amount: 0,
                                         discount_amount: 0,
                                         item_type: i.type || 'item',
@@ -567,6 +576,8 @@ export function CompactInvoiceEditor({
           if (isMounted && pdf) setPdfConfig(pdf);
           const hms = await getHMSSettings();
           if (isMounted && hms.success) setHmsConfig(hms.settings);
+          const profile = await getActiveGeneralBillingConfig();
+          if (isMounted && profile) setPrintProfile(profile);
         }
       } catch (e) {
         console.log('Failed to load configs', e);
@@ -644,7 +655,7 @@ export function CompactInvoiceEditor({
   useEffect(() => {
     let isMounted = true;
     if (selectedPatientId) {
-      getPatientBalance(selectedPatientId).then(res => {
+      getPatientBalance(selectedPatientId, initialInvoice?.id || lastSavedId || undefined).then(res => {
         if (isMounted && res.success) {
           setPatientBalanceData(res);
         }
@@ -736,6 +747,11 @@ export function CompactInvoiceEditor({
   const [payments, setPayments] = useState<Payment[]>([])
   const [isFinalizing, setIsFinalizing] = useState(false)
   const [activePaymentAmount, setActivePaymentAmount] = useState<string>('')
+  const [changeDueState, setChangeDueState] = useState<number | null>(null)
+  
+  const [tenderTargetState, setTenderTargetState] = useState<number | null>(null)
+  const [tenderAmountState, setTenderAmountState] = useState<string>('')
+
   const [globalDiscount, setGlobalDiscount] = useState(Number(initialInvoice?.total_discount || 0))
 
   // Batch Selection State
@@ -791,7 +807,7 @@ export function CompactInvoiceEditor({
   useEffect(() => {
     if (selectedPatientId) {
       setIsWalkIn(false);
-      getPatientBalance(selectedPatientId).then(res => {
+      getPatientBalance(selectedPatientId, initialInvoice?.id || lastSavedId || undefined).then(res => {
         if (res.success) {
           setPatientBalance(res.balance || 0);
           setBalanceType((res.type as "due" | "advance") || 'due');
@@ -949,7 +965,7 @@ export function CompactInvoiceEditor({
       description: item.name || '',
       quantity: item.quantity || 1,
       unit_price: Number(item.price || item.unit_price || 0),
-      tax_rate_id: item.tax_rate_id || defaultTaxId,
+      tax_rate_id: item.tax_rate_id || '',
       tax_amount: 0,
       uom: item.uom || 'PCS',
       item_type: (item.type === 'medicine' || item.type === 'item') ? 'item' : 'service',
@@ -1049,7 +1065,7 @@ export function CompactInvoiceEditor({
               const match = extendedTaxRates.find((tr: any) => Math.abs(Number(tr.rate) - Number(item.categoryTaxRate)) < 0.1);
               if (match) resolvedTaxId = match.id;
             }
-            updated.tax_rate_id = resolvedTaxId || defaultTaxId;
+            updated.tax_rate_id = resolvedTaxId || ''; // Respect product's explicit tax setup, do not force defaultTaxId here.
 
             // Metadata for complex items
             updated.metadata = item.metadata
@@ -1287,13 +1303,20 @@ export function CompactInvoiceEditor({
         setLastSavedId(invoiceId || null);
 
         // WORLD CLASS: Auto-Print Trigger (Trigger on Paid or Posted settlement)
-        if ((effectiveStatus === 'paid' || effectiveStatus === 'posted') && pdfConfig?.autoPrint && invoiceId) {
-          window.open(`/api/invoice-printer/${invoiceId}?autoPrint=true`, '_blank');
+        if ((effectiveStatus === 'paid' || effectiveStatus === 'posted') && invoiceId) {
+          const autoPrint = printProfile?.automation?.autoPrint !== false; // default true if legacy
+          const preview = printProfile?.automation?.previewBeforePrint;
+
+          if (autoPrint) {
+            window.open(`/api/print/sale_bill/${invoiceId}${preview ? '' : '?autoPrint=true'}`, '_blank');
+          } else if (preview) {
+            window.open(`/api/print/sale_bill/${invoiceId}`, '_blank');
+          }
         }
 
         // [WORLD CLASS] Live Refresh: Re-validate patient standing immediately after save
         if (selectedPatientId) {
-          getPatientBalance(selectedPatientId).then(balanceRes => {
+          getPatientBalance(selectedPatientId, initialInvoice?.id || invoiceId || undefined).then(balanceRes => {
             if (balanceRes.success) setPatientBalanceData(balanceRes);
           });
         }
@@ -1825,6 +1848,16 @@ export function CompactInvoiceEditor({
         </div>
       )}
 
+      {/* Mobile Floating Action Button for Hubs */}
+      <div className="fixed bottom-6 right-6 z-[250] lg:hidden animate-in zoom-in slide-in-from-bottom-8 duration-500">
+        <button
+          onClick={() => setIsHubOpen(!isHubOpen)}
+          className="h-14 w-14 bg-indigo-600 dark:bg-[#64ffff] rounded-full shadow-[0_0_30px_rgba(79,70,229,0.5)] flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+        >
+          {isHubOpen ? <X className="h-6 w-6 text-white dark:text-[#003333]" /> : <Activity className="h-6 w-6 text-white dark:text-[#003333]" />}
+        </button>
+      </div>
+
       {/* FIXED MODAL OVERLAY */}
       <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300 no-print" onClick={() => onClose ? onClose() : router.back()}>
         <div className={`relative flex flex-col bg-white dark:bg-slate-900 shadow-[2xl] overflow-hidden border border-slate-200 dark:border-slate-800 transition-all duration-500 ease-out ${isMaximized ? 'w-full h-full' : 'w-full max-w-[98vw] h-[95vh] rounded-[2.5rem]'}`} onClick={e => e.stopPropagation()}>
@@ -2070,7 +2103,7 @@ export function CompactInvoiceEditor({
           <div className="max-w-[1400px] mx-auto">
             <div className="bg-white dark:bg-slate-950 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden">
               <table className="w-full border-collapse">
-                <thead>
+                <thead className="hidden lg:table-header-group">
                   <tr className="bg-slate-50 dark:bg-[#003333] border-b border-slate-200 dark:border-[#006666]">
                     <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-[#64ffff] w-12 italic">SR.</th>
                     <th className="px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-[#64ffff] min-w-[450px] italic">Particulars / Service Node</th>
@@ -2087,17 +2120,20 @@ export function CompactInvoiceEditor({
                     const lineNet = (line.quantity * line.unit_price) - (line.discount_amount || 0);
                     const lineTotal = (taxMode === 'inclusive' || taxMode === 'exempt') ? lineNet : lineNet + (line.tax_amount || 0);
                     const isZeroLine = (line.product_id || line.description) && (line.quantity * line.unit_price) === 0 && line.product_id !== 'REG-FEE';
+                    const itemData = localBillableItems.find(i => i.id === line.product_id);
+                    const storageLoc = (itemData as any)?.metadata?.storageLocation;
 
                     return (
                       <tr
                         key={line.id}
                         className={cn(
                           "group transition-all hover:bg-slate-50/50 dark:hover:bg-[#002b2b]",
+                          "flex flex-col lg:table-row bg-white dark:bg-slate-900 rounded-xl shadow-sm mb-4 border border-slate-100 dark:border-slate-800 p-4 lg:p-0 lg:rounded-none lg:shadow-none lg:mb-0 lg:border-none lg:border-b",
                           isZeroLine ? "bg-rose-500/5" : ""
                         )}
                       >
-                        <td className="px-6 py-3 text-[10px] font-black text-slate-600 dark:text-[#64ffff]/40">{index + 1}</td>
-                        <td className="px-4 py-3 relative">
+                        <td className="hidden lg:table-cell px-6 py-3 text-[10px] font-black text-slate-600 dark:text-[#64ffff]/40">{index + 1}</td>
+                        <td className="block lg:table-cell px-4 py-3 relative">
                           {isZeroLine && (
                             <div className="absolute left-0 top-0 bottom-0 w-1 bg-rose-500 animate-pulse z-10" />
                           )}
@@ -2142,7 +2178,8 @@ export function CompactInvoiceEditor({
                             }}
                           />
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="flex flex-col lg:table-cell px-4 py-3 border-t border-slate-50 lg:border-none">
+                          <span className="lg:hidden text-[10px] font-black uppercase text-slate-400 mb-1">Type/Batch</span>
                           <div className="flex flex-col gap-1 items-start">
                             <button
                               type="button"
@@ -2182,9 +2219,15 @@ export function CompactInvoiceEditor({
                                 Lot: {line.batch_no}
                               </button>
                             )}
+                            {storageLoc && (
+                              <span className="text-[8px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-white/10 px-1.5 py-0.5 rounded border border-slate-200 dark:border-white/10" title="Storage Location">
+                                {storageLoc}
+                              </span>
+                            )}
                           </div>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="flex items-center justify-between lg:table-cell px-4 py-3 border-t border-slate-50 lg:border-none">
+                          <span className="lg:hidden text-[10px] font-black uppercase text-slate-400 w-24">Quantity</span>
                           <Input
                             id={`qty-input-${index}`}
                             type="number"
@@ -2206,14 +2249,16 @@ export function CompactInvoiceEditor({
                             className="h-10 bg-transparent border-none text-center font-black text-base focus:ring-0 text-slate-900 dark:text-[#ffffcc] placeholder:text-slate-300 dark:placeholder:text-[#ffffcc]/40"
                           />
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="flex items-center justify-between lg:table-cell px-4 py-3 border-t border-slate-50 lg:border-none">
+                          <span className="lg:hidden text-[10px] font-black uppercase text-slate-400 w-24">UOM</span>
                           <select className="w-full h-10 bg-white dark:bg-[#003333] text-slate-900 dark:text-[#ffffcc] border border-slate-200 dark:border-[#006666] rounded-lg px-2 text-[9px] font-black tracking-widest outline-none focus:ring-1 focus:ring-indigo-600 dark:focus:ring-[#64ffff]" value={line.uom || ''} onChange={e => updateLine(line.id, 'uom', e.target.value)} disabled={isPaymentModalOpen || loading}>
                             {getUomOptions(line.item_type, line.uom, line.product_id).map(u => (
                               <option key={u} value={u}>{u}</option>
                             ))}
                           </select>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="flex items-center justify-between lg:table-cell px-4 py-3 border-t border-slate-50 lg:border-none">
+                          <span className="lg:hidden text-[10px] font-black uppercase text-slate-400 w-24">Rate</span>
                           <Input 
                             id={`rate-input-${index}`}
                             type="number" 
@@ -2234,7 +2279,8 @@ export function CompactInvoiceEditor({
                             className={`h-10 bg-transparent border-none font-mono font-black text-sm focus:ring-0 ${hmsConfig && !hmsConfig.allowRateEdit ? 'text-slate-400 cursor-not-allowed' : 'text-slate-900 dark:text-[#ffffcc]'}`} 
                           />
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="flex items-center justify-between lg:table-cell px-4 py-3 border-t border-slate-50 lg:border-none">
+                          <span className="lg:hidden text-[10px] font-black uppercase text-slate-400 w-24">Tax</span>
                           <div className="flex flex-col gap-1">
                             <select 
                               className="w-full h-8 bg-white dark:bg-[#003333] text-slate-900 dark:text-[#ffffcc] border border-slate-200 dark:border-[#006666] rounded-lg px-2 text-[8px] font-black outline-none focus:ring-1 focus:ring-indigo-600 dark:focus:ring-[#64ffff] disabled:opacity-50" 
@@ -2245,7 +2291,7 @@ export function CompactInvoiceEditor({
                               <option value="">0% (No Tax)</option>
                               {extendedTaxRates.map((t: any) => (
                                 <option key={t.id} value={t.id}>
-                                  {t.name.includes(t.rate.toString()) ? t.name : `${t.name} (${t.rate}%)`}
+                                  {t.name.includes(Number(t.rate).toString()) ? t.name : `${t.name} (${Number(t.rate)}%)`}
                                 </option>
                               ))}
                             </select>
@@ -2256,13 +2302,14 @@ export function CompactInvoiceEditor({
                             )}
                           </div>
                         </td>
-                        <td className="px-8 py-3 text-right font-black text-lg italic tracking-tighter text-slate-900 dark:text-[#ffffcc]">
+                        <td className="flex items-center justify-between lg:table-cell px-8 py-4 bg-slate-50 lg:bg-transparent rounded-b-xl lg:rounded-none text-right font-black text-lg italic tracking-tighter text-slate-900 dark:text-[#ffffcc]">
+                          <span className="lg:hidden text-[10px] font-black uppercase text-slate-500">Total</span>
                           <span className={isZeroLine ? 'text-rose-500 animate-pulse' : ''}>
                             {safeCurrency}{lineTotal.toFixed(2)}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
-                          <button onClick={() => handleRemoveItem(line.id)} disabled={isPaymentModalOpen || loading} className="text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 className="h-4 w-4" /></button>
+                        <td className="absolute top-2 right-2 lg:static lg:table-cell px-4 py-3">
+                          <button onClick={() => handleRemoveItem(line.id)} disabled={isPaymentModalOpen || loading} className="text-rose-400 hover:text-red-500 transition-all lg:opacity-0 group-hover:opacity-100 p-2 lg:p-0"><Trash2 className="h-4 w-4" /></button>
                         </td>
                       </tr>
                     )
@@ -2281,8 +2328,8 @@ export function CompactInvoiceEditor({
 
           {/* Clinical Hub Sidebar - The World Standard Implementation */}
           <div className={cn(
-            "w-96 border-l border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#002b2b] backdrop-blur-3xl transition-all duration-500 overflow-y-auto no-print flex flex-col z-10 shadow-[-20px_0_50px_rgba(0,0,0,0.2)]",
-            isHubOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none hidden"
+            "fixed inset-y-0 right-0 lg:static w-[85vw] sm:w-96 border-l border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#002b2b] backdrop-blur-3xl transition-all duration-500 overflow-y-auto no-print flex flex-col z-[100] lg:z-10 shadow-[-20px_0_50px_rgba(0,0,0,0.2)]",
+            isHubOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none hidden lg:hidden"
           )}>
             <div className="p-8 border-b border-slate-200 dark:border-[#006666] flex items-center justify-between bg-slate-50 dark:bg-[#004d4d]/50">
               <div className="flex items-center gap-4">
@@ -2438,7 +2485,7 @@ export function CompactInvoiceEditor({
         </div>
 
         {/* 3. Global Control Bar (Compact World-Standard Layout) */}
-        <div className="bg-white dark:bg-[#0c1222] border-t border-slate-100 dark:border-slate-800 px-8 py-4 z-[200]">
+        <div className="sticky bottom-0 lg:static bg-white/95 dark:bg-[#0c1222]/95 backdrop-blur-xl border-t border-slate-100 dark:border-slate-800 px-4 py-4 lg:px-8 z-[200] shadow-[0_-10px_40px_rgba(0,0,0,0.1)] lg:shadow-none">
           <div className="max-w-[1400px] mx-auto flex flex-col xl:flex-row justify-between items-center gap-6">
 
               <div className="flex gap-10">
@@ -2564,16 +2611,16 @@ export function CompactInvoiceEditor({
                       </div>
                     )}
                   </button>
-                  {!isRegistrationFee && (
-                    <div className="flex gap-3">
-                      <button
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); handleSave('draft'); }}
-                        disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
-                        className="px-6 py-4 bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all"
-                      >
-                        {mode === 'return' ? 'Save Draft Return' : 'Save Draft'}
-                      </button>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); handleSave('draft'); }}
+                      disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
+                      className="px-6 py-4 bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all"
+                    >
+                      {mode === 'return' ? 'Save Draft Return' : 'Save Draft'}
+                    </button>
+                    {!isRegistrationFee && (
                       <button
                         type="button"
                         onClick={(e) => { e.preventDefault(); handleSave('posted'); }}
@@ -2585,8 +2632,8 @@ export function CompactInvoiceEditor({
                       >
                         {internalPendingCount > 0 ? 'Post Blocked' : (mode === 'return' ? (totalPaid > 0 ? 'Finalize Cash Refund' : 'Issue Credit Note') : 'Post Credit')}
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </>
               )}
             </div>
@@ -2594,6 +2641,97 @@ export function CompactInvoiceEditor({
         </div>
 
         {/* PROFESSIONAL BILLING SETTLEMENT OVERLAY */}
+        {/* TENDER CASH SETTLEMENT POPUP */}
+        <Dialog open={tenderTargetState !== null} onOpenChange={(open) => { if (!open) { setTenderTargetState(null); setTenderAmountState(''); } }}>
+          <DialogContent className="z-[600] max-w-sm bg-white dark:bg-slate-900 border-none shadow-2xl p-8 rounded-[2rem]">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-widest text-center">CASH SETTLEMENT</DialogTitle>
+            </DialogHeader>
+            <div className="py-6 space-y-6">
+              <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Cash Payable</p>
+                <p className="text-xl font-black text-slate-800 dark:text-white">{safeCurrency}{(tenderTargetState || 0).toFixed(2)}</p>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Tendered Cash</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-black text-slate-400">{safeCurrency}</span>
+                  <input
+                    type="number"
+                    autoFocus
+                    value={tenderAmountState}
+                    onChange={e => setTenderAmountState(e.target.value)}
+                    onKeyDown={e => {
+                       if (e.key === 'Enter' && tenderAmountState) {
+                          const amt = parseFloat(tenderAmountState) || 0;
+                          if (amt >= (tenderTargetState || 0)) {
+                              setTenderTargetState(null);
+                              setTenderAmountState('');
+                              handleSave('paid');
+                          }
+                       }
+                    }}
+                    className="w-full h-16 pl-12 pr-4 bg-white dark:bg-slate-950 border-2 border-emerald-500/30 rounded-2xl text-2xl font-black focus:outline-none focus:border-emerald-500 transition-colors shadow-inner"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              {(parseFloat(tenderAmountState) || 0) >= (tenderTargetState || 0) && tenderTargetState !== null && (
+                <div className="bg-emerald-500 text-white rounded-2xl p-4 animate-in zoom-in text-center shadow-lg shadow-emerald-500/20">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-100 mb-1">Change to Return</p>
+                  <p className="text-3xl font-black">{safeCurrency}{((parseFloat(tenderAmountState) || 0) - tenderTargetState).toFixed(2)}</p>
+                </div>
+              )}
+            </div>
+            
+            <DialogFooter className="flex-col gap-3 sm:flex-col">
+              <Button 
+                onClick={() => {
+                   setTenderTargetState(null);
+                   setTenderAmountState('');
+                   handleSave('paid');
+                }} 
+                className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-emerald-600/20"
+              >
+                CONFIRM & REceipt <Check className="ml-2 w-4 h-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => {
+                   setTenderTargetState(null);
+                   setTenderAmountState('');
+                   handleSave('paid');
+                }}
+                className="w-full h-10 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
+              >
+                Post as Credit (Unpaid)
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={changeDueState !== null} onOpenChange={() => setChangeDueState(null)}>
+          <DialogContent className="z-[500] max-w-sm text-center bg-white dark:bg-slate-900 border-emerald-500/30 shadow-2xl p-10 rounded-3xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-widest">Tendered Cash</DialogTitle>
+            </DialogHeader>
+            <div className="py-6 space-y-4">
+              <div className="bg-emerald-500 text-white rounded-3xl p-8 animate-in zoom-in shadow-xl shadow-emerald-500/20">
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-emerald-100 mb-2">Change to Return</p>
+                <p className="text-6xl font-black">{safeCurrency}{changeDueState?.toFixed(2)}</p>
+              </div>
+              <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Payment exactly tallied. Please hand the change back to the patient.</p>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setChangeDueState(null)} className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-sm font-black uppercase tracking-widest shadow-lg">
+                Got it, Change Returned
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
           <DialogContent
             onInteractOutside={(e) => e.preventDefault()}
@@ -2747,17 +2885,53 @@ export function CompactInvoiceEditor({
 
                 {/* Tally Summary Overlay Moved here */}
                 <div className={`mt-auto p-6 rounded-3xl border transition-all duration-500 ${!isBalanced ? 'bg-amber-500/10 border-amber-500/30 animate-pulse' : 'bg-slate-200/50 dark:bg-slate-800/50 border-white/5'}`}>
-                  <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${isDeficit ? 'bg-amber-100 text-amber-700' : isSurplus ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'}`}>
-                    {isDeficit ? 'Partial / Credit' : isSurplus ? 'Advance / Excess' : 'Balanced'}
-                  </span>
-                  <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-4 leading-relaxed tracking-tight underline-offset-4 decoration-dotted decoration-slate-300">
-                    {isDeficit ?
-                      `Deficit: ${safeCurrency}${(Math.max(0, settlementTarget - totalPaid)).toFixed(2)} to be carried as debt.` :
-                      isSurplus ?
-                        `Surplus: ${safeCurrency}${(totalPaid - settlementTarget).toFixed(2)} will be credited.` :
-                        `Transaction perfectly tallied. Ready for sync.`
-                    }
-                  </p>
+                  {isSurplus ? (
+                    <div className="bg-emerald-500 rounded-2xl p-5 text-center text-white mb-2 shadow-xl shadow-emerald-500/20 animate-in fade-in zoom-in">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-100 mb-1">Change to Return / Surplus</p>
+                      <p className="text-4xl font-black drop-shadow-md">
+                        {safeCurrency}{(totalPaid - settlementTarget).toFixed(2)}
+                      </p>
+                      {payments.some(p => p.method === 'cash') && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            let amountToReduce = totalPaid - settlementTarget;
+                            setPayments(prev => {
+                              let newPayments = [...prev];
+                              for (let i = newPayments.length - 1; i >= 0; i--) {
+                                if (newPayments[i].method === 'cash' && amountToReduce > 0) {
+                                  if (newPayments[i].amount > amountToReduce) {
+                                    newPayments[i].amount -= amountToReduce;
+                                    amountToReduce = 0;
+                                  } else {
+                                    amountToReduce -= newPayments[i].amount;
+                                    newPayments[i].amount = 0;
+                                  }
+                                }
+                              }
+                              return newPayments.filter(p => p.amount > 0);
+                            });
+                          }}
+                          className="mt-4 w-full py-3 bg-white text-emerald-700 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-emerald-50 transition-all shadow-sm active:scale-95"
+                        >
+                          Give Change & Tally Invoice
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${isDeficit ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                        {isDeficit ? 'Partial / Credit' : 'Balanced'}
+                      </span>
+                      <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-4 leading-relaxed tracking-tight underline-offset-4 decoration-dotted decoration-slate-300">
+                        {isDeficit ?
+                          `Deficit: ${safeCurrency}${(Math.max(0, settlementTarget - totalPaid)).toFixed(2)} to be carried as debt.` :
+                          `Transaction perfectly tallied. Ready for sync.`
+                        }
+                      </p>
+                    </>
+                  )}
                   {mode === 'return' && (
                     <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/5">
                         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Active Refund Node</p>
@@ -2805,19 +2979,35 @@ export function CompactInvoiceEditor({
                           e.stopPropagation();
                           if (e.key === 'Enter') {
                             e.preventDefault();
-                            e.stopPropagation();
                             const amt = parseFloat(activePaymentAmount) || 0;
                             const target = grandTotal + (includePrevBalance ? patientBalance : 0);
 
                             if (amt > 0) {
                               setPayments(prev => {
-                                const newPayments: Payment[] = [...prev, { method: 'cash', amount: amt } as Payment];
-                                const currentTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
+                                let finalAmt = amt;
+                                const currentTotalPaid = prev.reduce((sum, p) => sum + p.amount, 0);
                                 const remaining = Math.max(0, target - currentTotalPaid);
-                                if (remaining === 0) {
+                                if (amt > remaining) {
+                                  setChangeDueState(amt - remaining);
+                                  finalAmt = remaining;
+                                }
+
+                                const existingIdx = prev.findIndex(p => p.method === 'cash');
+                                let newPayments = [...prev];
+                                if (existingIdx !== -1) {
+                                  newPayments[existingIdx] = {
+                                    ...newPayments[existingIdx],
+                                    amount: newPayments[existingIdx].amount + finalAmt
+                                  };
+                                } else {
+                                  newPayments.push({ method: 'cash', amount: finalAmt } as Payment);
+                                }
+                                const newTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
+                                const newRemaining = Math.max(0, target - newTotalPaid);
+                                if (newRemaining === 0) {
                                   setTimeout(() => finalizeButtonRef.current?.focus(), 100);
                                 }
-                                setTimeout(() => setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : ''), 0);
+                                setTimeout(() => setActivePaymentAmount(newRemaining > 0 ? newRemaining.toFixed(2) : ''), 0);
                                 return newPayments;
                               });
                             } else if (totalPaid >= target || (payments.length === 0 && amt === 0)) {
@@ -2855,13 +3045,32 @@ export function CompactInvoiceEditor({
                             return;
                           }
 
-                          setPayments(prev => {
-                            const actualMethod = m.id === 'advance' ? 'adjustment' : m.id;
-                            const newPayments: Payment[] = [...prev, { method: actualMethod as any, amount: amt, reference: m.id === 'advance' ? 'PATIENT_CREDIT_APPLIED' : undefined } as Payment];
-                            const currentTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
-                            const remaining = Math.max(0, (grandTotal + (includePrevBalance ? patientBalance : 0)) - currentTotalPaid);
-                            setTimeout(() => setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : ''), 0);
-                            return newPayments;
+                            setPayments(prev => {
+                              const currentTotalPaid = prev.reduce((sum, p) => sum + p.amount, 0);
+                              const targetForChange = grandTotal + (includePrevBalance ? patientBalance : 0);
+                              const remainingForChange = Math.max(0, targetForChange - currentTotalPaid);
+                              let finalAmt = amt;
+
+                              if (m.id === 'cash' && amt > remainingForChange) {
+                                  setChangeDueState(amt - remainingForChange);
+                                  finalAmt = remainingForChange;
+                              }
+
+                              const actualMethod = m.id === 'advance' ? 'adjustment' : m.id;
+                              let newPayments = [...prev];
+                              const existingIdx = newPayments.findIndex(p => p.method === actualMethod && !p.reference);
+                              if (existingIdx !== -1) {
+                                newPayments[existingIdx] = {
+                                  ...newPayments[existingIdx],
+                                  amount: newPayments[existingIdx].amount + finalAmt
+                                };
+                              } else {
+                                newPayments.push({ method: actualMethod as any, amount: finalAmt, reference: m.id === 'advance' ? 'PATIENT_CREDIT_APPLIED' : undefined } as Payment);
+                              }
+                              const currentTotalPaidAfter = newPayments.reduce((sum, p) => sum + p.amount, 0);
+                              const remaining = Math.max(0, targetForChange - currentTotalPaidAfter);
+                              setTimeout(() => setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : ''), 0);
+                              return newPayments;
                           });
                         } else {
                           toast({ title: "Amount Required", description: "Enter an amount before selecting a payment method.", variant: "destructive" });
@@ -2999,14 +3208,20 @@ export function CompactInvoiceEditor({
                       e.preventDefault();
                       e.stopPropagation();
 
-                      const floatingAmt = parseFloat(activePaymentAmount) || 0;
+                      if (mode === 'return') {
+                         handleSave('paid');
+                         return;
+                      }
 
-                      // [FIX] Removed Auto-Apply to cash here.
-                      // This ensures that when the button says "POST AS CREDIT" (deficit state), it actually posts as credit.
-                      // Keyboard users can still utilize the "Enter" key on the amount input to quickly apply cash.
-                      handleSave('paid');
+                      const cashTotal = payments.filter(p => p.method === 'cash').reduce((sum, p) => sum + p.amount, 0);
+
+                      if (cashTotal > 0) {
+                          setTenderTargetState(cashTotal);
+                      } else {
+                          handleSave('paid');
+                      }
                     }}
-                    disabled={loading || (payments.length === 0 && (parseFloat(activePaymentAmount) || 0) === 0)}
+                    disabled={loading || (payments.length === 0 && (parseFloat(activePaymentAmount) || 0) === 0 && !isDeficit)}
                     className={`flex-1 h-16 rounded-2xl text-white font-black text-[10px] uppercase tracking-[0.3em] transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-3 col-span-1 ${isDeficit ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20' :
                       isSurplus ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' :
                         'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'

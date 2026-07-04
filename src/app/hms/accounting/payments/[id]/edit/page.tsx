@@ -2,13 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { TallyPaymentForm } from '@/components/accounting/tally-voucher-form';
-import { upsertPayment, getPayment } from '@/app/actions/accounting/payments';
-import { 
-    searchSuppliers, getOutstandingPurchaseBills, 
-    searchJournals, searchAccounts 
-} from '@/app/actions/accounting/helpers';
-import { Loader2 } from 'lucide-react';
+import { PaymentVoucherForm } from '@/components/accounting/payment-voucher-form';
+import { getPayment } from '@/app/actions/accounting/payments';
+import { Loader2, Printer } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function EditPaymentPage() {
     const router = useRouter();
@@ -22,26 +19,8 @@ export default function EditPaymentPage() {
         async function loadPayment() {
             const res = await getPayment(id);
             if (res.success) {
-                const p = res.data;
-                const meta = p.metadata as any;
-                
-                // Map database record to editor format
-                const formatted = {
-                    id: p.id,
-                    date: meta?.date ? meta.date.split('T')[0] : p.created_at?.split('T')[0],
-                    amount: p.amount.toString(),
-                    partner_id: p.partner_id,
-                    reference: p.reference,
-                    memo: meta?.memo || p.memo,
-                    journalId: p.journal_id,
-                    journalName: p.journalName,
-                    partnerName: p.partnerName,
-                    type: meta?.type || 'outbound',
-                    voucherType: p.partner_id ? 'bill' : 'direct',
-                    allocations: meta?.allocations || [],
-                    lines: p.enrichedLines || []
-                };
-                setInitialData(formatted);
+                // Pass the raw db object to PaymentVoucherForm which is designed to handle it
+                setInitialData(res.data);
             } else {
                 console.error("Failed to load payment:", res.error);
                 router.push('/hms/accounting/payments');
@@ -51,34 +30,34 @@ export default function EditPaymentPage() {
         loadPayment();
     }, [id, router]);
 
-    const handleSave = async (payload: any) => {
-        const res = await upsertPayment({ ...payload, id });
-        if (res.error) return false;
-        router.push('/hms/accounting/payments');
-        return true;
-    };
-
     if (isLoading) {
         return (
-            <div className="h-screen w-full bg-[#003333] flex items-center justify-center text-[#64ffff] font-mono uppercase tracking-[0.3em]">
-                <Loader2 className="h-8 w-8 animate-spin mr-4" />
-                Retrieving Voucher Data...
+            <div className="h-[calc(100vh-4rem)] w-full bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center text-slate-500 font-medium">
+                <Loader2 className="h-10 w-10 animate-spin mb-4 text-indigo-500" />
+                <p>Retrieving Voucher Data...</p>
             </div>
         );
     }
 
     return (
-        <div className="h-screen w-full bg-[#003333]">
-            <TallyPaymentForm
-                type="payment"
+        <div className="h-[calc(100vh-4rem)] w-full bg-slate-50 dark:bg-slate-950 overflow-hidden">
+            <PaymentVoucherForm
                 initialData={initialData}
-                onSave={handleSave}
-                onCancel={() => router.back()}
-                suppliersSearch={searchSuppliers}
-                accountsSearch={searchAccounts}
-                journalsSearch={searchJournals}
-                getBills={getOutstandingPurchaseBills}
-                currency="₹"
+                headerActions={
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="bg-white/10 hover:bg-white/20 text-white border-white/20 h-9"
+                        onClick={() => window.open(`/api/print/payment_voucher/${initialData.id}?autoPrint=true`, '_blank')}
+                    >
+                        <Printer className="h-4 w-4 mr-2" />
+                        Print Voucher
+                    </Button>
+                }
+                onClose={() => router.push('/hms/accounting/payments')}
+                onSuccess={() => {
+                    // Success handling is now built into PaymentVoucherForm
+                }}
             />
         </div>
     );

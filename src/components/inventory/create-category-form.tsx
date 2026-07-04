@@ -67,7 +67,7 @@ export function CreateCategoryForm({ taxRates, accounts, categoryToEdit }: Creat
                         <option value="">No Tax</option>
                         {taxRates.map(t => (
                             <option key={t.id} value={t.id}>
-                                {t.name.includes(t.rate.toString()) ? t.name : `${t.name} (${t.rate}%)`}
+                                {t.name.includes(Number(t.rate).toString()) ? t.name : `${t.name} (${Number(t.rate)}%)`}
                             </option>
                         ))}
                     </select>

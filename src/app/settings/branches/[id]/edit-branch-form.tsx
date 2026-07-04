@@ -24,8 +24,22 @@ export default function EditBranchForm({ branch }: { branch: any }) {
         phone: branch.phone || '',
         email: branch.email || '',
         address: branch.address || '',
-        is_active: branch.is_active ?? true
+        is_active: branch.is_active ?? true,
+        metadata: branch.metadata || {}
     })
+
+    const handleMetadataChange = (key: string, value: any) => {
+        setFormData(prev => ({
+            ...prev,
+            metadata: {
+                ...prev.metadata,
+                geofence: {
+                    ...(prev.metadata?.geofence || {}),
+                    [key]: value
+                }
+            }
+        }))
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -162,6 +176,52 @@ export default function EditBranchForm({ branch }: { branch: any }) {
                                         type="email"
                                         value={formData.email}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-slate-200 shadow-sm">
+                        <CardHeader className="bg-slate-50/50">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <MapPin className="h-4 w-4 text-emerald-600" />
+                                Geofenced Attendance
+                            </CardTitle>
+                            <CardDescription>Restrict employee check-ins to a specific GPS radius around this branch.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-6 space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="geo_lat">Latitude</Label>
+                                    <Input
+                                        id="geo_lat"
+                                        type="number"
+                                        step="any"
+                                        placeholder="e.g. 12.9716"
+                                        value={formData.metadata?.geofence?.lat || ''}
+                                        onChange={e => handleMetadataChange('lat', parseFloat(e.target.value) || null)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="geo_lng">Longitude</Label>
+                                    <Input
+                                        id="geo_lng"
+                                        type="number"
+                                        step="any"
+                                        placeholder="e.g. 77.5946"
+                                        value={formData.metadata?.geofence?.lng || ''}
+                                        onChange={e => handleMetadataChange('lng', parseFloat(e.target.value) || null)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="geo_radius">Allowed Radius (Meters)</Label>
+                                    <Input
+                                        id="geo_radius"
+                                        type="number"
+                                        placeholder="e.g. 50"
+                                        value={formData.metadata?.geofence?.radius_meters || ''}
+                                        onChange={e => handleMetadataChange('radius_meters', parseInt(e.target.value) || null)}
                                     />
                                 </div>
                             </div>

@@ -141,7 +141,7 @@ export async function getEmployeeMasters() {
         const companyId = session.user.companyId;
         if (!companyId) return { success: true, designations: [], branches: [], departments: [], supervisors: [] };
 
-        const [designations, branches, departments, supervisors] = await Promise.all([
+        let [designations, branches, departments, supervisors] = await Promise.all([
             prisma.crm_designation.findMany({
                 where: { tenant_id: session.user.tenantId, is_active: true },
                 orderBy: { name: 'asc' }
@@ -160,6 +160,78 @@ export async function getEmployeeMasters() {
                 orderBy: { first_name: 'asc' }
             })
         ]);
+
+        // Auto-seed world-standard hierarchical designations if empty or if it's the old flat list
+        if (designations.length === 0 || (designations.length === 10 && designations.every((d: any) => !d.parent_id))) {
+            
+            // Delete old flat list if it exists
+            if (designations.length > 0) {
+                await prisma.crm_designation.deleteMany({
+                    where: { tenant_id: session.user.tenantId }
+                });
+            }
+
+            const hierarchy = [
+                {
+                    name: "Executive Board",
+                    children: [
+                        { name: "Chief Executive Officer (CEO)" },
+                        { 
+                            name: "Chief Medical Officer (CMO)", children: [
+                                { 
+                                    name: "Head of Department (HOD)", children: [
+                                        { name: "Senior Consultant" },
+                                        { name: "Consultant" },
+                                        { name: "Resident Medical Officer (RMO)" }
+                                    ]
+                                }
+                            ]
+                        },
+                        { 
+                            name: "Chief Nursing Officer (CNO)", children: [
+                                { 
+                                    name: "Nursing Supervisor", children: [
+                                        { name: "Senior Staff Nurse" },
+                                        { name: "Ward Nurse" }
+                                    ]
+                                }
+                            ]
+                        },
+                        { 
+                            name: "Chief Financial Officer (CFO)", children: [
+                                { name: "Senior Accountant" },
+                                { name: "Billing Executive" }
+                            ]
+                        }
+                    ]
+                }
+            ];
+
+            const insertHierarchy = async (nodes: any[], parentId: string | null = null) => {
+                for (const node of nodes) {
+                    const id = crypto.randomUUID();
+                    await prisma.crm_designation.create({
+                        data: {
+                            id,
+                            tenant_id: session.user.tenantId,
+                            name: node.name,
+                            parent_id: parentId
+                        }
+                    });
+                    if (node.children) {
+                        await insertHierarchy(node.children, id);
+                    }
+                }
+            };
+
+            await insertHierarchy(hierarchy);
+            
+            // Re-fetch after seeding
+            designations = await prisma.crm_designation.findMany({
+                where: { tenant_id: session.user.tenantId, is_active: true },
+                orderBy: { name: 'asc' }
+            });
+        }
 
         return { success: true, designations, branches, departments, supervisors };
     } catch (error) {

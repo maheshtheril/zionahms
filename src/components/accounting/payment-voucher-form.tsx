@@ -5,7 +5,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
-import { Loader2, Trash2, Save, ArrowLeft, Maximize2, Minimize2 } from "lucide-react";
+import { Loader2, Trash2, Save, ArrowLeft, Maximize2, Minimize2, Plus, CheckCircle2, Printer } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,19 +28,22 @@ import { recordExpense } from "@/app/actions/accounting/expenses";
 import { upsertPayment } from '@/app/actions/accounting/payments';
 import { getJournals } from "@/app/actions/accounting-journals";
 import { searchSuppliers, getOutstandingPurchaseBills } from "@/app/actions/accounting/helpers";
-import { getAccounts } from "@/app/actions/accounting/chart-of-accounts";
+import { getAccounts, upsertAccount } from "@/app/actions/accounting/chart-of-accounts";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 // Tally Style Schema
 const lineItemSchema = z.object({
     categoryId: z.string().min(1, "Ledger required"),
     amount: z.coerce.number().min(0.01, "Amount required"),
+    memo: z.string().optional()
 })
 
 const expenseSchema = z.object({
     date: z.date(),
     journalId: z.string().min(1, "Credit Account required"),
     lines: z.array(lineItemSchema).optional(), // Optional for Bill Mode
+    payeeName: z.string().optional(),
     narration: z.string().optional()
 })
 
@@ -59,6 +62,10 @@ interface PaymentVoucherFormProps {
 export function PaymentVoucherForm({ onClose, className, onSuccess, headerActions, initialData, simplified }: PaymentVoucherFormProps) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
+    const [isCreateLedgerOpen, setIsCreateLedgerOpen] = useState(false);
+    const [newLedger, setNewLedger] = useState({ name: '', code: '', type: 'Expense', parent_id: '' });
+    const [isSavingLedger, setIsSavingLedger] = useState(false);
+    const [successVoucher, setSuccessVoucher] = useState<{ id: string; number: string; amount: number } | null>(null);
 
     // Mode State
     const [mode, setMode] = useState<VOUCHER_MODE>(initialData?.metadata?.allocations?.length > 0 ? 'BILL_SETTLEMENT' : 'GENERAL');
@@ -84,13 +91,14 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
 
     const voucherNo = initialData?.payment_number || "Auto"
 
+    const fetchAccounts = async () => {
+        const res = await getAccounts('', ['Expense', 'Liability', 'Equity', 'Asset', 'Cost of Goods Sold']);
+        if (res.success && res.data) {
+            setAccounts(res.data as any);
+        }
+    };
+
     useEffect(() => {
-        const fetchAccounts = async () => {
-            const res = await getAccounts('', ['Expense', 'Liability', 'Equity', 'Asset', 'Cost of Goods Sold']);
-            if (res.success && res.data) {
-                setAccounts(res.data as any);
-            }
-        };
         fetchAccounts();
 
         const fetchJournals = async () => {
@@ -119,15 +127,18 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                     .filter((l: any) => l.metadata?.account_id) // Only take expense lines (not bill allocations)
                     .map((l: any) => ({
                         categoryId: l.metadata.account_id,
-                        amount: Number(l.amount)
+                        amount: Number(l.amount),
+                        memo: l.metadata.description || ""
                     }))
                 : (initialData?.metadata?.lines?.length > 0
                     ? initialData.metadata.lines.map((l: any) => ({
                         categoryId: l.account_id || l.categoryId,
-                        amount: Number(l.amount)
+                        amount: Number(l.amount),
+                        memo: l.description || l.memo || ""
                     }))
-                    : [{ categoryId: "", amount: 0 }]
+                    : [{ categoryId: "", amount: 0, memo: "" }]
                 ),
+            payeeName: initialData?.metadata?.payee_name || "",
             narration: initialData?.metadata?.memo || initialData?.reference || ""
         }
     })
@@ -178,7 +189,7 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
             if (mode === 'GENERAL') {
                 const primaryLine = values.lines![0];
                 const primaryAcc = accounts.find(a => a.id === primaryLine.categoryId);
-                const payeeName = primaryAcc ? primaryAcc.name : "Payment";
+                const payeeName = values.payeeName || (primaryAcc ? primaryAcc.name : "Payment");
 
                 const combinedMemo = values.lines!.map(l => {
                     const accName = accounts.find(a => a.id === l.categoryId)?.name || 'Exp';
@@ -190,7 +201,8 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                 const result = await recordExpense({
                     id: initialData?.id, // Pass ID for updating
                     amount: generalTotal,
-                    categoryId: primaryLine.categoryId,
+                    categoryId: primaryLine.categoryId, // Still passed as fallback/primary
+                    lines: values.lines, // Pass ALL lines
                     payeeName: payeeName,
                     memo: finalMemo,
                     date: values.date,
@@ -198,9 +210,12 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                 });
 
                 if (result.success) {
-                    toast({ title: "Success", description: `Voucher ${result.data?.payment_number} Saved`, className: "bg-emerald-50 border-emerald-200" });
-                    onSuccess?.();
-                    onClose?.();
+                    toast({ title: "Success", description: `Voucher ${result.data?.payment_number} Saved` });
+                    setSuccessVoucher({ 
+                        id: result.data?.id || '',
+                        number: result.data?.payment_number || 'New Voucher',
+                        amount: mode === 'GENERAL' ? generalTotal : totalAllocated
+                    });
                 } else {
                     toast({ title: "Error", description: result.error, variant: "destructive" });
                 }
@@ -234,9 +249,12 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                 const result = await upsertPayment(payload);
 
                 if (result.success) {
-                    toast({ title: "Success", description: `Payment Voucher Saved`, className: "bg-emerald-50 border-emerald-200" });
-                    onSuccess?.();
-                    onClose?.();
+                    toast({ title: "Success", description: `Payment Voucher Saved` });
+                    setSuccessVoucher({ 
+                        id: (result.data as any)?.id || '',
+                        number: (result.data as any)?.payment_number || 'New Voucher',
+                        amount: totalAllocated
+                    });
                 } else {
                     toast({ title: "Error", description: (result as any).error, variant: "destructive" });
                 }
@@ -254,6 +272,51 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
         label: acc.name,
         subLabel: acc.type
     }));
+
+    if (successVoucher) {
+        return (
+            <div className={cn("bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center h-full w-full p-8 text-center animate-in fade-in zoom-in duration-500", className)}>
+                <div className="h-24 w-24 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mb-6 shadow-2xl shadow-emerald-500/20">
+                    <CheckCircle2 className="h-12 w-12" />
+                </div>
+                <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white mb-2">Voucher Saved Successfully!</h2>
+                <p className="text-slate-500 dark:text-slate-400 font-medium mb-12 text-lg">Voucher <span className="font-bold text-slate-700 dark:text-slate-300">#{successVoucher.number}</span> • Amount: <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">₹ {successVoucher.amount.toLocaleString()}</span></p>
+                
+                <div className="flex flex-wrap justify-center items-center gap-4">
+                    <Button 
+                        onClick={() => window.open(`/api/print/payment_voucher/${successVoucher.id}?autoPrint=true`, '_blank')}
+                        className="bg-slate-800 hover:bg-slate-900 text-white font-black uppercase tracking-widest text-xs rounded-2xl h-14 px-8 shadow-lg transition-all active:scale-95"
+                    >
+                        <Printer className="h-4 w-4 mr-2" /> Print PDF
+                    </Button>
+                    <Button 
+                        onClick={() => {
+                            setSuccessVoucher(null);
+                            form.reset();
+                            setMode('GENERAL');
+                            setSelectedVendorId("");
+                            setAllocationList([]);
+                        }}
+                        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black uppercase tracking-widest text-xs rounded-2xl h-14 px-10 shadow-lg shadow-emerald-500/20 hover:shadow-xl transition-all active:scale-95"
+                    >
+                        <Plus className="h-4 w-4 mr-2" /> Enter Another Voucher
+                    </Button>
+                    {onClose && (
+                        <Button 
+                            variant="outline"
+                            onClick={() => {
+                                onSuccess?.();
+                                onClose?.();
+                            }}
+                            className="rounded-2xl h-14 px-8 font-black uppercase tracking-widest text-xs border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95"
+                        >
+                            Close Terminal
+                        </Button>
+                    )}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={cn("bg-gradient-to-br from-slate-50 via-indigo-50/20 to-emerald-50/20 dark:from-slate-950 dark:via-indigo-950/30 dark:to-emerald-950/20 font-sans text-sm flex flex-col h-full overflow-hidden text-slate-900 dark:text-slate-100", className)}>
@@ -344,7 +407,7 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                                             <SearchableSelect
                                                 value={field.value}
                                                 inputId="voucher-credit-account"
-                                                autoFocus={true}
+                                                autoFocus={!initialData?.id}
                                                 onChange={(val) => {
                                                     field.onChange(val || "");
                                                     if (val) {
@@ -379,9 +442,10 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                             // --- GENERAL MODE ---
                             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden animate-in fade-in duration-500 transition-all">
                                 {/* Grid Header */}
-                                <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 font-black text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 py-4">
+                                <div className="flex text-xs font-black uppercase tracking-widest text-slate-500 bg-slate-100/50 dark:bg-slate-800/50 py-3 rounded-t-2xl border-b border-slate-200 dark:border-slate-800">
                                     <div className="flex-1 px-6 border-r border-slate-200 dark:border-slate-800 text-left">Particulars (Expense / Liability)</div>
-                                    <div className="w-56 px-6 text-right">Amount</div>
+                                    <div className="w-56 px-6 border-r border-slate-200 dark:border-slate-800 text-right">Amount</div>
+                                    <div className="w-80 px-6 text-left">Line Narration</div>
                                     <div className="w-16"></div>
                                 </div>
 
@@ -389,38 +453,66 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                                     {fields.map((field, index) => (
                                         <div key={field.id} className="flex items-center group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                                             <div className="flex-1 p-3 border-r border-slate-100 dark:border-slate-800/50">
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`lines.${index}.categoryId`}
-                                                    render={({ field }) => (
-                                                        <SearchableSelect
-                                                            value={field.value}
-                                                            onChange={(val) => {
-                                                                field.onChange(val || "");
-                                                                if (val) {
-                                                                    setTimeout(() => {
-                                                                        const amtInput = document.getElementById(`voucher-amount-${index}`);
-                                                                        if (amtInput) {
-                                                                            amtInput.focus();
-                                                                            (amtInput as HTMLInputElement).select();
+                                                    <FormField
+                                                        control={form.control}
+                                                        name={`lines.${index}.categoryId`}
+                                                        render={({ field }) => (
+                                                            <div className="flex gap-2 w-full">
+                                                                <div className="flex-1">
+                                                                    <SearchableSelect
+                                                                        value={field.value}
+                                                                        onChange={(val) => {
+                                                                            field.onChange(val || "");
+                                                                            if (val) {
+                                                                                setTimeout(() => {
+                                                                                    const amtInput = document.getElementById(`voucher-amount-${index}`);
+                                                                                    if (amtInput) {
+                                                                                        amtInput.focus();
+                                                                                        (amtInput as HTMLInputElement).select();
+                                                                                    }
+                                                                                }, 50);
+                                                                            }
+                                                                        }}
+                                                                        options={accounts.map(a => ({
+                                                                            id: a.id,
+                                                                            label: `${a.code} - ${a.name}`,
+                                                                            subLabel: a.type
+                                                                        }))}
+                                                                        placeholder="Search Ledger..."
+                                                                        inputId={`voucher-ledger-${index}`}
+                                                                        className="border-0 shadow-none bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl font-bold h-11 text-xs"
+                                                                    />
+                                                                </div>
+                                                                <Button 
+                                                                    type="button" 
+                                                                    variant="outline" 
+                                                                    size="icon"
+                                                                    onClick={() => {
+                                                                        let defaultGroup = accounts.find((a: any) => 
+                                                                            a.is_group && a.name.toLowerCase().includes('indirect')
+                                                                        );
+                                                                        if (!defaultGroup) {
+                                                                            defaultGroup = accounts.find((a: any) => 
+                                                                                a.is_group && a.name.toLowerCase().includes('expense')
+                                                                            );
                                                                         }
-                                                                    }, 50);
-                                                                }
-                                                            }}
-                                                            onSearch={async (q) => {
-                                                                const res = await getAccounts(q, ['Expense', 'Liability', 'Equity', 'Asset', 'Cost of Goods Sold']);
-                                                                return res.success && res.data ? res.data.map((a: any) => ({ id: a.id, label: a.name, subLabel: a.type })) : [];
-                                                            }}
-                                                            options={accountOptions}
-                                                            placeholder="Select Ledger..."
-                                                            inputId={`voucher-ledger-${index}`}
-                                                            autoFocus={index > 0 && index === fields.length - 1}
-                                                            className="border-0 shadow-none bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl font-bold h-11 text-xs"
-                                                        />
-                                                    )}
-                                                />
+                                                                        setNewLedger({ 
+                                                                            name: '', 
+                                                                            code: '', 
+                                                                            type: 'Expense', 
+                                                                            parent_id: defaultGroup ? defaultGroup.id : '' 
+                                                                        });
+                                                                        setIsCreateLedgerOpen(true);
+                                                                    }}
+                                                                    className="shrink-0 h-11 w-11 rounded-xl"
+                                                                >
+                                                                    <Plus className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        )}
+                                                    />
                                             </div>
-                                            <div className="w-56 p-3">
+                                            <div className="w-56 p-3 border-r border-slate-100 dark:border-slate-800/50">
                                                 <FormField
                                                     control={form.control}
                                                     name={`lines.${index}.amount`}
@@ -433,20 +525,43 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                                                             onKeyDown={(e) => {
                                                                 if (e.key === 'Enter') {
                                                                     e.preventDefault();
-                                                                    if (index === fields.length - 1) {
-                                                                        const addBtn = document.getElementById('add-ledger-row-btn');
-                                                                        if (addBtn) addBtn.focus();
-                                                                    } else {
-                                                                        const nextAmt = document.getElementById(`voucher-amount-${index + 1}`);
-                                                                        if (nextAmt) {
-                                                                            nextAmt.focus();
-                                                                            (nextAmt as HTMLInputElement).select();
-                                                                        }
+                                                                    const memoInput = document.getElementById(`voucher-memo-${index}`);
+                                                                    if (memoInput) {
+                                                                        memoInput.focus();
                                                                     }
                                                                 }
                                                             }}
                                                             className="text-right border-0 shadow-none bg-transparent h-11 font-black text-base font-mono focus-visible:ring-1 focus-visible:ring-indigo-500 rounded-xl"
                                                             placeholder="0.00"
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+                                            <div className="w-80 p-3">
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`lines.${index}.memo`}
+                                                    render={({ field }) => (
+                                                        <Input
+                                                            {...field}
+                                                            id={`voucher-memo-${index}`}
+                                                            value={field.value || ''}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                    e.preventDefault();
+                                                                    if (index === fields.length - 1) {
+                                                                        const addBtn = document.getElementById('add-ledger-row-btn');
+                                                                        if (addBtn) addBtn.focus();
+                                                                    } else {
+                                                                        const nextLedger = document.getElementById(`voucher-ledger-${index + 1}`);
+                                                                        if (nextLedger) {
+                                                                            nextLedger.focus();
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="border-0 shadow-none bg-transparent h-11 text-xs text-slate-600 dark:text-slate-400 focus-visible:ring-1 focus-visible:ring-indigo-500 rounded-xl"
+                                                            placeholder="Optional line details..."
                                                         />
                                                     )}
                                                 />
@@ -470,7 +585,13 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                                 <button
                                     type="button"
                                     id="add-ledger-row-btn"
-                                    onClick={() => append({ categoryId: "", amount: 0 })}
+                                    onClick={() => {
+                                        append({ categoryId: "", amount: 0, memo: "" });
+                                        setTimeout(() => {
+                                            const newLedger = document.getElementById(`voucher-ledger-${fields.length}`);
+                                            if (newLedger) newLedger.focus();
+                                        }, 50);
+                                    }}
                                     className="p-4 bg-slate-50/50 dark:bg-slate-800/30 cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-widest border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-2 transition-all focus:ring-2 focus:ring-indigo-500 focus:outline-none w-full font-sans"
                                 >
                                     <span className="text-base font-bold leading-none">+</span> Add Ledger Row
@@ -541,6 +662,21 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                             </div>
 
                             <div className="flex items-start gap-6 p-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm">
+                                <span className="font-black text-xs uppercase tracking-widest text-indigo-600 dark:text-indigo-400 w-32 mt-3 text-right">Paid To (Payee) :</span>
+                                <FormField
+                                    control={form.control}
+                                    name="payeeName"
+                                    render={({ field }) => (
+                                        <Input
+                                            {...field}
+                                            className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 font-mono text-sm max-w-2xl rounded-2xl h-12 px-4 shadow-sm focus-visible:ring-1 focus-visible:ring-indigo-500"
+                                            placeholder="Enter person or company name..."
+                                        />
+                                    )}
+                                />
+                            </div>
+
+                            <div className="flex items-start gap-6 p-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm">
                                 <span className="font-black text-xs uppercase tracking-widest text-indigo-600 dark:text-indigo-400 w-32 mt-3 text-right">Narration / Memo :</span>
                                 <FormField
                                     control={form.control}
@@ -571,6 +707,76 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                     {simplified ? 'Record Expense (Yes)' : 'Accept (Yes)'}
                 </Button>
             </div>
+
+            <Dialog open={isCreateLedgerOpen} onOpenChange={setIsCreateLedgerOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Create New Ledger</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Ledger Name <span className="text-rose-500">*</span></label>
+                            <Input 
+                                autoFocus
+                                value={newLedger.name} 
+                                onChange={e => setNewLedger({...newLedger, name: e.target.value})}
+                                placeholder="e.g. Office Supplies"
+                                className="h-10 rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Under Group <span className="text-rose-500">*</span></label>
+                            <SearchableSelect
+                                value={newLedger.parent_id}
+                                onChange={(val) => setNewLedger({...newLedger, parent_id: val || ''})}
+                                options={accounts.filter((a: any) => a.is_group).map((a: any) => ({
+                                    id: a.id,
+                                    label: `${a.code} - ${a.name}`,
+                                    subLabel: a.type
+                                }))}
+                                placeholder="Select Account Group..."
+                                className="h-10 rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Account Code (Optional)</label>
+                            <Input 
+                                value={newLedger.code} 
+                                onChange={e => setNewLedger({...newLedger, code: e.target.value})}
+                                placeholder="e.g. 5001"
+                                className="h-10 rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsCreateLedgerOpen(false)}>Cancel</Button>
+                        <Button 
+                            disabled={!newLedger.name || !newLedger.parent_id || isSavingLedger}
+                            onClick={async () => {
+                                setIsSavingLedger(true);
+                                const res = await upsertAccount({
+                                    name: newLedger.name,
+                                    code: newLedger.code || newLedger.name.substring(0, 4).toUpperCase() + Math.floor(Math.random() * 1000),
+                                    type: newLedger.type,
+                                    parent_id: newLedger.parent_id
+                                });
+                                setIsSavingLedger(false);
+                                if (res.success) {
+                                    toast({ title: "Ledger created successfully" });
+                                    setIsCreateLedgerOpen(false);
+                                    setNewLedger({ name: '', code: '', type: 'Expense', parent_id: '' });
+                                    fetchAccounts();
+                                } else {
+                                    toast({ title: "Error", description: res.error, variant: "destructive" });
+                                }
+                            }}
+                        >
+                            {isSavingLedger ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                            Save Ledger
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

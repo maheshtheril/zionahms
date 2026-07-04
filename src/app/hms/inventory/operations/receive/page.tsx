@@ -130,6 +130,7 @@ export default function ReceiveStockPage() {
                 toast({ title: "Scan Complete", description: `Found ${result.data.length} items. Matching with inventory...` })
                 
                 const newItems: any[] = []
+                const notFoundItems: string[] = []
                 for (const scanned of result.data) {
                     // Try to find matching product in DB
                     const searchRes = await searchProducts(scanned.name)
@@ -147,8 +148,12 @@ export default function ReceiveStockPage() {
                             _uom: matchedProduct.uom
                         })
                     } else {
-                        toast({ title: "Product Not Found", description: `Could not find "${scanned.name}" in catalogue.`, variant: "destructive" })
+                        notFoundItems.push(scanned.name || 'Unknown')
                     }
+                }
+
+                if (notFoundItems.length > 0) {
+                    toast({ title: "Products Not Found", description: `Could not find ${notFoundItems.length} product(s) in catalogue. They were skipped.`, variant: "destructive" })
                 }
 
                 if (newItems.length > 0) {

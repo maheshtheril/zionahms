@@ -55,10 +55,10 @@ export default function PharmacyInventoryPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase leading-none">Pharmacy Inventory</h1>
-                    <p className="text-slate-500 mt-2 font-bold flex items-center gap-2">
+                    <div className="text-slate-500 mt-2 font-bold flex items-center gap-2">
                         <Badge variant="outline" className="border-indigo-100 text-indigo-600 uppercase font-bold text-[10px] tracking-widest">Live Stock Levels</Badge>
                         <span>• {format(new Date(), 'dd-MMMM-yyyy').toUpperCase()}</span>
-                    </p>
+                    </div>
                 </div>
 
                 <div className="flex gap-4">

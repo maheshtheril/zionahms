@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { auth } from "@/auth";
 import { getAIConfig } from "@/app/actions/settings";
+import { getDynamicAIModels } from "@/lib/ai-models";
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -38,15 +39,10 @@ export async function POST(request: NextRequest) {
 
         const genAI = new GoogleGenerativeAI(keyToTest);
         
-        // Final, exhaustive brute force list for both stable and beta/preview models
-        const testConfigs = [
-            { model: "gemini-2.5-flash", apiVersion: "v1beta" as const },
-            { model: "gemini-2.5-flash", apiVersion: "v1" as const },
-            { model: "gemini-flash-latest", apiVersion: "v1beta" as const },
-            { model: "gemini-2.0-flash", apiVersion: "v1beta" as const },
-            { model: "gemini-3.1-flash-lite-preview", apiVersion: "v1beta" as const },
-            { model: "gemini-pro-latest", apiVersion: "v1" as const },
-        ];
+        const dynamicModels = await getDynamicAIModels(keyToTest);
+        const testConfigs = dynamicModels.map(mName => ({ model: mName, apiVersion: "v1beta" as const }));
+        // Add a fallback config just in case
+        testConfigs.push({ model: "gemini-pro-latest", apiVersion: "v1" as const });
 
         let lastError = "";
         for (const config of testConfigs) {

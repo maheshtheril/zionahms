@@ -276,6 +276,21 @@ export async function getTaxRates() {
         }
 
         let allTaxes = Array.from(allTaxesMap.values());
+        
+        // World Standard: If Company explicitly chose a Tax System, strictly enforce it!
+        if (compSettings?.default_tax_type_id) {
+            const strictTaxes = await prisma.tax_rates.findMany({
+                where: { tax_type_id: compSettings.default_tax_type_id, is_active: true },
+                orderBy: { rate: 'asc' }
+            });
+            if (strictTaxes.length > 0) {
+                return strictTaxes.map(t => ({ id: t.id, name: t.name, rate: Number(t.rate) }));
+            }
+        }
+
+        // Fallback: Filter out VAT per user request if no tax type explicitly set
+        allTaxes = allTaxes.filter(t => t.name && !t.name.toUpperCase().includes('VAT'));
+        
         return allTaxes;
     } catch (error) {
         logDebug(`getTaxRates Error: ${error}`);
@@ -815,6 +830,9 @@ export async function createProduct(formData: FormData) {
     const tracking = formData.get("tracking") as string || 'none'; // none, batch, serial
     const imageUrl = formData.get("image_url") as string;
     const manufacturerId = formData.get("manufacturerId") as string;
+    const storageLocation = formData.get("storageLocation") as string;
+    const reorderLevel = formData.get("reorderLevel") as string;
+    const composition = formData.get("composition") as string;
 
     if (!name || !sku) {
         return { error: "Name and SKU are required" };
@@ -824,12 +842,22 @@ export async function createProduct(formData: FormData) {
     const mrp = parseFloat(formData.get("mrp") as string) || 0;
 
     try {
+        let taxRateValue = 0;
+        if (taxRateId) {
+            const tr = await prisma.tax_rates.findUnique({ where: { id: taxRateId } });
+            if (tr) taxRateValue = Number(tr.rate);
+        }
+
         // Construct Metadata
         const metadata: Record<string, any> = {
             brand: brand || null,
             tracking: tracking, // Store tracking preference
             cost_price: costPrice,
-            mrp: mrp
+            mrp: mrp,
+            storageLocation: storageLocation || null,
+            reorder_level: parseFloat(reorderLevel) || 0,
+            composition: composition || null,
+            purchase_tax_rate: taxRateValue > 0 ? taxRateValue : undefined
         };
 
         let uomName = 'each';
@@ -869,6 +897,64 @@ export async function createProduct(formData: FormData) {
                     is_primary: true
                 }
             });
+        }
+
+        // --- RELATIONAL STORAGE LOCATION (WMS) ---
+        const locZone = formData.get("locZone") as string;
+        const locRack = formData.get("locRack") as string;
+        const locShelf = formData.get("locShelf") as string;
+
+        if (locZone || locRack || locShelf) {
+            let parentId: string | null = null;
+            
+            // 1. Zone
+            if (locZone) {
+                let zone = await prisma.hms_storage_locations.findFirst({
+                    where: { name: { equals: locZone, mode: 'insensitive' }, type: 'ZONE', company_id: session.user.companyId }
+                });
+                if (!zone) {
+                    zone = await prisma.hms_storage_locations.create({
+                        data: { tenant_id: session.user.tenantId, company_id: session.user.companyId, name: locZone, type: 'ZONE' }
+                    });
+                }
+                parentId = zone.id;
+            }
+            
+            // 2. Rack
+            if (locRack) {
+                let rack = await prisma.hms_storage_locations.findFirst({
+                    where: { name: { equals: locRack, mode: 'insensitive' }, type: 'RACK', parent_id: parentId, company_id: session.user.companyId }
+                });
+                if (!rack) {
+                    rack = await prisma.hms_storage_locations.create({
+                        data: { tenant_id: session.user.tenantId, company_id: session.user.companyId, name: locRack, type: 'RACK', parent_id: parentId }
+                    });
+                }
+                parentId = rack.id;
+            }
+            
+            // 3. Shelf
+            if (locShelf) {
+                let shelf = await prisma.hms_storage_locations.findFirst({
+                    where: { name: { equals: locShelf, mode: 'insensitive' }, type: 'SHELF', parent_id: parentId, company_id: session.user.companyId }
+                });
+                if (!shelf) {
+                    shelf = await prisma.hms_storage_locations.create({
+                        data: { tenant_id: session.user.tenantId, company_id: session.user.companyId, name: locShelf, type: 'SHELF', parent_id: parentId }
+                    });
+                }
+                parentId = shelf.id;
+            }
+            
+            if (parentId) {
+                await prisma.hms_product_storage_link.create({
+                    data: {
+                        product_id: newProduct.id,
+                        location_id: parentId,
+                        is_primary: true
+                    }
+                });
+            }
         }
 
         // Link Tax Rate if provided
@@ -938,6 +1024,12 @@ export async function updateProduct(formData: FormData) {
     const tracking = formData.get("tracking") as string || 'none';
     const imageUrl = formData.get("image_url") as string;
     const manufacturerId = formData.get("manufacturerId") as string;
+    const storageLocation = formData.get("storageLocation") as string;
+    const reorderLevel = formData.get("reorderLevel") as string;
+    const composition = formData.get("composition") as string;
+    const isService = formData.get("is_service") === 'on';
+
+    console.log("updateProduct received formData:", { id, name, taxRateId, categoryId });
 
     if (!id || !name || !sku) {
         return { error: "Missing required fields" };
@@ -954,12 +1046,22 @@ export async function updateProduct(formData: FormData) {
         const costPrice = parseFloat(formData.get("costPrice") as string) || 0;
         const mrp = parseFloat(formData.get("mrp") as string) || 0;
 
+        let taxRateValue = 0;
+        if (taxRateId) {
+            const tr = await prisma.tax_rates.findUnique({ where: { id: taxRateId } });
+            if (tr) taxRateValue = Number(tr.rate);
+        }
+
         const metadata: Record<string, any> = {
             ...currentMetadata,
             brand: brand || null,
             tracking: tracking,
             cost_price: costPrice,
-            mrp: mrp
+            mrp: mrp,
+            storageLocation: storageLocation || null,
+            reorder_level: parseFloat(reorderLevel) || 0,
+            composition: composition || null,
+            purchase_tax_rate: taxRateValue > 0 ? taxRateValue : undefined
         };
 
         let uomName = 'each';
@@ -982,6 +1084,7 @@ export async function updateProduct(formData: FormData) {
                 uom_id: uomId || null,
                 manufacturer_id: manufacturerId || null,
                 default_barcode: barcode || null,
+                is_service: isService,
                 metadata,
                 updated_by: session.user.id,
                 updated_at: new Date()
@@ -1006,13 +1109,83 @@ export async function updateProduct(formData: FormData) {
             });
         }
 
+        // --- RELATIONAL STORAGE LOCATION (WMS) ---
+        const locZone = formData.get("locZone") as string;
+        const locRack = formData.get("locRack") as string;
+        const locShelf = formData.get("locShelf") as string;
+
+        if (locZone || locRack || locShelf) {
+            let parentId: string | null = null;
+            
+            // 1. Zone
+            if (locZone) {
+                let zone = await prisma.hms_storage_locations.findFirst({
+                    where: { name: { equals: locZone, mode: 'insensitive' }, type: 'ZONE', company_id: session.user.companyId }
+                });
+                if (!zone) {
+                    zone = await prisma.hms_storage_locations.create({
+                        data: { tenant_id: session.user.tenantId, company_id: session.user.companyId, name: locZone, type: 'ZONE' }
+                    });
+                }
+                parentId = zone.id;
+            }
+            
+            // 2. Rack
+            if (locRack) {
+                let rack = await prisma.hms_storage_locations.findFirst({
+                    where: { name: { equals: locRack, mode: 'insensitive' }, type: 'RACK', parent_id: parentId, company_id: session.user.companyId }
+                });
+                if (!rack) {
+                    rack = await prisma.hms_storage_locations.create({
+                        data: { tenant_id: session.user.tenantId, company_id: session.user.companyId, name: locRack, type: 'RACK', parent_id: parentId }
+                    });
+                }
+                parentId = rack.id;
+            }
+            
+            // 3. Shelf
+            if (locShelf) {
+                let shelf = await prisma.hms_storage_locations.findFirst({
+                    where: { name: { equals: locShelf, mode: 'insensitive' }, type: 'SHELF', parent_id: parentId, company_id: session.user.companyId }
+                });
+                if (!shelf) {
+                    shelf = await prisma.hms_storage_locations.create({
+                        data: { tenant_id: session.user.tenantId, company_id: session.user.companyId, name: locShelf, type: 'SHELF', parent_id: parentId }
+                    });
+                }
+                parentId = shelf.id;
+            }
+            
+            if (parentId) {
+                // Remove existing primary link
+                await prisma.hms_product_storage_link.deleteMany({
+                    where: { product_id: id, is_primary: true }
+                });
+                
+                await prisma.hms_product_storage_link.create({
+                    data: {
+                        product_id: id,
+                        location_id: parentId,
+                        is_primary: true
+                    }
+                });
+            }
+        } else {
+            // Remove existing primary link if all are cleared
+            await prisma.hms_product_storage_link.deleteMany({
+                where: { product_id: id, is_primary: true }
+            });
+        }
+
         // Update Tax Rule
         // Delete existing rule
+        console.log("Deleting existing tax rules for product", id);
         await prisma.product_tax_rules.deleteMany({
             where: { product_id: id }
         });
 
         if (taxRateId) {
+            console.log("Creating new tax rule with taxRateId", taxRateId);
             await prisma.product_tax_rules.create({
                 data: {
                     tenant_id: session.user.tenantId,
@@ -1022,6 +1195,8 @@ export async function updateProduct(formData: FormData) {
                     priority: 1
                 }
             });
+        } else {
+            console.log("No taxRateId provided, skipping tax rule creation.");
         }
 
         // Add New Image if provided

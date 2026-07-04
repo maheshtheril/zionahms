@@ -7,6 +7,7 @@
 
 export const SYSTEM_DEFAULT_CURRENCY_CODE = typeof process !== 'undefined' ? (process.env.NEXT_PUBLIC_DEFAULT_CURRENCY_CODE || 'INR') : 'INR';
 export const SYSTEM_DEFAULT_CURRENCY_SYMBOL = typeof process !== 'undefined' ? (process.env.NEXT_PUBLIC_DEFAULT_CURRENCY_SYMBOL || '\u20B9') : '\u20B9';
+export const SYSTEM_DEFAULT_LOCALE = typeof process !== 'undefined' ? (process.env.NEXT_PUBLIC_DEFAULT_LOCALE || 'en-IN') : 'en-IN';
 
 export const CURRENCY_SYMBOLS: Record<string, string> = {
     'IN': '\u20B9',   // India - Rupee

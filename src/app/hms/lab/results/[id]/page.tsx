@@ -35,7 +35,13 @@ export default function LabResultEntryPage() {
         if (res.success && res.data) {
             setOrder(res.data)
             // Pre-fill results state
-            const initialResults = (res.data.hms_lab_order_lines || []).map((line: any) => ({
+            const allLines = [
+                ...(res.data.hms_lab_order_lines || []),
+                ...(res.data.hms_lab_order_line || [])
+            ]
+            const initialResults = allLines
+                .filter((line: any) => !line.hms_lab_test?.is_panel)
+                .map((line: any) => ({
                 orderLineId: line.id,
                 testId: line.test_id,
                 testName: line.hms_lab_test?.name || line.requested_name,
@@ -73,7 +79,8 @@ export default function LabResultEntryPage() {
         if (res.success) {
             toast({ title: "Results Saved", description: verify ? "Reports verified and completed." : "Progress saved successfully." })
             if (verify) {
-                router.push(`/hms/lab/reports/${id}`)
+                window.open(`/api/print/lab_report/${id}`, '_blank')
+                router.push('/hms/lab/pending')
             } else {
                 router.push('/hms/lab/pending')
             }

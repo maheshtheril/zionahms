@@ -44,6 +44,11 @@ export default async function DashboardPage() {
         redirect('/hms/accounting');
     }
 
+    // 6. PHARMACY DASHBOARD
+    if (perms.includes('hms:dashboard:pharmacy')) {
+        redirect('/hms/pharmacy/dashboard');
+    }
+
     // --- LEGACY FAIL-SAFE: Redirect based on role name/string (Compatibility Mode) ---
     const role = session?.user?.role?.toLowerCase() || '';
     const name = session?.user?.name?.toLowerCase() || '';
@@ -61,6 +66,24 @@ export default async function DashboardPage() {
         redirect('/hms/accounting');
     }
 
+    // --- STRICT ADMIN LOCK ---
+    // If a user falls through all the specific redirects above, they MUST be an admin to see this dashboard.
+    // Otherwise, block them to prevent unauthorized data access.
+    // @ts-ignore
+    const isAdmin = session?.user?.isAdmin || role === 'admin' || role === 'super_admin' || perms.includes('*') || perms.includes('hms:dashboard:admin');
+    
+    if (!isAdmin) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[70vh] text-slate-500 bg-slate-50/50 rounded-xl m-4 border border-slate-100 shadow-sm">
+                <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4 shadow-sm border border-red-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </div>
+                <div className="text-2xl font-bold mb-2 text-slate-700">Access Restricted</div>
+                <p className="text-slate-600">The main management dashboard is restricted to Administrators.</p>
+                <p className="text-sm mt-4 text-slate-400">Please use the side menu to navigate to your assigned modules.</p>
+            </div>
+        )
+    }
 
     const tenantId = session?.user?.tenantId
     const companyId = session?.user?.companyId

@@ -260,6 +260,10 @@ export function ReceptionActionCenter({
             router.push('/hms/accounting/payments')
             return
         }
+        if (actionId === 'general_ledger') {
+            router.push('/hms/accounting/ledger')
+            return
+        }
         if (actionId === 'beds') {
             setActiveModal('beds')
             return
@@ -363,10 +367,11 @@ export function ReceptionActionCenter({
         { id: 'appointment', title: 'OP/IP Registration', icon: CalendarPlus, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-100 dark:border-blue-800' },
         { id: 'billing', title: 'IP/OP Billing', icon: CreditCard, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/20', border: 'border-violet-100 dark:border-violet-800' },
         { id: 'journal', title: 'Advanced Voucher (F7)', icon: BookOpen, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-emerald-100 dark:border-emerald-800' },
-        { id: 'ledger_view', title: 'Financial Ledger', icon: History, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-100 dark:border-blue-800' },
+        { id: 'ledger_view', title: 'Daily Collection', icon: History, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-100 dark:border-blue-800' },
         { id: 'expense', title: 'Petty Cash / Exp (F5)', icon: Wallet, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-100 dark:border-amber-800' },
         { id: 'shift', title: 'Cash Counter', icon: Banknote, color: 'text-slate-600', bg: 'bg-slate-50 dark:bg-slate-800/50', border: 'border-slate-200 dark:border-slate-700' },
         { id: 'expense_report', title: 'Expense Reports', icon: FileText, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/20', border: 'border-rose-100 dark:border-rose-800' },
+        { id: 'general_ledger', title: 'General Ledger', icon: BookOpen, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/20', border: 'border-indigo-100 dark:border-indigo-800' },
     ]
 
     useEffect(() => { 
@@ -1278,6 +1283,7 @@ export function ReceptionActionCenter({
                         onOpenExpense={() => {
                             setActiveModal('expense');
                         }} 
+                        onClose={() => setActiveModal(null)}
                     />
                 </DialogContent>
             </Dialog>
@@ -1347,7 +1353,7 @@ export function ReceptionActionCenter({
             <Dialog open={isPaymentsOpen} onOpenChange={setIsPaymentsOpen}>
                 <DialogContent className="max-w-4xl p-0 overflow-hidden bg-white dark:bg-[#0a0f1e] rounded-[3rem] border-none shadow-[0_50px_100px_rgba(0,0,0,0.3)]">
                     <DialogHeader className="sr-only">
-                        <DialogTitle>Financial Revenue Ledger & Payment History</DialogTitle>
+                        <DialogTitle>Daily Collection & Payment History</DialogTitle>
                     </DialogHeader>
                     <div className="bg-gradient-to-br from-emerald-600 to-teal-700 p-8 text-white">
                         <div className="flex justify-between items-start">
@@ -1356,7 +1362,7 @@ export function ReceptionActionCenter({
                                     <IndianRupee className="h-8 w-8 text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-black italic uppercase tracking-tighter">Daily Revenue Ledger</h3>
+                                    <h3 className="text-2xl font-black italic uppercase tracking-tighter">Daily Payment Register</h3>
                                     <div className="flex items-center gap-3 mt-1">
                                         <p className="text-[10px] font-black uppercase text-emerald-100 tracking-widest">Real-time Financial Pulse</p>
                                         <Button

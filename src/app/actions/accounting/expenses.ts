@@ -11,7 +11,8 @@ import { serialize } from "@/lib/utils"
 export async function recordExpense(data: {
     id?: string; // Optional ID for updates
     amount: number;
-    categoryId: string; // The Expense Account ID
+    categoryId?: string; // The Expense Account ID
+    lines?: { categoryId: string; amount: number; memo?: string }[];
     payeeName: string;
     memo?: string;
     date: Date;
@@ -28,9 +29,12 @@ export async function recordExpense(data: {
     }
 
     try {
-        // 1. Get Expense Category Name for Metadata
+        // 1. Get Primary Expense Category Name for Metadata
+        const primaryCategoryId = data.lines?.[0]?.categoryId || data.categoryId;
+        if (!primaryCategoryId) return { error: "Missing Expense Category" };
+
         const account = await prisma.accounts.findUnique({
-            where: { id: data.categoryId },
+            where: { id: primaryCategoryId },
             select: { name: true, code: true }
         });
 
@@ -163,20 +167,31 @@ export async function recordExpense(data: {
                 });
             }
 
-            // 3. Create Payment Line (Expense Line) - Common for Create/Update
-            await tx.payment_lines.create({
-                data: {
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    payment_id: payment.id,
-                    amount: data.amount,
-                    metadata: {
-                        account_id: data.categoryId,
-                        account_name: categoryName,
-                        description: data.memo
+            // 3. Create Payment Line(s) (Expense Line) - Common for Create/Update
+            const linesToCreate = data.lines?.length 
+                ? data.lines 
+                : [{ categoryId: data.categoryId!, amount: data.amount, memo: data.memo }];
+
+            for (const line of linesToCreate) {
+                const lineAccount = await tx.accounts.findUnique({
+                    where: { id: line.categoryId },
+                    select: { name: true }
+                });
+
+                await tx.payment_lines.create({
+                    data: {
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        payment_id: payment.id,
+                        amount: line.amount,
+                        metadata: {
+                            account_id: line.categoryId,
+                            account_name: lineAccount?.name || 'Unknown Category',
+                            description: line.memo || data.memo
+                        }
                     }
-                }
-            });
+                });
+            }
 
             return payment;
         });

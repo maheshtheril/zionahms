@@ -7,14 +7,19 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { 
     Plus, Search, FlaskConical, Beaker, Trash2, 
-    Edit, Database, Loader2, Info, ArrowLeft
+    Edit, Database, Loader2, Info, ArrowLeft, Printer
 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useToast } from "@/components/ui/use-toast"
+import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
 import Link from "next/link"
+import { SearchableSelect } from "@/components/ui/searchable-select"
+import { X } from "lucide-react"
 
 export default function LabTestManagementPage() {
     const { toast } = useToast()
+    const [isMounted, setIsMounted] = useState(false)
     const [tests, setTests] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState("")
@@ -23,8 +28,11 @@ export default function LabTestManagementPage() {
     const [seeding, setSeeding] = useState(false)
 
     useEffect(() => {
+        setIsMounted(true)
         loadTests()
     }, [])
+
+    if (!isMounted) return null;
 
     async function loadTests() {
         setLoading(true)
@@ -79,12 +87,23 @@ export default function LabTestManagementPage() {
                     <div>
                         <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
                              Lab Test Catalog
+                             <Badge variant="secondary" className="text-lg bg-indigo-100 text-indigo-700 ml-2 rounded-xl px-3">
+                                 {loading ? "..." : filteredTests.length}
+                             </Badge>
                         </h1>
                         <p className="text-slate-500 text-sm font-medium">Manage your hospital's diagnostic investigations and reference ranges</p>
                     </div>
                 </div>
 
                 <div className="flex gap-2">
+                    <Button 
+                        variant="outline" 
+                        onClick={() => window.open('/api/print/lab_catalog/catalog', '_blank')}
+                        className="rounded-2xl gap-2 font-bold text-emerald-600 border-emerald-100 hover:bg-emerald-50 hidden md:flex items-center"
+                    >
+                        <Printer className="w-4 h-4" />
+                        Print Catalog
+                    </Button>
                     <Button 
                         variant="outline" 
                         onClick={handleSeed}
@@ -111,6 +130,7 @@ export default function LabTestManagementPage() {
                             </DialogHeader>
                             <LabTestForm 
                                 initialData={editingTest} 
+                                allTests={tests}
                                 onSubmit={handleSave} 
                                 onClose={() => setIsOpen(false)} 
                             />
@@ -151,17 +171,28 @@ export default function LabTestManagementPage() {
                                 <tr key={test.id} className="hover:bg-slate-50/50 transition-colors group">
                                     <td className="px-6 py-5">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors">
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${test.is_panel ? 'bg-indigo-50 text-indigo-500' : 'bg-slate-100 text-slate-400 group-hover:text-indigo-600'}`}>
                                                 <Beaker className="w-5 h-5" />
                                             </div>
-                                            <span className="font-black text-slate-900 uppercase tracking-tight">{test.name}</span>
+                                            <div className="flex flex-col">
+                                                <span className="font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                                                    {test.name}
+                                                    {test.is_panel && (
+                                                        <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 text-[9px] px-1.5 py-0">PACKAGE ({test.hms_lab_test_panel_member_hms_lab_test_panel_member_panel_idTohms_lab_test?.length || 0})</Badge>
+                                                    )}
+                                                </span>
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-5">
-                                        <div className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/50">
-                                            <Info className="w-3 h-3 text-indigo-400" />
-                                            {typeof test.reference_range === 'object' ? test.reference_range?.range || JSON.stringify(test.reference_range) : test.reference_range || "Not Defined"}
-                                        </div>
+                                        {test.is_panel ? (
+                                            <span className="text-xs font-bold text-slate-400 italic">Depends on child tests</span>
+                                        ) : (
+                                            <div className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/50">
+                                                <Info className="w-3 h-3 text-indigo-400" />
+                                                {typeof test.reference_range === 'object' ? test.reference_range?.range || JSON.stringify(test.reference_range) : test.reference_range || "Not Defined"}
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="px-6 py-5">
                                         <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{test.units || "—"}</span>
@@ -213,23 +244,63 @@ export default function LabTestManagementPage() {
     )
 }
 
-function LabTestForm({ initialData, onSubmit, onClose }: any) {
+function LabTestForm({ initialData, allTests, onSubmit, onClose }: any) {
     const [formData, setFormData] = useState(initialData ? {
         ...initialData,
-        reference_range: typeof initialData.reference_range === 'object' ? initialData.reference_range?.range || JSON.stringify(initialData.reference_range) : initialData.reference_range || ""
+        reference_range: typeof initialData.reference_range === 'object' ? initialData.reference_range?.range || JSON.stringify(initialData.reference_range) : initialData.reference_range || "",
+        panel_members: initialData.hms_lab_test_panel_member_hms_lab_test_panel_member_panel_idTohms_lab_test?.map((m: any) => m.member_test_id) || []
     } : {
         name: "",
         price: "",
         units: "",
         reference_range: "",
-        method: ""
+        method: "",
+        is_panel: false,
+        panel_members: []
     })
+
+    const [searchChild, setSearchChild] = useState("")
+
+    const individualTests = (allTests || []).filter((t: any) => !t.is_panel && t.id !== formData.id)
+    
+    const filteredChildTests = individualTests.filter((t: any) => 
+        t.name.toLowerCase().includes(searchChild.toLowerCase())
+    )
+
+    const togglePanelMember = (id: string) => {
+        setFormData((prev: any) => ({
+            ...prev,
+            panel_members: prev.panel_members.includes(id) 
+                ? prev.panel_members.filter((m: string) => m !== id)
+                : [...prev.panel_members, id]
+        }))
+    }
 
     return (
         <form onSubmit={(e) => {
             e.preventDefault()
             onSubmit(formData)
         }} className="space-y-5 pt-4">
+            
+            <div className="flex items-center justify-between p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+                <div className="space-y-0.5">
+                    <label className="text-sm font-black text-indigo-900">Is this a Package / Profile?</label>
+                    <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Groups multiple tests together</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <input 
+                        type="checkbox"
+                        id="is_panel"
+                        checked={!!formData.is_panel} 
+                        onChange={(e) => setFormData(prev => ({...prev, is_panel: e.target.checked}))}
+                        className="w-5 h-5 accent-indigo-600 cursor-pointer"
+                    />
+                    <label htmlFor="is_panel" className="text-sm font-bold text-indigo-900 cursor-pointer">
+                        Yes, this is a package
+                    </label>
+                </div>
+            </div>
+
             <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Investigation Name</label>
                 <Input 
@@ -249,6 +320,7 @@ function LabTestForm({ initialData, onSubmit, onClose }: any) {
                         onChange={(e) => setFormData({...formData, units: e.target.value})}
                         placeholder="e.g. mg/dL"
                         className="rounded-xl font-bold py-5"
+                        disabled={formData.is_panel}
                     />
                 </div>
                 <div className="space-y-2">
@@ -264,25 +336,72 @@ function LabTestForm({ initialData, onSubmit, onClose }: any) {
                 </div>
             </div>
 
-            <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reference Range / Normal Value</label>
-                <Input 
-                    value={formData.reference_range || ""}
-                    onChange={(e) => setFormData({...formData, reference_range: e.target.value})}
-                    placeholder="e.g. 70 - 110"
-                    className="rounded-xl font-bold py-5"
-                />
-            </div>
+            {!formData.is_panel ? (
+                <>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reference Range / Normal Value</label>
+                        <Input 
+                            value={formData.reference_range || ""}
+                            onChange={(e) => setFormData({...formData, reference_range: e.target.value})}
+                            placeholder="e.g. 70 - 110"
+                            className="rounded-xl font-bold py-5"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Method (Optional)</label>
+                        <Input 
+                            value={formData.method || ""}
+                            onChange={(e) => setFormData({...formData, method: e.target.value})}
+                            placeholder="e.g. UV-Spectrometry"
+                            className="rounded-xl font-bold py-5"
+                        />
+                    </div>
+                </>
+            ) : (
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Select Child Tests</label>
+                        <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 text-[10px] font-black">{formData.panel_members.length} Selected</Badge>
+                    </div>
+                    
+                    <SearchableSelect
+                        placeholder="Search to add child test..."
+                        options={individualTests
+                            .filter((t: any) => !formData.panel_members.includes(t.id))
+                            .map((t: any) => ({
+                                id: t.id,
+                                label: t.name,
+                                subLabel: `Rs. ${t.price || 0}`
+                            }))}
+                        onChange={(val) => {
+                            if (val && !formData.panel_members.includes(val)) {
+                                togglePanelMember(val);
+                            }
+                        }}
+                        value={null}
+                    />
 
-            <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Method (Optional)</label>
-                <Input 
-                    value={formData.method || ""}
-                    onChange={(e) => setFormData({...formData, method: e.target.value})}
-                    placeholder="e.g. UV-Spectrometry"
-                    className="rounded-xl font-bold py-5"
-                />
-            </div>
+                    {formData.panel_members.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3 p-3 bg-slate-50 border border-slate-200 rounded-xl max-h-48 overflow-y-auto">
+                            {formData.panel_members.map((id: string) => {
+                                const test = individualTests.find((t: any) => t.id === id) || (allTests || []).find((t: any) => t.id === id);
+                                return (
+                                    <div key={id} className="flex items-center gap-2 bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm">
+                                        <span>{test?.name || 'Unknown Test'}</span>
+                                        <button 
+                                            type="button"
+                                            onClick={() => togglePanelMember(id)} 
+                                            className="text-indigo-500 hover:text-indigo-900 bg-white/50 rounded-full p-0.5 transition-colors"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div className="flex gap-3 pt-6">
                 <Button type="button" variant="ghost" onClick={onClose} className="flex-1 rounded-xl font-bold">Cancel</Button>

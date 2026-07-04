@@ -8,13 +8,14 @@ import { updatePaymentMappings } from '@/app/actions/settings'
 import { useToast } from "@/components/ui/use-toast"
 import { CreditCard, Smartphone, Banknote, Building } from 'lucide-react'
 
-export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel, journals, paymentMappings }: {
+export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel, journals, paymentMappings, taxTypes }: {
     settings: any,
     accounts: any[],
     taxRates: any[],
     taxLabel: string,
     journals: any[],
-    paymentMappings: any
+    paymentMappings: any,
+    taxTypes?: any[]
 }) {
     const router = useRouter()
     const { toast } = useToast()
@@ -34,6 +35,7 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
         currency_precision: settings?.currency_precision || 2,
         retained_earnings_account_id: settings?.retained_earnings_account_id || '',
         exchange_gain_loss_account_id: settings?.exchange_gain_loss_account_id || '',
+        default_tax_type_id: settings?.default_tax_type_id || '',
 
         // Journals Mapping
         sales_journal_id: settings?.sales_journal_id || '',
@@ -96,12 +98,10 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
         setLoading(true)
         try {
             const res = await updateAccountingSettings(formData)
-
             if (res.success) {
                 toast({
                     title: "Success",
-                    description: "Accounting configuration saved.",
-                    className: "bg-green-600 text-white border-none"
+                    description: "Accounting settings updated successfully.",
                 })
                 router.refresh()
             } else {
@@ -327,6 +327,20 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
                             <option value="exempt">Exempt (No Tax for B2C/Unregistered)</option>
                         </select>
                         <p className={subLabelClass}>Determines the default behavior for new Pharmacy bills.</p>
+                    </div>
+                    <div className="space-y-1">
+                        <label className={labelClass}>Company Tax System</label>
+                        <select 
+                            value={formData.default_tax_type_id} 
+                            onChange={e => setFormData({ ...formData, default_tax_type_id: e.target.value })} 
+                            className={inputClass}
+                        >
+                            <option value="">Auto-Detect from Country</option>
+                            {taxTypes?.map(t => (
+                                <option key={t.id} value={t.id}>{t.name}</option>
+                            ))}
+                        </select>
+                        <p className={subLabelClass}>Force the system to strictly use GST, VAT, or Sales Tax globally.</p>
                     </div>
                 </div>
             </div>

@@ -3,6 +3,7 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import { headers } from "next/headers"
 import { format } from "date-fns"
 
 export type PunchData = {
@@ -11,6 +12,21 @@ export type PunchData = {
     ip?: string;
     city?: string;
     userAgent?: string;
+}
+
+function getDistanceInMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const R = 6371e3; // metres
+    const p1 = lat1 * Math.PI / 180;
+    const p2 = lat2 * Math.PI / 180;
+    const dp = (lat2 - lat1) * Math.PI / 180;
+    const dl = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(dp / 2) * Math.sin(dp / 2) +
+        Math.cos(p1) * Math.cos(p2) *
+        Math.sin(dl / 2) * Math.sin(dl / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
 }
 
 export async function getStaffAttendanceStatus() {
@@ -86,6 +102,64 @@ export async function punchIn(data: PunchData) {
             if (now.getTime() > shiftStartTime.getTime() + graceMs) {
                 status = 'late'
                 meta.late_minutes = Math.floor((now.getTime() - shiftStartTime.getTime()) / (60 * 1000))
+            }
+        }
+        // 2.5 Geofencing Validation
+        // Bypass if accessed via Local LAN (Host header indicates local IP or .local domain)
+        const headersList = await headers();
+        const host = headersList.get('host') || '';
+        const isLocalNetwork = host.startsWith('192.168.') || 
+                               host.startsWith('10.') || 
+                               host.startsWith('172.') || 
+                               host.startsWith('localhost') || 
+                               host.includes('.local');
+
+        if (!isLocalNetwork) {
+            const branches = await prisma.hms_branch.findMany({
+                where: { company_id: session.user.companyId, is_active: true }
+            });
+
+            let isWithinAnyGeofence = false;
+            let geofenceEnabled = false;
+            let closestDistance = Infinity;
+            let closestRadius = 0;
+
+            for (const branch of branches) {
+                if (branch.metadata) {
+                    const metadata = branch.metadata as any;
+                    if (metadata.geofence && metadata.geofence.lat && metadata.geofence.lng && metadata.geofence.radius_meters) {
+                        geofenceEnabled = true;
+                        
+                        // Only calculate distance if we actually received GPS data
+                        if (data.lat && data.lng) {
+                            const branchLat = parseFloat(metadata.geofence.lat);
+                            const branchLng = parseFloat(metadata.geofence.lng);
+                            const radius = parseInt(metadata.geofence.radius_meters);
+
+                            const distance = getDistanceInMeters(data.lat, data.lng, branchLat, branchLng);
+                            
+                            if (distance < closestDistance) {
+                                closestDistance = distance;
+                                closestRadius = radius;
+                            }
+
+                            if (distance <= radius) {
+                                isWithinAnyGeofence = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Block 1: Geofence is required, but user provided NO GPS data (e.g., blocked permission)
+            if (geofenceEnabled && (!data.lat || !data.lng)) {
+                return { error: `Security block: You are not connected to the hospital WiFi. Please enable GPS Location to clock in remotely.` };
+            }
+
+            // Block 2: User provided GPS, but is too far away
+            if (geofenceEnabled && !isWithinAnyGeofence) {
+                return { error: `Geofence block: You are ${Math.round(closestDistance)} meters away from the nearest office. Allowed radius is ${closestRadius} meters.` };
             }
         }
 

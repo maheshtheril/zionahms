@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { QuickCategoryForm, QuickManufacturerForm } from "@/components/inventory/quick-create-wrappers"
 import {
-    Box, Tag, DollarSign, Layers, Image as ImageIcon, Barcode, Factory, Check, Zap, Info, Plus, X, Cpu, History, ArrowUpDown, TrendingUp, TrendingDown, Trash2
+    Box, Tag, DollarSign, Layers, Image as ImageIcon, Barcode, Factory, Check, Zap, Info, Plus, X, Cpu, History, ArrowUpDown, TrendingUp, TrendingDown, Trash2, Pencil
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -307,7 +307,7 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
 
 
                         {/* Pricing Row - Master Defaults */}
-                        <div className="md:col-span-3 grid grid-cols-4 gap-4 bg-gray-50/50 p-3 rounded-xl border border-gray-100">
+                        <div className="md:col-span-3 grid grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-50/50 p-3 rounded-xl border border-gray-100">
                             <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Std Sale Price</label>
                                 <div className="relative">
@@ -339,7 +339,7 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                         </div>
 
                         {/* Identification & Policy Row */}
-                        <div className="md:col-span-3 grid grid-cols-4 gap-4">
+                        <div className="md:col-span-3 grid grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-gray-500 uppercase">Barcode</label>
                                 <input name="barcode" defaultValue={initialData?.default_barcode} placeholder="Scan..." className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-mono" />
@@ -402,49 +402,6 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                             )}
                         </div>
 
-                        {/* Batch History (if editing) */}
-                        {isEditing && trackingType === 'batch' && batches.length > 0 && (
-                            <div className="p-3 bg-white border border-gray-100 rounded-xl shadow-sm">
-                                <h4 className="text-[10px] font-bold text-gray-400 uppercase mb-2">Active Batches</h4>
-                                <div className="space-y-1 max-h-40 overflow-y-auto custom-scrollbar">
-                                    {batches.map((batch: any) => (
-                                        <div key={batch.id} className="group border-b border-gray-50 py-2">
-                                            <div className="flex justify-between items-center mb-1">
-                                                <span className="text-[10px] font-mono font-bold text-gray-700">{batch.batch_no}</span>
-                                                <span className="text-[11px] font-black text-emerald-600">{Number(batch.qty_on_hand)} {initialData?.uom}</span>
-                                            </div>
-                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setEditingBatch(batch)}
-                                                    className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-black uppercase tracking-tighter hover:bg-blue-600 hover:text-white transition-all"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setAdjustingBatch(batch)}
-                                                    className="px-2 py-0.5 bg-amber-50 text-amber-600 rounded text-[9px] font-black uppercase tracking-tighter hover:bg-amber-600 hover:text-white transition-all"
-                                                >
-                                                    Adjust
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={async () => {
-                                                        setHistoryBatch(batch);
-                                                        const res = await getBatchHistory(batch.id);
-                                                        if (res.success) setBatchLedger(res.data);
-                                                    }}
-                                                    className="px-2 py-0.5 bg-slate-50 text-slate-500 rounded text-[9px] font-black uppercase tracking-tighter hover:bg-slate-900 hover:text-white transition-all"
-                                                >
-                                                    Ledger
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
 
                         <div className="bg-amber-50 rounded-xl p-3 border border-amber-100 space-y-1">
                             <div className="flex items-center gap-1 text-amber-800">
@@ -455,6 +412,103 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                         </div>
                     </div>
                 </div>
+
+                {/* --- FULL WIDTH BATCH SECTION AT BOTTOM --- */}
+                {isEditing && (
+                    <div className="mt-8 px-2">
+                        {trackingType === 'batch' ? (
+                            <div className="bg-white border-2 border-indigo-100 rounded-2xl shadow-sm overflow-hidden">
+                                <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-4 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
+                                            <Layers className="h-5 w-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-black text-indigo-900 tracking-tight">Batch Details & Inventory</h3>
+                                            <p className="text-xs font-semibold text-indigo-500">Manage batches, expiry dates, and stock adjustments</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-6">
+                                    {batches.length === 0 ? (
+                                        <div className="py-12 flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50">
+                                            <Layers className="h-12 w-12 text-gray-300 mb-3" />
+                                            <p className="text-sm font-bold text-gray-500">No Active Batches Available</p>
+                                            <p className="text-xs text-gray-400 mt-1 max-w-sm text-center">Batches are automatically generated when you receive stock via Purchase Receipts or Opening Stock entries.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {batches.map((batch: any) => (
+                                                <div key={batch.id} className="group relative bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all">
+                                                    <div className="flex justify-between items-start mb-4">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs font-black text-gray-500 uppercase tracking-widest mb-1">Batch No</span>
+                                                            <span className="text-base font-mono font-bold text-gray-900">{batch.batch_no}</span>
+                                                        </div>
+                                                        <div className="text-right flex flex-col items-end">
+                                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Stock</span>
+                                                            <span className="text-lg font-black text-emerald-600">{Number(batch.qty_on_hand)} <span className="text-xs">{initialData?.uom}</span></span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="grid grid-cols-3 gap-4 mb-4 p-3 bg-gray-50 rounded-lg">
+                                                        <div>
+                                                            <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Expiry Date</span>
+                                                            <span className={`text-sm font-bold ${batch.expiry_date && new Date(batch.expiry_date) < new Date(new Date().setMonth(new Date().getMonth() + 3)) ? 'text-rose-600' : 'text-gray-700'}`}>
+                                                                {batch.expiry_date ? new Date(batch.expiry_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">MRP</span>
+                                                            <span className="text-sm font-bold text-gray-700">₹{Number(batch.mrp || 0).toFixed(2)}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Sale Price</span>
+                                                            <span className="text-sm font-black text-indigo-600">₹{Number(batch.sale_price || batch.mrp || 0).toFixed(2)}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setEditingBatch(batch)}
+                                                            className="flex-1 py-2 bg-white border border-blue-200 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors flex items-center justify-center gap-1"
+                                                        >
+                                                            <Pencil className="h-3 w-3" /> Edit
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setAdjustingBatch(batch)}
+                                                            className="flex-1 py-2 bg-white border border-amber-200 text-amber-600 rounded-lg text-xs font-bold hover:bg-amber-50 transition-colors flex items-center justify-center gap-1"
+                                                        >
+                                                            <ArrowUpDown className="h-3 w-3" /> Adjust
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={async () => {
+                                                                setHistoryBatch(batch);
+                                                                const res = await getBatchHistory(batch.id);
+                                                                if (res.success) setBatchLedger(res.data);
+                                                            }}
+                                                            className="flex-1 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
+                                                        >
+                                                            <History className="h-3 w-3" /> Ledger
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 text-center">
+                                <p className="text-sm font-bold text-gray-500">Tracking is currently set to "{trackingType}".</p>
+                                <p className="text-xs text-gray-400 mt-1">To manage inventory in specific batches, change the Tracking setting above to "Batch" and save.</p>
+                            </div>
+                        )}
+                    </div>
+                )}
             </form >
 
             {/* QUICK CREATE MODALS */}
@@ -713,17 +767,32 @@ function BatchEditForm({ batch, onSuccess }: { batch: any, onSuccess: () => void
         <form action={action} className="space-y-4">
             <input type="hidden" name="id" value={batch.id} />
 
-            <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Market Retail Price (MRP)</label>
-                <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">\u20B9</span>
-                    <input
-                        name="mrp"
-                        type="number"
-                        step="0.01"
-                        defaultValue={Number(batch.mrp || 0)}
-                        className="w-full pl-7 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-semibold"
-                    />
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">MRP</label>
+                    <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
+                        <input
+                            name="mrp"
+                            type="number"
+                            step="0.01"
+                            defaultValue={Number(batch.mrp || 0)}
+                            className="w-full pl-7 pr-2 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-semibold"
+                        />
+                    </div>
+                </div>
+                <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Sale Price</label>
+                    <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
+                        <input
+                            name="salePrice"
+                            type="number"
+                            step="0.01"
+                            defaultValue={Number(batch.sale_price || 0)}
+                            className="w-full pl-7 pr-2 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-semibold"
+                        />
+                    </div>
                 </div>
             </div>
 

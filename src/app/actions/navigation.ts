@@ -286,7 +286,7 @@ export async function getMenuItems() {
         // This ensures that if RBAC filtered out everything (or DB is empty), we still show the structure
         // for modules the user is legally allowed to see.
         const fallback = getFallbackMenuItems(isAdmin);
-        const coreKeys = ['finance', 'accounting', 'inventory', 'crm', 'hms', 'lab', 'configuration', 'system'];
+        const coreKeys = ['hms', 'finance', 'accounting', 'hr', 'inventory', 'crm', 'lab', 'configuration', 'system'];
         
         // Track already used keys to prevent React duplicate key errors in the UI
         const usedKeys = new Set<string>();
@@ -302,7 +302,8 @@ export async function getMenuItems() {
         coreKeys.forEach(key => {
             if (!allowedModuleKeys.has(key)) return;
 
-            const exists = result.find(g => g.module?.module_key === key);
+            // Merge accounting fallback into finance if finance exists
+            const exists = result.find(g => g.module?.module_key === key || (key === 'accounting' && g.module?.module_key === 'finance'));
             const fallbackGroup = fallback.find((g: any) => g.module?.module_key === key);
             
             if (fallbackGroup && allowedModuleKeys.has(fallbackGroup.module.module_key)) {
@@ -453,11 +454,11 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
             { key: 'inv-products', label: 'Product Master', icon: 'Package', url: '/hms/inventory/products', permission_code: 'inventory:view' },
             { key: 'inv-import', label: 'Bulk Import Products', icon: 'Upload', url: '/hms/inventory/products?import=true', permission_code: 'inventory:create' },
             {
-                key: 'inv-pharmacy',
-                label: 'Pharmacy Stock',
-                icon: 'Activity',
-                url: '/hms/pharmacy/inventory',
-                permission_code: 'pharmacy:view'
+                key: 'inv-pos',
+                label: 'POS Terminal',
+                icon: 'MonitorSmartphone',
+                url: '/hms/pharmacy/pos',
+                permission_code: 'inventory:view'
             },
             {
                 key: 'inv-procurement',
@@ -496,7 +497,18 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
         ]
     });
 
-    // 4. CRM (Optional)
+    // 5. HR & PAYROLL
+    items.push({
+        module: { name: 'HR Command Center', module_key: 'hr' },
+        items: [
+            { key: 'hr-dashboard', label: 'HR Overview', icon: 'Users', url: '/hms/hr', permission_code: 'hr:view' },
+            { key: 'hr-payroll', label: 'HR Payroll', icon: 'Banknote', url: '/hms/hr/payroll', permission_code: 'hr:view' },
+            { key: 'hr-attendance', label: 'Attendance', icon: 'Clock', url: '/hms/hr/attendance', permission_code: 'hr:view' },
+            { key: 'hr-leave', label: 'Leave Management', icon: 'CalendarOff', url: '/hms/hr/leave', permission_code: 'hr:view' }
+        ]
+    });
+
+    // 6. CRM (Optional)
     items.push({
         module: { name: 'CRM & Engagement', module_key: 'crm' },
         items: [
@@ -513,6 +525,7 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
             items: [
                 { key: 'users', label: 'User Management', icon: 'Users', url: '/settings/users' },
                 { key: 'roles', label: 'RBAC & Security', icon: 'Shield', url: '/settings/roles' },
+                { key: 'print-formats', label: 'Print & Billing Formats', icon: 'FileText', url: '/hms/settings/print' },
                 { key: 'general-settings', label: 'Global Settings', icon: 'Settings', url: '/settings/global' },
                 { key: 'branch-settings', label: 'Branch Management', icon: 'Building2', url: '/settings/branches' },
                 { key: 'geography-settings', label: 'Geography & Regions', icon: 'Globe', url: '/settings/geography' },

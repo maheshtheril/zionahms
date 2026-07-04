@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from "@google/generative-ai"
+import { getDynamicAIModels } from "@/lib/ai-models"
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || "")
 
@@ -26,7 +27,9 @@ export async function POST(request: NextRequest) {
         const base64Image = buffer.toString('base64')
 
         // Use Gemini Vision to extract text  
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }, { apiVersion: 'v1beta' })
+        const dynamicModels = await getDynamicAIModels(process.env.GOOGLE_GENERATIVE_AI_API_KEY || "");
+        // Use the absolute highest tier flash model available
+        const model = genAI.getGenerativeModel({ model: dynamicModels[0] }, { apiVersion: 'v1beta' })
 
         const result = await model.generateContent([
             {
@@ -47,9 +50,17 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
         console.error('Handwriting recognition error:', error)
+        let msg = error.message || 'Unknown error';
+        let friendlyError = 'Failed to recognize handwriting';
+
+        if (msg.includes("403") || msg.includes("denied access")) friendlyError = "API Key Permission Denied. Please ensure your Google AI API Key is valid and has billing enabled.";
+        else if (msg.includes("429") && msg.includes("limit: 0")) friendlyError = "API Key Quota Exhausted. Your Google Cloud Free Tier limits have been reached.";
+        else if (msg.includes("429") || msg.includes("Too Many Requests") || msg.includes("Quota exceeded")) friendlyError = "AI Rate Limit Reached. Please wait 1-2 minutes.";
+        else if (msg.includes("503") || msg.includes("Overloaded")) friendlyError = "AI Server Overloaded. Google's servers are busy.";
+
         return NextResponse.json({
-            error: 'Failed to recognize handwriting',
-            details: error.message || 'Unknown error'
+            error: friendlyError,
+            details: msg
         }, { status: 500 })
     }
 }

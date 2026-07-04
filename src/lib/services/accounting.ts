@@ -2010,14 +2010,38 @@ export class AccountingService {
      */
     static async getLedger(companyId: string, accountId: string, startDate?: Date, endDate?: Date) {
         try {
-            const account = await prisma.accounts.findUnique({ where: { id: accountId } });
-            if (!account) throw new Error("Account not found");
+            let account: any = await prisma.accounts.findUnique({ where: { id: accountId } });
+            let isPatient = false;
+            let patient = null;
+
+            if (!account) {
+                patient = await prisma.hms_patient.findUnique({ where: { id: accountId } });
+                if (!patient) throw new Error("Account or Patient not found");
+                isPatient = true;
+                
+                account = {
+                    id: patient.id,
+                    name: `${patient.first_name} ${patient.last_name || ''}`.trim() + " (Patient Ledger)",
+                    code: patient.patient_number || 'PATIENT',
+                    type: 'Accounts Receivable',
+                    company_id: companyId,
+                    tenant_id: patient.tenant_id,
+                    is_active: true,
+                    created_at: new Date(),
+                    updated_at: new Date()
+                };
+            }
 
             const where: any = {
                 company_id: companyId,
-                account_id: accountId,
                 journal_entries: { posted: true }
             };
+
+            if (isPatient) {
+                where.partner_id = accountId;
+            } else {
+                where.account_id = accountId;
+            }
 
             if (startDate || endDate) {
                 where.journal_entries.date = {};
@@ -2060,17 +2084,23 @@ export class AccountingService {
                 partner_name: l.partner_id ? partnerMap.get(l.partner_id) : null
             }));
 
-            // Calculate Opening Balance if range is provided
             let openingBalance = 0;
             if (startDate) {
                 const sd = new Date(startDate);
                 sd.setHours(0, 0, 0, 0);
+                
+                const prevWhere: any = {
+                    company_id: companyId,
+                    journal_entries: { date: { lt: sd }, posted: true }
+                };
+                if (isPatient) {
+                    prevWhere.partner_id = accountId;
+                } else {
+                    prevWhere.account_id = accountId;
+                }
+
                 const prevLines = await prisma.journal_entry_lines.aggregate({
-                    where: {
-                        company_id: companyId,
-                        account_id: accountId,
-                        journal_entries: { date: { lt: sd }, posted: true }
-                    },
+                    where: prevWhere,
                     _sum: { debit: true, credit: true }
                 });
                 openingBalance = Number(prevLines._sum.debit || 0) - Number(prevLines._sum.credit || 0);

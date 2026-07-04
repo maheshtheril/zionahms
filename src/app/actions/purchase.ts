@@ -229,7 +229,8 @@ export async function createProductQuick(name: string, price: number = 0, isServ
                 price: price,
                 default_cost: 0,
                 uom: isService ? 'SVC' : 'PCS',
-                is_active: true
+                is_active: true,
+                metadata: isService ? {} : { tracking: 'batch' }
             }
         })
 

@@ -21,7 +21,6 @@ export async function getSuppliersList(query?: string, page: number = 1) {
         if (query) {
             where.OR = [
                 { name: { contains: query, mode: 'insensitive' } },
-                { contact_name: { contains: query, mode: 'insensitive' } },
             ];
         }
         const [suppliers, total] = await prisma.$transaction([
@@ -39,7 +38,8 @@ export async function getSuppliersList(query?: string, page: number = 1) {
             data: suppliers.map(s => ({
                 id: s.id,
                 name: s.name,
-                gstin: (s.metadata as any)?.gstin || (s.metadata as any)?.GSTIN || ''
+                gstin: (s.metadata as any)?.gstin || (s.metadata as any)?.GSTIN || '',
+                address: (s.metadata as any)?.address || (s.metadata as any)?.ADDRESS || ''
             })),
             meta: { total, page, totalPages: Math.ceil(total / pageSize) }
         };
@@ -87,7 +87,28 @@ export async function getProductsPremium(query?: string, page: number = 1, suppl
                 include: {
                     hms_stock_levels: { select: { quantity: true } },
                     hms_product_category_rel: { include: { hms_product_category: true } },
-                    hms_uom: true
+                    hms_product_supplier: { where: { is_primary: true }, take: 1 },
+                    hms_uom: true,
+                    product_tax_rules: { take: 1, orderBy: { priority: 'asc' } },
+                    hms_product_storage_link: {
+                        where: { is_primary: true },
+                        take: 1,
+                        include: {
+                            location: {
+                                include: {
+                                    parent: {
+                                        include: {
+                                            parent: true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    hms_product_batch: {
+                        where: { qty_on_hand: { gt: 0 } },
+                        orderBy: { expiry_date: 'asc' }
+                    }
                 }
             }),
             prisma.hms_product.count({ where }),
@@ -123,17 +144,49 @@ export async function getProductsPremium(query?: string, page: number = 1, suppl
                 }
             }
 
+            let locZone = '';
+            let locRack = '';
+            let locShelf = '';
+            
+            const linkedLoc = p.hms_product_storage_link?.[0]?.location;
+            if (linkedLoc) {
+                if (linkedLoc.type === 'SHELF') {
+                    locShelf = linkedLoc.name;
+                    if (linkedLoc.parent?.type === 'RACK') {
+                        locRack = linkedLoc.parent.name;
+                        if (linkedLoc.parent.parent?.type === 'ZONE') locZone = linkedLoc.parent.parent.name;
+                    }
+                } else if (linkedLoc.type === 'RACK') {
+                    locRack = linkedLoc.name;
+                    if (linkedLoc.parent?.type === 'ZONE') locZone = linkedLoc.parent.name;
+                } else if (linkedLoc.type === 'ZONE') {
+                    locZone = linkedLoc.name;
+                }
+            }
+
             processed.push({
                 ...rest,
                 price: Number(p.price || 0),
                 totalStock,
                 stockStatus: totalStock === 0 ? 'Out of Stock' : totalStock < 10 ? 'Low Stock' : 'In Stock',
                 category: p.hms_product_category_rel[0]?.hms_product_category?.name || 'Uncategorized',
+                categoryId: p.hms_product_category_rel[0]?.category_id || '',
+                manufacturerId: p.manufacturer_id || '',
+                supplierId: p.hms_product_supplier?.[0]?.supplier_id || '',
                 brand: metadata.brand || '',
                 uom: uomName,
                 uom_id: uomId,
+                tracking: metadata.tracking || 'none',
+                reorderLevel: Number(metadata.reorder_level || 0),
+                storageLocation: metadata.storageLocation || '',
+                locZone,
+                locRack,
+                locShelf,
                 default_cost: Number(metadata.cost_price || p.default_cost || 0),
-                mrp: Number(metadata.mrp || p.price || 0)
+                mrp: Number(metadata.mrp || p.price || 0),
+                taxRateId: p.product_tax_rules?.[0]?.tax_rate_id || '',
+                composition: metadata.composition || '',
+                batches: p.hms_product_batch || []
             });
         }
 
@@ -329,11 +382,28 @@ export async function searchProducts(query: string) {
     if (!session?.user?.companyId) return { error: "Unauthorized" };
     try {
         const products = await prisma.hms_product.findMany({
-            where: { company_id: session.user.companyId, is_active: true, OR: [{ name: { contains: query, mode: 'insensitive' } }, { sku: { contains: query, mode: 'insensitive' } }] },
+            where: { 
+                company_id: session.user.companyId, 
+                is_active: true, 
+                OR: [
+                    { name: { contains: query, mode: 'insensitive' } }, 
+                    { sku: { contains: query, mode: 'insensitive' } },
+                    { metadata: { path: ['composition'], string_contains: query } }
+                ] 
+            },
             select: { id: true, name: true, sku: true, price: true, default_cost: true, uom: true, metadata: true },
             take: 10
         });
-        return { success: true, data: products.map(p => ({ ...p, price: Number(p.price || 0), mrp: Number(p.price || 0), default_cost: Number(p.default_cost || (p.metadata as any)?.cost || 0) })) };
+        return { 
+            success: true, 
+            data: products.map(p => ({ 
+                ...p, 
+                price: Number(p.price || 0), 
+                mrp: Number(p.price || 0), 
+                default_cost: Number(p.default_cost || (p.metadata as any)?.cost || 0),
+                composition: (p.metadata as any)?.composition || ''
+            })) 
+        };
     } catch (e: any) { return { error: e.message }; }
 }
 

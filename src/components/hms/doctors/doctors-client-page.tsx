@@ -48,9 +48,10 @@ interface DoctorsClientPageProps {
     departments: Department[]
     roles: Role[]
     specializations: Specialization[]
+    employees?: any[]
 }
 
-export function DoctorsClientPage({ doctors, stats, departments, roles, specializations }: DoctorsClientPageProps) {
+export function DoctorsClientPage({ doctors, stats, departments, roles, specializations, employees = [] }: DoctorsClientPageProps) {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
 
@@ -253,6 +254,7 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                 departments={departments}
                 roles={roles}
                 specializations={specializations}
+                employees={employees}
             />
         </div>
     )

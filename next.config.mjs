@@ -25,6 +25,7 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '50mb',
     },
+    optimizePackageImports: ['lucide-react'],
   },
   typescript: {
     ignoreBuildErrors: true,

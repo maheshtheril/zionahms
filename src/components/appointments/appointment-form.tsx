@@ -428,24 +428,18 @@ export function AppointmentForm({
         // Handle Invalid Date strings
         if (isNaN(expiryDate.getTime())) return { shouldCharge: true, status: 'invalid_date', expiryDate: null };
 
-        // [POLICY-GUARD] If DB has a legacy 365-day expiry, snap to policy window
-        const policyExpiry = new Date(createdAt);
-        policyExpiry.setDate(policyExpiry.getDate() + Number(validityDays));
-        const correctedExpiry = expiryDate > policyExpiry ? policyExpiry : expiryDate;
-
-        const isExpired = correctedExpiry < new Date();
+        const isExpired = expiryDate < new Date();
 
         const result = {
             shouldCharge: isExpired,
             status: isExpired ? 'expired' : 'valid',
-            expiryDate: correctedExpiry.toISOString(),
+            expiryDate: expiryDate.toISOString(),
             debug: {
                 metadataStatus: metadata.status,
                 regFeesPaid: metadata.registration_fees_paid,
                 validityDays,
                 createdAt: createdAt.toISOString(),
-                originalExpiry: expiryDateStr,
-                policyExpiry: policyExpiry.toISOString()
+                originalExpiry: expiryDateStr
             }
         };
         console.log("DEBUG: checkRegistrationStatus Result", JSON.stringify(result, null, 2));
@@ -541,7 +535,7 @@ export function AppointmentForm({
 
         // [REG-FEE GUARD] Block save if registration fee is outstanding
         const regStatus = checkRegistrationStatus();
-        if (regStatus.shouldCharge && !isWaivingFee) {
+        if (regStatus.shouldCharge && !isWaivingFee && !paidInvoiceId) {
             const msg = regStatus.status === 'awaiting_payment'
                 ? "Registration fee is pending. Please collect or waive the registration fee before booking."
                 : regStatus.status === 'expired'
@@ -858,7 +852,7 @@ export function AppointmentForm({
                         />
 
 
-                        {activeRegStatus.shouldCharge && (
+                        {activeRegStatus.shouldCharge && !paidInvoiceId && (
                             <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 rounded-2xl flex items-center justify-between animate-in slide-in-from-top-2 shadow-inner">
                                 <div className="flex items-center gap-3">
                                     <ShieldAlert className="h-5 w-5 text-amber-600" />
@@ -1037,14 +1031,14 @@ export function AppointmentForm({
                     <div className="flex items-center gap-8">
                         <div className="text-right hidden xl:block">
                             <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] leading-none mb-1.5 opacity-40">System Protocol: V10.2</div>
-                            <div className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest italic flex items-center justify-end gap-2">
+                        <div className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest italic flex items-center justify-end gap-2">
                                 <BadgeCheck className="h-3.5 w-3.5" /> High-Intensity Mode Active
                             </div>
                         </div>
 
-                        <Button
+                        <button
                             type="submit"
-                            disabled={isPending || isLoadingPatient || activeRegStatus.shouldCharge || activeRegStatus.status === 'loading'}
+                            disabled={isPending || isLoadingPatient || (activeRegStatus.shouldCharge && !paidInvoiceId) || activeRegStatus.status === 'loading'}
                             className="h-24 px-20 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2.5rem] shadow-[0_25px_50px_-12px_rgba(79,70,229,0.5)] font-black text-sm uppercase tracking-[0.4em] transition-all active:scale-[0.98] flex items-center gap-6 border-4 border-white/20 dark:border-white/10 disabled:opacity-20 disabled:grayscale disabled:cursor-not-allowed group relative overflow-hidden"
                         >
                             {(isPending || isLoadingPatient) ? (
@@ -1058,7 +1052,7 @@ export function AppointmentForm({
                                     </span>
                                 </div>
                             )}
-                        </Button>
+                        </button>
                     </div>
                 </div>
             </form>

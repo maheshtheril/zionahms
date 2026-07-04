@@ -139,7 +139,7 @@ export default async function CategoryMasterPage(props: { searchParams: Promise<
                                                     {taxRate ? (
                                                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-100">
                                                              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                                             {taxRate.name} ({taxRate.rate}%)
+                                                             {taxRate.name.includes(Number(taxRate.rate).toString()) ? taxRate.name : `${taxRate.name} (${Number(taxRate.rate)}%)`}
                                                          </div>
                                                      ) : (
                                                          <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-50 text-gray-500 text-xs font-medium border border-gray-200">

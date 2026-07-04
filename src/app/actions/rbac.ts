@@ -33,7 +33,7 @@ const STANDARD_PERMISSIONS = [
     { code: 'hms:dashboard:reception', name: 'Access Reception Dashboard', module: 'HMS' },
     { code: 'hms:dashboard:lab', name: 'Access Lab Dashboard', module: 'HMS' },
     { code: 'hms:dashboard:accounting', name: 'Access Accounting Dashboard', module: 'HMS' },
-
+    { code: 'hms:dashboard:pharmacy', name: 'Access Pharmacy Dashboard', module: 'HMS' },
 
     // HMS - Clinical & Patient
     { code: 'patients:view', name: 'View Patients', module: 'HMS' },
@@ -702,12 +702,20 @@ export async function getUserPermissions(userId: string): Promise<string[]> {
 
         if (userRecord?.role) {
             // Find the role entity that matches this string key
-            const legacyRole = await prisma.role.findFirst({
+            let legacyRole = await prisma.role.findFirst({
                 where: {
                     tenant_id: tenantId,
                     key: userRecord.role.toLowerCase() // Normalization
                 }
             });
+            
+            // FALLBACK: If role is not defined for this specific tenant, pull the global/standard definition
+            if (!legacyRole) {
+                legacyRole = await prisma.role.findFirst({
+                    where: { key: userRecord.role.toLowerCase() }
+                });
+            }
+
             if (legacyRole) {
                 roleIds.push(legacyRole.id);
             }

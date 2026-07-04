@@ -85,10 +85,7 @@ export async function getShiftSummary(shiftId: string) {
     // 1. Fetch Collections (Inbound)
     const collections = await prisma.hms_invoice_payments.findMany({
         where: {
-            OR: [
-                { created_by: shift.user_id },
-                { created_by: null }
-            ],
+            created_by: shift.user_id,
             tenant_id: shift.tenant_id,
             created_at: { 
                 gte: shift.start_time,
@@ -102,13 +99,27 @@ export async function getShiftSummary(shiftId: string) {
         orderBy: { created_at: 'desc' }
     });
 
+    // 1.5 Fetch Invoices (Revenue generated during shift)
+    const invoices = await prisma.hms_invoice.findMany({
+        where: {
+            created_by: shift.user_id,
+            tenant_id: shift.tenant_id,
+            created_at: { 
+                gte: shift.start_time,
+                ...(shift.end_time && { lte: shift.end_time })
+            },
+            status: { not: 'cancelled' }
+        },
+        include: {
+            hms_patient: { select: { first_name: true, last_name: true, full_name: true } }
+        },
+        orderBy: { created_at: 'desc' }
+    });
+
     // 2. Fetch Expenses (Outbound)
     const expenses = await prisma.payments.findMany({
         where: {
-            OR: [
-                { created_by: shift.user_id },
-                { created_by: null }
-            ],
+            created_by: shift.user_id,
             tenant_id: shift.tenant_id,
             metadata: { path: ['type'], equals: 'outbound' },
             created_at: { 
@@ -128,6 +139,8 @@ export async function getShiftSummary(shiftId: string) {
         other: 0,
         totalIn: 0,
         totalOut: 0,
+        totalRevenue: 0,
+        pendingBillsTotal: 0,
         netCash: 0 // (Opening + CashIn) - CashOut
     };
 
@@ -139,6 +152,18 @@ export async function getShiftSummary(shiftId: string) {
         else if (p.method === 'card') summary.card += amt;
         else if (p.method === 'upi') summary.upi += amt;
         else summary.other += amt;
+    });
+
+    // Process Invoices
+    invoices.forEach(i => {
+        const total = Number(i.total || 0);
+        summary.totalRevenue += total;
+        const status = (i.status || '').toLowerCase();
+        if (status === 'draft' || status === 'pending') {
+            const outst = Number(i.outstanding || 0);
+            const pendingAmount = outst > 0 ? outst : total;
+            summary.pendingBillsTotal += pendingAmount;
+        }
     });
 
     // Process Expenses (Assuming mostly cash for petty cash, but tracking method if available)
@@ -173,7 +198,24 @@ export async function getShiftSummary(shiftId: string) {
             amount: Number(e.amount),
             description: (e.metadata as any)?.description || (e.metadata as any)?.notes || 'Expense',
             category: (e.metadata as any)?.category || 'Petty Cash'
-        }))
+        })),
+        ...invoices.filter(i => {
+            const status = (i.status || '').toLowerCase();
+            return status === 'draft' || status === 'pending';
+        }).map(i => {
+            const tot = Number(i.total || 0);
+            const outst = Number(i.outstanding || 0);
+            const pendingAmt = outst > 0 ? outst : tot;
+            return {
+                id: i.id,
+                time: i.created_at,
+                type: 'PENDING',
+                method: '-',
+                amount: pendingAmt,
+                description: `Unpaid Inv #${i.invoice_number} - ${i.hms_patient?.full_name || i.hms_patient?.first_name || 'Walk-in'}`,
+                category: 'Draft / Pending Bill'
+            };
+        })
     ].sort((a, b) => new Date(b.time || 0).getTime() - new Date(a.time || 0).getTime());
 
 

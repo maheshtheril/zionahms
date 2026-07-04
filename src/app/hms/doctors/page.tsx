@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { DoctorsClientPage } from "@/components/hms/doctors/doctors-client-page"
 import { randomUUID } from "crypto"
+import { getEmployees } from "@/app/actions/crm/employees"
 
 export default async function DoctorsPage({
     searchParams
@@ -22,7 +23,7 @@ export default async function DoctorsPage({
     }
 
     // Fetch master data - If anything is empty, we perform a world-class seed
-    let [departments, roles, specializations] = await Promise.all([
+    let [departments, roles, specializations, employees] = await Promise.all([
         prisma.hms_departments.findMany({
             where: { tenant_id: tenantId, is_active: true },
             select: { id: true, name: true, parent_id: true },
@@ -37,7 +38,8 @@ export default async function DoctorsPage({
             where: { tenant_id: tenantId, is_active: true },
             select: { id: true, name: true },
             orderBy: { name: 'asc' }
-        })
+        }),
+        getEmployees()
     ])
 
     // World-class auto-seeding if data is missing
@@ -70,10 +72,11 @@ export default async function DoctorsPage({
         await Promise.all([...deptPromises, ...rolePromises]);
 
         // Re-fetch after seeding
-        [departments, roles, specializations] = await Promise.all([
+        [departments, roles, specializations, employees] = await Promise.all([
             prisma.hms_departments.findMany({ where: { tenant_id: tenantId, is_active: true }, select: { id: true, name: true, parent_id: true }, orderBy: { name: 'asc' } }),
             prisma.hms_roles.findMany({ where: { tenant_id: tenantId, is_active: true }, select: { id: true, name: true, is_clinical: true }, orderBy: { name: 'asc' } }),
-            prisma.hms_specializations.findMany({ where: { tenant_id: tenantId, is_active: true }, select: { id: true, name: true }, orderBy: { name: 'asc' } })
+            prisma.hms_specializations.findMany({ where: { tenant_id: tenantId, is_active: true }, select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+            getEmployees()
         ]);
     }
 
@@ -114,6 +117,7 @@ export default async function DoctorsPage({
                 departments={JSON.parse(JSON.stringify(departments))}
                 roles={JSON.parse(JSON.stringify(roles))}
                 specializations={JSON.parse(JSON.stringify(specializations))}
+                employees={JSON.parse(JSON.stringify(employees))}
             />
         </div>
     )

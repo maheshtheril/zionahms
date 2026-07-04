@@ -64,6 +64,17 @@ export async function GET() {
                 ]
             },
 
+            // Laboratory Group (Submenu)
+            {
+                key: 'hms-lab', label: 'Laboratory', icon: 'Microscope', url: null, sort: 65,
+                children: [
+                    { key: 'hms-lab-dashboard', label: 'Dashboard', url: '/hms/lab/dashboard', sort: 66 },
+                    { key: 'hms-lab-orders', label: 'All Orders', url: '/hms/lab/orders', sort: 67 },
+                    { key: 'hms-lab-pending', label: 'Pending Reports', url: '/hms/lab/pending', sort: 68 },
+                    { key: 'hms-lab-tests', label: 'Test Catalog', url: '/hms/lab/tests', sort: 69 },
+                ]
+            },
+
             { key: 'hms-billing', label: 'Billing', icon: 'CreditCard', url: '/hms/billing', sort: 70 },
 
             // Accounting Group (Submenu)

@@ -9,8 +9,9 @@ import {
     ArrowRight, Check, Loader2, X, IndianRupee
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { updateLabOrderStatus, uploadAndAttachLabReport, deleteLabReport } from "@/app/actions/lab"
+import { updateLabOrderStatus, uploadAndAttachLabReport, deleteLabReport, createWalkinLabOrder, seedStandardLabTests } from "@/app/actions/lab"
 import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 import { DashboardDateFilter } from "../dashboard-date-filter"
 
 interface LabDashboardProps {
@@ -24,12 +25,48 @@ interface LabDashboardProps {
     patients: any[]
     billableItems: any[]
     taxConfig: any
+    availableTests?: any[]
 }
 
-export function LabDashboardClient({ labStaffName, orders, stats, patients, billableItems, taxConfig }: LabDashboardProps) {
+export function LabDashboardClient({ labStaffName, orders, stats, patients, billableItems, taxConfig, availableTests = [] }: LabDashboardProps) {
     const router = useRouter()
     const [selectedTab, setSelectedTab] = useState<'pending' | 'completed'>('pending')
     const [searchQuery, setSearchQuery] = useState('')
+    
+    // Walk-in Order State
+    const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false)
+    const [isWalkInGuest, setIsWalkInGuest] = useState(false)
+    const [walkInDetails, setWalkInDetails] = useState({ name: '', phone: '', age: '', gender: 'Male', doctor_name: '' })
+    const [newOrderPatientId, setNewOrderPatientId] = useState('')
+    const [newOrderTestIds, setNewOrderTestIds] = useState<string[]>([])
+    const [isCreatingOrder, setIsCreatingOrder] = useState(false)
+
+    const handleCreateWalkinOrder = async () => {
+        if (!isWalkInGuest && !newOrderPatientId) return;
+        if (isWalkInGuest && !walkInDetails.name) return;
+        if (newOrderTestIds.length === 0) return;
+
+        setIsCreatingOrder(true);
+        try {
+            const payload = { 
+                patientId: isWalkInGuest ? undefined : newOrderPatientId, 
+                walkinDetails: isWalkInGuest ? walkInDetails : undefined,
+                testIds: newOrderTestIds 
+            };
+            const res = await createWalkinLabOrder(payload);
+            if (res.success) {
+                setIsNewOrderModalOpen(false);
+                setNewOrderPatientId('');
+                setWalkInDetails({ name: '', phone: '', age: '', gender: 'Male', doctor_name: '' });
+                setNewOrderTestIds([]);
+                router.refresh();
+            } else {
+                alert(res.error || "Failed to create order");
+            }
+        } finally {
+            setIsCreatingOrder(false);
+        }
+    }
 
     // Filter logic
     const pendingOrders = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled')
@@ -113,7 +150,16 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                                 Lab Dashboard <span className="text-xl font-medium text-slate-400 block sm:inline sm:ml-2">| {labStaffName}</span>
                             </motion.h1>
                             <div className="text-slate-500 dark:text-slate-400 font-medium mt-1 flex flex-col sm:flex-row sm:items-center gap-4">
-                                <DashboardDateFilter />
+                                <div className="flex items-center gap-2">
+                            <DashboardDateFilter />
+                            <button
+                                onClick={() => setIsNewOrderModalOpen(true)}
+                                className="h-10 px-4 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm shadow-xl shadow-violet-600/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap"
+                            >
+                                <FlaskConical className="w-4 h-4" />
+                                New Walk-in Order
+                            </button>
+                        </div>
                                 <span className="flex items-center gap-2">
                                     <Calendar className="h-4 w-4" />
                                     {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
@@ -632,18 +678,187 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                         patients={patients}
                         billableItems={billableItems}
                         taxConfig={taxConfig}
-                        initialPatientId={patients.find(p => p.patient_number === billingOrder.patient_id)?.id}
+                        initialPatientId={billingOrder.patient_id_raw || ''}
+                        initialInvoice={{
+                            patient_id: billingOrder.patient_id_raw || null,
+                            patient_name: billingOrder.patient_name,
+                            patient_phone: billingOrder.patient_phone,
+                            billing_metadata: { is_walk_in: !billingOrder.patient_id_raw }
+                        }}
                         initialMedicines={billingOrder.tests.map((t: any) => ({
-                            id: '',
+                            id: t.test_id,
                             name: `Lab: ${t.test_name}`,
                             price: Number(t.price) || 0,
                             quantity: 1,
-                            type: 'service'
+                            type: 'service',
+                            sourceId: t.sourceId || t.id
                         }))}
                         onClose={() => setBillingOrder(null)}
                     />
                 </div>
             )}
+
+            {/* New Walk-in Order Modal */}
+            <AnimatePresence>
+                {isNewOrderModalOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-white/10"
+                        >
+                            <div className="p-6 border-b border-slate-100 dark:border-white/10 flex items-center justify-between">
+                                <h3 className="text-xl font-black text-slate-900 dark:text-white">Create Walk-in Lab Order</h3>
+                                <button onClick={() => setIsNewOrderModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <div className="p-6 space-y-6">
+                                {/* Toggle */}
+                                <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl">
+                                    <button
+                                        onClick={() => setIsWalkInGuest(false)}
+                                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${!isWalkInGuest ? 'bg-white dark:bg-slate-800 text-indigo-600 shadow-sm' : 'text-slate-500'}`}
+                                    >
+                                        Registered Patient
+                                    </button>
+                                    <button
+                                        onClick={() => setIsWalkInGuest(true)}
+                                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${isWalkInGuest ? 'bg-white dark:bg-slate-800 text-pink-600 shadow-sm' : 'text-slate-500'}`}
+                                    >
+                                        Walk-in Guest
+                                    </button>
+                                </div>
+
+                                {!isWalkInGuest ? (
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Select Patient</label>
+                                        <select 
+                                            value={newOrderPatientId}
+                                            onChange={(e) => setNewOrderPatientId(e.target.value)}
+                                            className="w-full h-12 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-violet-500"
+                                        >
+                                            <option value="">-- Choose Patient --</option>
+                                            {patients.map(p => (
+                                                <option key={p.id} value={p.id}>{p.first_name} {p.last_name} ({p.patient_number})</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Patient Name *</label>
+                                                <input type="text" value={walkInDetails.name} onChange={e => setWalkInDetails({...walkInDetails, name: e.target.value})} className="w-full h-10 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 text-sm focus:ring-2 focus:ring-violet-500" placeholder="e.g. John Doe" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Phone</label>
+                                                <input type="text" value={walkInDetails.phone} onChange={e => setWalkInDetails({...walkInDetails, phone: e.target.value})} className="w-full h-10 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 text-sm focus:ring-2 focus:ring-violet-500" placeholder="e.g. 1234567890" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Age</label>
+                                                <input type="number" value={walkInDetails.age} onChange={e => setWalkInDetails({...walkInDetails, age: e.target.value})} className="w-full h-10 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 text-sm focus:ring-2 focus:ring-violet-500" placeholder="e.g. 35" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Gender</label>
+                                                <select value={walkInDetails.gender} onChange={e => setWalkInDetails({...walkInDetails, gender: e.target.value})} className="w-full h-10 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 text-sm focus:ring-2 focus:ring-violet-500">
+                                                    <option>Male</option>
+                                                    <option>Female</option>
+                                                    <option>Other</option>
+                                                </select>
+                                            </div>
+                                            <div className="space-y-1 col-span-2">
+                                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Referring Doctor</label>
+                                                <input type="text" value={walkInDetails.doctor_name} onChange={e => setWalkInDetails({...walkInDetails, doctor_name: e.target.value})} className="w-full h-10 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 text-sm focus:ring-2 focus:ring-violet-500" placeholder="e.g. Dr. Smith" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Select Lab Tests</label>
+                                    
+                                    <SearchableSelect
+                                        placeholder="Search to add lab test (e.g. CBC)..."
+                                        options={availableTests
+                                            .filter((t: any) => !newOrderTestIds.includes(t.id))
+                                            .map((t: any) => ({ 
+                                                id: t.id, 
+                                                label: t.name, 
+                                                subLabel: `Rs. ${t.price || 0}` 
+                                            }))}
+                                        onChange={(val) => {
+                                            if (val && !newOrderTestIds.includes(val)) {
+                                                setNewOrderTestIds([...newOrderTestIds, val]);
+                                            }
+                                        }}
+                                        value={null}
+                                    />
+
+                                    {newOrderTestIds.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mt-3 p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                                            {newOrderTestIds.map(id => {
+                                                const test = availableTests.find((t: any) => t.id === id);
+                                                return (
+                                                    <div key={id} className="flex items-center gap-2 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm">
+                                                        <span>{test?.name}</span>
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => setNewOrderTestIds(newOrderTestIds.filter(tid => tid !== id))} 
+                                                            className="text-violet-500 hover:text-violet-900 dark:hover:text-violet-100 bg-white/50 dark:bg-black/20 rounded-full p-0.5 transition-colors"
+                                                        >
+                                                            <X size={14} />
+                                                        </button>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {availableTests.length === 0 && (
+                                        <div className="flex flex-col items-center justify-center p-6 gap-3 text-center border-2 border-dashed border-slate-200 dark:border-white/5 rounded-xl mt-4">
+                                            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No lab tests configured yet.</p>
+                                            <button 
+                                                type="button"
+                                                onClick={async () => {
+                                                    const res = await seedStandardLabTests();
+                                                    if (res && !res.success) alert(res.error);
+                                                    else router.refresh();
+                                                }}
+                                                className="px-4 py-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-xs transition-colors flex items-center gap-2"
+                                            >
+                                                <FlaskConical className="w-3 h-3" />
+                                                Load Standard Tests Library
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="p-6 bg-slate-50 dark:bg-white/5 border-t border-slate-100 dark:border-white/10 flex justify-end gap-3">
+                                <button
+                                    onClick={() => setIsNewOrderModalOpen(false)}
+                                    className="px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-white/10 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleCreateWalkinOrder}
+                                    disabled={(!isWalkInGuest && !newOrderPatientId) || (isWalkInGuest && !walkInDetails.name) || newOrderTestIds.length === 0 || isCreatingOrder}
+                                    className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-bold shadow-xl shadow-violet-600/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                                >
+                                    {isCreatingOrder ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
+                                    Create Order
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div >
     )
 }

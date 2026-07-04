@@ -78,7 +78,7 @@ export default async function PrintShiftReport({ params }: { params: Promise<{ i
             </div>
 
             <div className="mb-6">
-                <h2 className="text-lg font-bold border-b border-black mb-2 uppercase">Transaction Ledger</h2>
+                <h2 className="text-lg font-bold border-b border-black mb-2 uppercase">Exceptions & Expenses</h2>
                 <table className="w-full text-sm text-left">
                     <thead>
                         <tr className="border-b border-slate-300">
@@ -88,21 +88,21 @@ export default async function PrintShiftReport({ params }: { params: Promise<{ i
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {ledger.map((tx: any) => (
+                        {ledger.filter((tx: any) => tx.type === 'OUT').map((tx: any) => (
                             <tr key={tx.id}>
                                 <td className="py-2 whitespace-nowrap">{format(new Date(tx.time), 'hh:mm a')}</td>
                                 <td className="py-2">
                                     <div className="font-semibold">{tx.description}</div>
                                     <div className="text-xs text-slate-500">{tx.method.toUpperCase()}</div>
                                 </td>
-                                <td className={`py-2 text-right font-bold ${tx.type === 'IN' ? '' : 'text-red-600'}`}>
-                                    {tx.type === 'IN' ? '+' : '-'} ₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                <td className="py-2 text-right font-bold text-red-600">
+                                    - ₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                 </td>
                             </tr>
                         ))}
-                        {ledger.length === 0 && (
+                        {ledger.filter((tx: any) => tx.type === 'OUT').length === 0 && (
                             <tr>
-                                <td colSpan={3} className="py-4 text-center text-slate-500 italic">No transactions recorded</td>
+                                <td colSpan={3} className="py-4 text-center text-slate-500 italic">No expenses recorded</td>
                             </tr>
                         )}
                     </tbody>

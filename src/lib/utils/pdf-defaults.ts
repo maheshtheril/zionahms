@@ -184,11 +184,32 @@ export const WORLD_STANDARD_DEFAULTS: Record<string, any> = {
         table: { x: 50, y: 320, showSection: true }
     },
     lab_report: {
-        logo: { x: 50, y: 50, showSection: true, width: 80 },
-        doc_title: { x: 400, y: 80, fontSize: 20, fontWeight: 'bold', label: "LABORATORY REPORT", align: 'center', showSection: true },
-        patient_name: { x: 50, y: 180, fontSize: 12, label: "Name: {{patient.fullname}}", showSection: true },
-        patient_id: { x: 50, y: 200, fontSize: 10, label: "ID: {{patient.patient_number}}", showSection: true },
-        table: { x: 50, y: 280, showSection: true }
+        // WORLD-CLASS PATHOLOGY REPORT HEADER
+        logo: { x: 40, y: 30, width: 65 },
+        hosp_name: { x: 297, y: 35, fontSize: 20, fontWeight: '900', label: "{{company.name}}", align: 'center' },
+        dept_name: { x: 297, y: 65, fontSize: 11, fontWeight: 'bold', label: "DEPARTMENT OF LABORATORY MEDICINE", align: 'center', color: "#3730a3" },
+        hosp_info: { x: 297, y: 82, fontSize: 9, color: "#64748b", label: "{{company.address}} | Ph: {{company.phone}} | {{company.email}}", align: 'center' },
+        
+        line_hdr: { type: 'line', x: 40, y: 100, x2: 555, thickness: 1.5, color: '#1e293b' },
+        
+        patient_lbl: { x: 40, y: 115, fontSize: 7, fontWeight: 'bold', label: "PATIENT DETAILS:", color: "#64748b" },
+        patient_name: { x: 40, y: 128, fontSize: 13, fontWeight: '900', label: "{{patient_name}}" },
+        patient_id: { x: 40, y: 144, fontSize: 9, label: "Hosp ID: {{patient.patient_number}}" },
+        patient_age: { x: 40, y: 156, fontSize: 9, label: "Age/Sex: {{patient.age}} / {{patient.gender}}" },
+        patient_mobile: { x: 40, y: 168, fontSize: 9, label: "Mob: {{patient.mobile}}" },
+        
+        doc_lbl: { x: 555, y: 115, fontSize: 7, fontWeight: 'bold', label: "REPORT DETAILS:", align: 'right', color: "#64748b" },
+        bill_no: { x: 555, y: 128, fontSize: 11, fontWeight: 'bold', label: "Report ID: {{doc_number}}", align: 'right' },
+        date_hdr: { x: 555, y: 144, fontSize: 9, label: "Date: {{formatted_date}}", align: 'right' },
+        ref_doctor: { x: 555, y: 156, fontSize: 9, label: "Ref By: {{doctor_name}}", align: 'right', color: "#1e293b", fontWeight: 'bold' },
+        
+        doc_title: { x: 297, y: 185, fontSize: 16, fontWeight: '900', color: "#1e293b", label: "LABORATORY REPORT", align: 'center' },
+        
+        table: { x: 40, y: 210, fontSize: 10, headerFontSize: 10, showSection: true, qtyX: 340, rateX: 430, totalX: 555 },
+        
+        footer_line: { type: 'line', x: 40, y: 730, x2: 555, thickness: 0.5, color: '#e2e8f0' },
+        footer: { x: 297, y: 745, fontSize: 8, label: "This is an electronically generated report. Signatures are not required if verified.", align: 'center', color: "#64748b" },
+        end_of_report: { x: 297, y: 230, fontSize: 9, fontWeight: 'bold', label: "*** END OF REPORT ***", align: 'center', color: "#64748b" }
     },
     doctor_note: {
         logo: { x: 50, y: 50, showSection: true, width: 60 },
@@ -200,5 +221,6 @@ export const WORLD_STANDARD_DEFAULTS: Record<string, any> = {
 
 export function getUsageDefault(usage: string) {
     const norm = usage.toLowerCase().trim().split(' ').join('_');
+    if (norm === 'pos_bill') return WORLD_STANDARD_DEFAULTS.sale_bill;
     return WORLD_STANDARD_DEFAULTS[norm] || WORLD_STANDARD_DEFAULTS.sale_bill;
 }

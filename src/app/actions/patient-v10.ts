@@ -183,6 +183,28 @@ export async function createPatientV10(patientId: string | null | any, formData:
                 }
             }
 
+            // [INSURANCE INTEGRATION]
+            const providerId = formData.get('insurance_provider_id') as string;
+            const policyNo = formData.get('insurance_policy_number') as string;
+            
+            if (providerId && policyNo) {
+                try {
+                    await prisma.hms_patient_insurance.create({
+                        data: {
+                            tenant_id: tenantId,
+                            company_id: companyId,
+                            patient_id: patient.id,
+                            insurance_provider_id: providerId,
+                            policy_number: policyNo,
+                            group_number: (formData.get('insurance_group_number') as string) || null,
+                            is_primary: true
+                        }
+                    });
+                } catch (insErr) {
+                    console.warn("[INSURANCE-INTEGRATION] Failed to create insurance record. Proceeding with patient creation.", insErr);
+                }
+            }
+
             return {
                 success: true,
                 message: isUpdate ? "Master Patient Index Updated." : "New Patient Registered.",
@@ -269,5 +291,20 @@ export async function updatePatientMetadata(patientId: string, newMetadata: any)
     } catch (err: any) {
         console.error("[UPDATE_PATIENT_METADATA_FAIL]", err);
         return { error: err.message };
+    }
+}
+
+export async function getInsuranceProviders() {
+    const session = await auth();
+    if (!session?.user?.tenantId) return { success: false, data: [] };
+
+    try {
+        const providers = await prisma.hms_insurance_provider.findMany({
+            where: { tenant_id: session.user.tenantId, is_active: true }
+        });
+        return { success: true, data: providers };
+    } catch (err) {
+        console.error("Failed to fetch insurance providers:", err);
+        return { success: false, data: [] };
     }
 }

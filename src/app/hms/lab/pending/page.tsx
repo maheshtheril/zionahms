@@ -121,7 +121,7 @@ export default function LabPendingOrdersPage() {
                                     </div>
 
                                     <div className="flex flex-wrap gap-2">
-                                        {(order.hms_lab_order_lines || []).map((line: any) => (
+                                        {[...(order.hms_lab_order_lines || []), ...(order.hms_lab_order_line || [])].map((line: any) => (
                                             <Badge key={line.id} variant="secondary" className="bg-slate-50 dark:bg-slate-900 border-none px-3 py-1 text-slate-600 dark:text-slate-400">
                                                 {line.hms_lab_test?.name || line.requested_name}
                                             </Badge>
@@ -149,12 +149,12 @@ export default function LabPendingOrdersPage() {
                                         </Link>
                                     )}
                                     {order.status === 'completed' && (
-                                        <Link href={`/hms/lab/reports/${order.id}`}>
+                                        <a href={`/api/print/lab_report/${order.id}`} target="_blank" rel="noopener noreferrer">
                                             <Button variant="outline" className="rounded-xl gap-2 border-slate-200">
                                                 <Printer className="w-4 h-4" />
                                                 Report
                                             </Button>
-                                        </Link>
+                                        </a>
                                     )}
                                 </div>
                             </div>

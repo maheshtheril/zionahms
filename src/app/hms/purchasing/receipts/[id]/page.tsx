@@ -893,11 +893,11 @@ export default function EditPurchaseReceiptPage() {
                                         <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-16 text-foreground">Tax%</th>
                                         {taxType === 'INTRA' ? (
                                             <>
-                                                <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-20 text-foreground">CGST</th>
-                                                <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-20 text-foreground">SGST</th>
+                                                <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-20 text-foreground">Tax 1</th>
+                                                <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-20 text-foreground">Tax 2</th>
                                             </>
                                         ) : (
-                                            <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-20 text-foreground">IGST</th>
+                                            <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-20 text-foreground">Total Tax</th>
                                         )}
                                         <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-28 text-foreground">Net Total</th>
                                         <th className="w-8"></th>

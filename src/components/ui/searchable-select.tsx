@@ -34,7 +34,7 @@ interface SearchableSelectProps {
     value?: string | null;
     valueLabel?: string; // Explicit label for programmatically set value
     onChange: (value: string | null, option?: Option | null) => void;
-    onSearch: (query: string) => Promise<Option[]>;
+    onSearch?: (query: string) => Promise<Option[]>;
     placeholder?: string;
     options?: Option[];
     onCreate?: (query: string) => Promise<Option | null>;
@@ -74,7 +74,7 @@ export function SearchableSelect({
     const [creating, setCreating] = React.useState(false);
     const [selectedOption, setSelectedOption] = React.useState<Option | null>(null);
     const [activeIndex, setActiveIndex] = React.useState(0);
-    const [position, setPosition] = React.useState({ top: 0, left: 0, width: 0 });
+    const [position, setPosition] = React.useState<{ top?: number, bottom?: number, left: number, width: number, isFlipped?: boolean }>({ top: 0, left: 0, width: 0 });
 
     React.useEffect(() => {
         // Sync options with propOptions ONLY when propOptions actually changes (content-wise)
@@ -147,12 +147,26 @@ export function SearchableSelect({
             const updatePosition = () => {
                 if (!containerRef.current) return;
                 const rect = containerRef.current.getBoundingClientRect();
+                
+                // Smart Positioning: Flip upwards if we run out of screen space at the bottom
+                const dropdownHeight = 350; 
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const spaceAbove = rect.top;
+                
+                const isFlipped = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
+
                 setPosition(prev => {
-                    if (prev.top === rect.bottom && prev.left === rect.left && prev.width === rect.width) return prev;
+                    const newTop = isFlipped ? undefined : rect.bottom + 4;
+                    const newBottom = isFlipped ? window.innerHeight - rect.top + 4 : undefined;
+                    
+                    if (prev.top === newTop && prev.bottom === newBottom && prev.left === rect.left && prev.width === rect.width && prev.isFlipped === isFlipped) return prev;
+                    
                     return {
-                        top: rect.bottom,
+                        top: newTop,
+                        bottom: newBottom,
                         left: rect.left,
                         width: rect.width,
+                        isFlipped
                     };
                 });
             };
@@ -211,6 +225,16 @@ export function SearchableSelect({
 
 
     const performSearch = useDebouncedCallback(async (searchTerm: string) => {
+        if (!onSearch) {
+            const lowerSearch = searchTerm.toLowerCase();
+            const filtered = propOptions.filter(o => 
+                o.label.toLowerCase().includes(lowerSearch) || 
+                o.subLabel?.toLowerCase().includes(lowerSearch)
+            );
+            setOptions(filtered);
+            return;
+        }
+
         setLoading(true);
         // [MOD] Clear previous options immediately to show looking state
         setOptions([]); 
@@ -324,17 +348,18 @@ export function SearchableSelect({
         <div
             className={`
                 ${usePortal ? 'fixed' : 'absolute'} 
-                z-[999999] mt-1 overflow-hidden rounded-xl py-1 text-base shadow-2xl ring-1 ring-black/5 focus:outline-none sm:text-sm 
+                z-[999999] overflow-hidden rounded-xl py-1 text-base shadow-2xl ring-1 ring-black/5 focus:outline-none sm:text-sm 
                 bg-white dark:bg-neutral-900 border border-gray-100 dark:border-white/10 text-gray-900 dark:text-white shadow-lg dark:shadow-black
-                ${usePortal ? '' : 'w-full top-full left-0'}
+                ${usePortal ? '' : 'w-full top-full left-0 mt-1'}
             `}
             style={{
                 top: usePortal ? position.top : undefined,
+                bottom: usePortal ? position.bottom : undefined,
                 left: usePortal ? position.left : undefined,
                 minWidth: usePortal ? position.width : undefined,
                 width: usePortal ? 'max-content' : '100%',
                 maxWidth: '90vw',
-                maxHeight: '400px',
+                maxHeight: '350px',
                 pointerEvents: 'auto'
             }}
         >
@@ -422,10 +447,16 @@ export function SearchableSelect({
                         ${disabled ? 'opacity-70 cursor-not-allowed bg-gray-50 dark:bg-neutral-800' : ''}
                     `}
                     tabIndex={disabled ? -1 : 0}
-                    onFocus={() => {
+                    onFocus={(e) => {
                         if (disabled) return;
                         if (selectedOption && !open) {
                             setOpen(true);
+                        }
+                        // World-Class UX: Auto-scroll into view on mobile so the keyboard doesn't hide the dropdown
+                        if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                            setTimeout(() => {
+                                containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 300); // 300ms delay allows the virtual keyboard to fully open first
                         }
                         setTimeout(() => inputRef.current?.focus(), 0);
                     }}
@@ -437,6 +468,11 @@ export function SearchableSelect({
                             setTimeout(() => inputRef.current?.focus(), 0);
                         } else {
                             inputRef.current?.focus();
+                        }
+                        if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                            setTimeout(() => {
+                                containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 300);
                         }
                     }}
                 >
@@ -471,9 +507,14 @@ export function SearchableSelect({
                                 onFocus={() => {
                                     if (!disabled) {
                                         setOpen(true);
+                                        inputRef.current?.select();
                                         // Fetch immediately on focus if query is empty for better DX
                                         if (!query) {
-                                            onSearch("").then(res => setOptions(res));
+                                            if (onSearch) {
+                                                onSearch("").then(res => setOptions(res));
+                                            } else {
+                                                setOptions(propOptions);
+                                            }
                                         } else {
                                             performSearch(query);
                                         }

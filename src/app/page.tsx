@@ -26,8 +26,18 @@ export default async function Home() {
     }
 
     // 4. Reception Access
-    if (role === 'receptionist' || await checkPermission('hms:dashboard:reception')) {
+    if (role === 'receptionist' || role.includes('reception') || await checkPermission('hms:dashboard:reception')) {
       redirect('/hms/reception/dashboard');
+    }
+
+    // 5. Lab Access
+    if (role.includes('lab') || await checkPermission('hms:dashboard:lab')) {
+      redirect('/hms/lab/dashboard');
+    }
+
+    // 6. Pharmacy Access
+    if (role.includes('pharmac') || await checkPermission('hms:dashboard:pharmacy')) {
+      redirect('/hms/pharmacy/dashboard');
     }
   }
 
@@ -62,14 +72,14 @@ export default async function Home() {
   // Decision Logic:
   // Prioritize CRM if explicit, then HMS if explicit.
 
-  // 1. If CRM is present AND User has Access, go CRM.
-  if (hasCRM && await checkPermission('crm:view')) {
-    redirect('/crm/dashboard');
+  // 1. If HMS is present AND User has Access, go HMS.
+  if ((hasHMS || isHealthcare) && await checkPermission('hms:view')) {
+    redirect('/hms/dashboard');
   }
 
-  // 2. If HMS is present AND User has Access, go HMS.
-  if (hasHMS && await checkPermission('hms:view')) {
-    redirect('/hms/dashboard');
+  // 2. If CRM is present AND User has Access, go CRM.
+  if ((hasCRM || !isHealthcare) && await checkPermission('crm:view')) {
+    redirect('/crm/dashboard');
   }
 
   // 3. Fallback based on Industry (Legacy behavior)

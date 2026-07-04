@@ -24,7 +24,7 @@ export default function SettingsHubPage() {
             description: 'Manage companies, business units, and tenant settings.',
             icon: <Building2 className="h-6 w-6 text-blue-600" />,
             links: [
-                { name: 'Companies & Branches', href: '/hms/settings/companies' },
+                { name: 'Companies & Branches', href: '/settings/companies' },
             ]
         },
         {
@@ -42,6 +42,7 @@ export default function SettingsHubPage() {
             links: [
                 { name: 'Accounting Configuration', href: '/settings/accounting' },
                 { name: 'Payment Ledger Mapping', href: '/settings/accounting' },
+                { name: 'Print & Billing Formats', href: '/hms/settings/print', badge: 'New' },
             ]
         }
     ]

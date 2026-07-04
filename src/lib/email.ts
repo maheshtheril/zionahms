@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-export async function sendInvitationEmail(email: string, token: string, name: string, logoUrl?: string | null, appName?: string) {
+export async function sendInvitationEmail(email: string, token: string, name: string, logoUrl?: string | null, appName?: string, customAppUrl?: string) {
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
         console.warn('RESEND_API_KEY is not set. Email will not be sent.');
@@ -11,7 +11,7 @@ export async function sendInvitationEmail(email: string, token: string, name: st
 
     // [PRODUCTION READY] Determine App URL dynamically from the system
     // Using simple detection here, or pass it from headers() in the future calls.
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://cloud-hms.onrender.com');
+    const appUrl = customAppUrl || process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://cloud-hms.onrender.com');
 
     const inviteUrl = `${appUrl}/auth/accept-invite?token=${token}`;
     const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';

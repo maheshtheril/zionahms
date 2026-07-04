@@ -215,34 +215,31 @@ export async function inviteUser(data: InviteUserData) {
                 select: { logo_url: true, app_name: true }
             })
 
+            // Prefer current request's origin/host for accurate LAN routing
+            let host = (await headers()).get('host');
+            let origin = (await headers()).get('origin');
+            
+            let appUrl = '';
+            if (origin) {
+                appUrl = origin;
+            } else if (host) {
+                const protocol = host.includes('localhost') || host.includes('127.0.0.1') || host.startsWith('192.168.') ? 'http' : 'https';
+                appUrl = `${protocol}://${host}`;
+            } else {
+                appUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://cloud-hms.onrender.com');
+            }
+
             const emailResult = await sendInvitationEmail(
                 user.email,
                 token,
                 user.full_name || user.name || 'User',
                 tenant?.logo_url,
-                tenant?.app_name || undefined
+                tenant?.app_name || undefined,
+                appUrl
             )
             if (!emailResult.success) {
                 console.error("Resend Error:", emailResult.error)
                 emailError = typeof emailResult.error === 'string' ? emailResult.error : 'API Key missing or Sandbox restriction';
-            }
-
-            // Determine APP URL dynamically for Production Ready setup
-            // This is critical for LAN/Hospital deployments where process.env.NEXT_PUBLIC_APP_URL might be wrong or local
-            let host = (await headers()).get('host');
-            let origin = (await headers()).get('origin');
-            
-            // Prefer explicitly defined APP URL in production, or fallback to the current request's origin/host
-            let appUrl = process.env.NEXT_PUBLIC_APP_URL;
-            if (!appUrl) {
-                if (origin) {
-                    appUrl = origin;
-                } else if (host) {
-                    const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
-                    appUrl = `${protocol}://${host}`;
-                } else {
-                    appUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://cloud-hms.onrender.com';
-                }
             }
             
             inviteLink = `${appUrl}/auth/accept-invite?token=${token}`;
@@ -363,31 +360,31 @@ export async function resendInvitation(userId: string) {
             select: { logo_url: true, app_name: true }
         })
 
+        // Prefer current request's origin/host for accurate LAN routing
+        let host = (await headers()).get('host');
+        let origin = (await headers()).get('origin');
+        
+        let appUrl = '';
+        if (origin) {
+            appUrl = origin;
+        } else if (host) {
+            const protocol = host.includes('localhost') || host.includes('127.0.0.1') || host.startsWith('192.168.') ? 'http' : 'https';
+            appUrl = `${protocol}://${host}`;
+        } else {
+            appUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://cloud-hms.onrender.com');
+        }
+
         const emailResult = await sendInvitationEmail(
             user.email,
             token,
             user.full_name || user.name || 'User',
             tenant?.logo_url,
-            tenant?.app_name || undefined
+            tenant?.app_name || undefined,
+            appUrl
         )
 
         if (!emailResult.success) {
             emailError = typeof emailResult.error === 'string' ? emailResult.error : 'Mail delivery failed (Check API Key/Sandbox)';
-        }
-
-        let host = (await headers()).get('host');
-        let origin = (await headers()).get('origin');
-        
-        let appUrl = process.env.NEXT_PUBLIC_APP_URL;
-        if (!appUrl) {
-            if (origin) {
-                appUrl = origin;
-            } else if (host) {
-                const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
-                appUrl = `${protocol}://${host}`;
-            } else {
-                appUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://cloud-hms.onrender.com';
-            }
         }
         
         inviteLink = `${appUrl}/auth/accept-invite?token=${token}`;

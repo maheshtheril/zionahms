@@ -23,7 +23,6 @@ export async function searchPatients(query: string) {
         const patients = await prisma.hms_patient.findMany({
             where: {
                 tenant_id: tenantId,
-                ...(!isAdmin && { created_by: session.user.id }),
                 OR: [
                     { first_name: { contains: query, mode: 'insensitive' } },
                     { last_name: { contains: query, mode: 'insensitive' } },
@@ -80,7 +79,6 @@ export async function searchPatients(query: string) {
         const fallback = await prisma.hms_patient.findMany({
             where: {
                 tenant_id: session.user.tenantId,
-                ...(!isAdmin && { created_by: session.user.id }),
                 OR: [
                     { first_name: { contains: query, mode: 'insensitive' } },
                     { last_name: { contains: query, mode: 'insensitive' } }

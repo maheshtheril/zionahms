@@ -51,7 +51,7 @@ export async function generateMetadata(): Promise<Metadata> {
         { url: logoUrl, sizes: "180x180", type: "image/png" },
       ],
     },
-    manifest: '/manifest.webmanifest?v=1.0.6',
+    manifest: '/manifest.json',
     appleWebApp: {
       capable: true,
       statusBarStyle: "default",

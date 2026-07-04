@@ -12,7 +12,8 @@ import {
     Loader2,
     AlertCircle,
     CheckCircle2,
-    FileText
+    FileText,
+    Printer
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,7 @@ const DENOMINATIONS = [
     { value: 1, label: "1" },
 ];
 
-export function ShiftManager({ onShiftUpdate, onOpenExpense }: { onShiftUpdate?: (shift: any) => void, onOpenExpense?: () => void }) {
+export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShiftUpdate?: (shift: any) => void, onOpenExpense?: () => void, onClose?: () => void }) {
     const [shift, setShift] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isStartOpen, setIsStartOpen] = useState(false);
@@ -68,6 +69,10 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense }: { onShiftUpdate?:
     const [isExpenseOpen, setIsExpenseOpen] = useState(false);
     const [expenseAmount, setExpenseAmount] = useState("");
     const [expenseNotes, setExpenseNotes] = useState("");
+
+    // Post-close state
+    const [isPrintPromptOpen, setIsPrintPromptOpen] = useState(false);
+    const [closedShiftId, setClosedShiftId] = useState<string | null>(null);
     const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
 
     const refreshShift = async () => {
@@ -101,6 +106,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense }: { onShiftUpdate?:
             setIsStartOpen(false);
             setStartQuantities({});
             refreshShift();
+            if (onClose) onClose();
         } else {
             toast.error(res.error || "Failed to open shift counter");
             setLoading(false);
@@ -139,12 +145,13 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense }: { onShiftUpdate?:
         const res = await closeShift(shift.id, totalCashPhysical, quantities);
         if (res.success) {
             toast.success("Shift closed and reconciled successfully");
-            handlePrintShift({ id: shift.id });
+            setClosedShiftId(shift.id);
             setIsEndOpen(false);
             setShift(null);
             setQuantities({});
             setSummary(null);
             refreshShift();
+            setIsPrintPromptOpen(true);
         } else {
             toast.error(res.error || "Failed to close shift");
             setLoading(false);
@@ -180,7 +187,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense }: { onShiftUpdate?:
 
     const handlePrintShift = (shiftData: any) => {
         // We'll open a minimal printable report in a new tab.
-        window.open(`/hms/reception/shift/${shiftData.id}/print`, '_blank', 'width=800,height=600');
+        window.open(`/api/print/shift_close/${shiftData.id}?autoPrint=true`, '_blank', 'width=800,height=600');
     };
 
     if (loading && !shift) {
@@ -199,7 +206,7 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense }: { onShiftUpdate?:
                     <div className="space-y-1.5">
                         <CardTitle className="text-2xl font-black flex items-center gap-2.5 text-slate-800 dark:text-slate-100 tracking-tight">
                             {shift ? <Unlock className="h-6 w-6 text-emerald-500 animate-pulse" /> : <Lock className="h-6 w-6 text-slate-400" />}
-                            Enterprise Counter Terminal & Handover Audit
+                            {shift ? "Active Cash Register" : "Cash Register (Closed)"}
                         </CardTitle>
                         <CardDescription className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                             {shift
@@ -323,6 +330,33 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense }: { onShiftUpdate?:
                             )}
                         </TableBody>
                     </Table>
+                </DialogContent>
+            </Dialog>
+
+            {/* Post-Close Print Prompt */}
+            <Dialog open={isPrintPromptOpen} onOpenChange={setIsPrintPromptOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-emerald-600">
+                            <CheckCircle2 className="h-6 w-6" />
+                            Shift Closed Successfully
+                        </DialogTitle>
+                        <DialogDescription>
+                            The cash counter has been securely locked and recorded. Would you like to print the end-of-shift report now?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex gap-2 sm:justify-end mt-4">
+                        <Button variant="outline" onClick={() => setIsPrintPromptOpen(false)}>
+                            Done
+                        </Button>
+                        <Button onClick={() => {
+                            handlePrintShift({ id: closedShiftId });
+                            setIsPrintPromptOpen(false);
+                        }} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
+                            <Printer className="h-4 w-4 mr-2" />
+                            Print Report
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 
@@ -495,11 +529,19 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense }: { onShiftUpdate?:
                                         <Loader2 className="h-4 w-4 animate-spin" /> Calculating session totals...
                                     </div>
                                 ) : summary ? (
-                                    <div className="space-y-3">
-                                        <div className="flex justify-between text-sm">
-                                            <span>Opening Float</span>
-                                            <span className="font-bold">₹{Number(shift?.opening_balance || 0).toLocaleString()}</span>
-                                        </div>
+                                      <div className="space-y-3">
+                                          <div className="flex justify-between text-sm">
+                                              <span>Total Revenue (Sales)</span>
+                                              <span className="font-bold text-indigo-600">₹{summary.totalRevenue?.toLocaleString() || 0}</span>
+                                          </div>
+                                          <div className="flex justify-between text-sm pb-3 border-b border-dashed">
+                                              <span>Draft / Pending Bills</span>
+                                              <span className="font-bold text-amber-600">₹{summary.pendingBillsTotal?.toLocaleString() || 0}</span>
+                                          </div>
+                                          <div className="flex justify-between text-sm pt-1">
+                                              <span>Opening Float</span>
+                                              <span className="font-bold">₹{Number(shift?.opening_balance || 0).toLocaleString()}</span>
+                                          </div>
                                         <div className="flex justify-between text-sm">
                                             <span>Cash Collected</span>
                                             <span className="font-bold text-green-600">+ ₹{summary.cashCollected.toLocaleString()}</span>
@@ -567,17 +609,28 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense }: { onShiftUpdate?:
                                 />
                             </div>
 
-                            <div className="pt-4">
-                                <Button
-                                    className="w-full h-12 text-lg font-bold"
-                                    disabled={loading || summaryLoading}
-                                    onClick={handleCloseShift}
-                                >
-                                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lock className="mr-2 h-4 w-4" />}
-                                    FINALIZE & CLOSE SHIFT
-                                </Button>
+                            <div className="pt-4 space-y-2">
+                                <div className="flex gap-3">
+                                    <Button
+                                        variant="outline"
+                                        className="h-12 px-6 border-slate-300 dark:border-slate-700"
+                                        onClick={() => handlePrintShift({ id: shift?.id })}
+                                        title="Print Report"
+                                    >
+                                        <FileText className="h-5 w-5 mr-2" />
+                                        Print
+                                    </Button>
+                                    <Button
+                                        className="flex-1 h-12 text-lg font-bold"
+                                        disabled={loading || summaryLoading}
+                                        onClick={handleCloseShift}
+                                    >
+                                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lock className="mr-2 h-4 w-4" />}
+                                        FINALIZE & CLOSE SHIFT
+                                    </Button>
+                                </div>
                                 <p className="text-[10px] text-center mt-2 text-muted-foreground">
-                                    By closing, you acknowledge the physical cash count matches your declaration.
+                                    Note: If printing does not start automatically when closing, please "Allow Popups" in your browser or click the Print button above.
                                 </p>
                             </div>
                         </div>

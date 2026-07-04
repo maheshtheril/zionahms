@@ -201,7 +201,7 @@ export async function getPendingLabOrders() {
             orderBy: { created_at: 'desc' }
         })
 
-        return { success: true, data: orders }
+        return { success: true, data: JSON.parse(JSON.stringify(orders)) }
     } catch (err: any) {
         return { success: false, error: err.message }
     }
@@ -230,7 +230,7 @@ export async function getLabOrderForReporting(orderId: string) {
             }
         })
 
-        return { success: true, data: order }
+        return { success: true, data: JSON.parse(JSON.stringify(order)) }
     } catch (err: any) {
         return { success: false, error: err.message }
     }
@@ -347,9 +347,18 @@ export async function getLabTests() {
     try {
         const tests = await prisma.hms_lab_test.findMany({
             where: { company_id: session.user.companyId },
-            orderBy: { name: 'asc' }
+            orderBy: { name: 'asc' },
+            include: {
+                hms_lab_test_panel_member_hms_lab_test_panel_member_panel_idTohms_lab_test: {
+                    include: {
+                        hms_lab_test_hms_lab_test_panel_member_member_test_idTohms_lab_test: {
+                            select: { id: true, name: true, units: true, reference_range: true, method: true, price: true }
+                        }
+                    }
+                }
+            }
         })
-        return { success: true, data: tests }
+        return { success: true, data: JSON.parse(JSON.stringify(tests)) }
     } catch (err: any) {
         return { success: false, error: err.message }
     }
@@ -363,25 +372,29 @@ export async function saveLabTest(data: any) {
         const tenantId = session.user.tenantId!
         const companyId = session.user.companyId!
 
+        // Strip relation arrays - only pass scalar fields to Prisma
+        const safeData = {
+            name:            data.name,
+            method:          data.method          ?? null,
+            units:           data.units           ?? null,
+            reference_range: data.reference_range ?? null,
+            price:           data.price           ?? 0,
+            is_panel:        data.is_panel        ?? false,
+            group_id:        data.group_id        ?? null,
+            code:            data.code            ?? null,
+            loinc_code:      data.loinc_code      ?? null,
+            metadata:        data.metadata        ?? {},
+        };
+
         if (data.id) {
-            const { id, ...rest } = data;
             await prisma.hms_lab_test.update({
-                where: { id: id },
-                data: {
-                    ...rest,
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    updated_at: new Date()
-                }
-            })
+                where: { id: data.id },
+                data: { ...safeData, tenant_id: tenantId, company_id: companyId, updated_at: new Date() }
+            });
         } else {
             await prisma.hms_lab_test.create({
-                data: {
-                    ...data,
-                    tenant_id: tenantId,
-                    company_id: companyId
-                }
-            })
+                data: { ...safeData, tenant_id: tenantId, company_id: companyId }
+            });
         }
 
         revalidatePath('/hms/lab/tests')
@@ -565,4 +578,84 @@ export async function sendLabReportWhatsappAction(orderId: string) {
     return await NotificationService.sendLabReportWhatsapp(orderId, tenantId)
 }
 
+export async function getProcessingLabOrders() {
+    const session = await auth();
+    if (!session?.user?.companyId) return { success: false, error: 'Unauthorized' };
+    try {
+        const orders = await prisma.hms_lab_order.findMany({
+            where: {
+                company_id: session.user.companyId,
+                status: { in: ['collected', 'in_progress'] }
+            },
+            include: {
+                hms_patient: { select: { first_name: true, last_name: true, patient_number: true } },
+                hms_appointment: { include: { hms_clinician: { select: { first_name: true, last_name: true } } } },
+                hms_lab_order_lines: { include: { hms_lab_test: true, hms_lab_result: true } },
+                hms_lab_order_line: { include: { hms_lab_test: true } }
+            },
+            orderBy: { created_at: 'desc' }
+        });
+        return { success: true, data: JSON.parse(JSON.stringify(orders)) };
+    } catch (error) {
+        return { success: false, error: 'Failed to fetch' };
+    }
+}
+
+export async function getCompletedLabOrders() {
+    const session = await auth();
+    if (!session?.user?.companyId) return { success: false, error: 'Unauthorized' };
+    try {
+        const orders = await prisma.hms_lab_order.findMany({
+            where: {
+                company_id: session.user.companyId,
+                status: { in: ['completed', 'approved'] }
+            },
+            include: {
+                hms_patient: { select: { first_name: true, last_name: true, patient_number: true } },
+                hms_appointment: { include: { hms_clinician: { select: { first_name: true, last_name: true } } } },
+                hms_lab_order_lines: { include: { hms_lab_test: true, hms_lab_result: true } },
+                hms_lab_order_line: { include: { hms_lab_test: true } }
+            },
+            orderBy: { created_at: 'desc' }
+        });
+        return { success: true, data: JSON.parse(JSON.stringify(orders)) };
+    } catch (error) {
+        return { success: false, error: 'Failed to fetch' };
+    }
+}
+
+export async function createWalkinLabOrder(payload: any) {
+    const session = await auth();
+    if (!session?.user?.tenantId) return { success: false, error: 'Unauthorized' };
+    
+    try {
+        const orderId = crypto.randomUUID();
+        const patientId = payload.patient_id || crypto.randomUUID(); 
+        
+        const order = await prisma.hms_lab_order.create({
+            data: {
+                id: orderId,
+                tenant_id: session.user.tenantId,
+                company_id: session.user.companyId || null,
+                order_number: `LAB-${Date.now()}`,
+                patient_id: patientId,
+                status: 'requested',
+                priority: 'normal',
+                hms_lab_order_line: {
+                    create: payload.tests.map((test: any) => ({
+                        id: crypto.randomUUID(),
+                        tenant_id: session.user.tenantId,
+                        test_id: test.id,
+                        status: 'requested',
+                        price: test.price || 0
+                    }))
+                }
+            }
+        });
+        
+        return { success: true, data: JSON.parse(JSON.stringify(order)) };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}
 

@@ -83,14 +83,14 @@ export function WorkspaceTabs() {
                 const nextActive = remaining[Math.max(0, index - 1)];
                 router.push(nextActive.url);
             } else {
-                router.push('/hms');
+                router.push('/hms/dashboard');
             }
         }
     };
 
     const closeAll = () => {
         setTabs([]);
-        router.push('/hms');
+        router.push('/hms/dashboard');
     };
 
     const closeOthers = (id: string) => {
@@ -112,7 +112,7 @@ export function WorkspaceTabs() {
             <div className="flex items-center">
                 {/* Home/Overview Icon */}
                 <div 
-                    onClick={() => router.push('/hms')}
+                    onClick={() => router.push('/hms/dashboard')}
                     className="px-4 h-12 flex items-center justify-center border-r border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors text-slate-400 hover:text-indigo-600"
                 >
                     <LayoutGrid className="h-4 w-4" />

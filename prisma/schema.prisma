@@ -252,8 +252,9 @@ model attachment {
   @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model audit_log {
-  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id         String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id  String?   @db.Uuid
   actor_id   String?   @db.Uuid
   table_name String
@@ -263,6 +264,8 @@ model audit_log {
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   row_id     String?   @db.Uuid
   event      String?
+
+  @@ignore
 }
 
 model business_partners {
@@ -1331,6 +1334,7 @@ model hms_invoice {
   hms_payment_allocations hms_payment_allocations[]
   hms_sales_return        hms_sales_return[]
   journal_entries         journal_entries[]
+  insurance_claim         hms_insurance_claim?
 
   @@unique([tenant_id, company_id, invoice_number], map: "ux_hms_invoice_company_number")
   @@index([tenant_id, company_id, issued_at(sort: Desc)], map: "ix_hms_invoice_tenant_company_issued_desc")
@@ -1349,29 +1353,30 @@ model hms_invoice_history {
 }
 
 model hms_invoice_lines {
-  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id             String                  @db.Uuid
-  company_id            String                  @db.Uuid
-  invoice_id            String                  @db.Uuid
+  id                    String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id             String                     @db.Uuid
+  company_id            String                     @db.Uuid
+  invoice_id            String                     @db.Uuid
   line_idx              Int
   line_ref              String?
-  product_id            String?                 @db.Uuid
+  product_id            String?                    @db.Uuid
   description           String?
-  quantity              Decimal                 @default(1) @db.Decimal(14, 4)
+  quantity              Decimal                    @default(1) @db.Decimal(14, 4)
   uom                   String?
-  unit_price            Decimal                 @default(0) @db.Decimal(18, 4)
-  discount_amount       Decimal                 @default(0) @db.Decimal(18, 4)
-  tax_amount            Decimal                 @default(0) @db.Decimal(18, 4)
-  net_amount            Decimal                 @default(0) @db.Decimal(18, 4)
+  unit_price            Decimal                    @default(0) @db.Decimal(18, 4)
+  discount_amount       Decimal                    @default(0) @db.Decimal(18, 4)
+  tax_amount            Decimal                    @default(0) @db.Decimal(18, 4)
+  net_amount            Decimal                    @default(0) @db.Decimal(18, 4)
   account_code          String?
-  metadata              Json?                   @default("{}")
-  created_at            DateTime                @default(now()) @db.Timestamptz(6)
-  subtotal              Decimal?                @default(0) @db.Decimal(20, 6)
-  tax_rate_id           String?                 @db.Uuid
-  hms_invoice           hms_invoice             @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  hms_product           hms_product?            @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  tax_rates             tax_rates?              @relation(fields: [tax_rate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  metadata              Json?                      @default("{}")
+  created_at            DateTime                   @default(now()) @db.Timestamptz(6)
+  subtotal              Decimal?                   @default(0) @db.Decimal(20, 6)
+  tax_rate_id           String?                    @db.Uuid
+  hms_invoice           hms_invoice                @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  hms_product           hms_product?               @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tax_rates             tax_rates?                 @relation(fields: [tax_rate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_sales_return_line hms_sales_return_line[]
+  insurance_claim_lines hms_insurance_claim_line[]
 
   @@index([tenant_id, product_id], map: "ix_hms_invoice_lines_product")
   @@index([tenant_id, product_id], map: "ix_hms_invoice_lines_tenant_product")
@@ -1633,40 +1638,41 @@ model hms_outbox {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model hms_patient {
-  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id         String              @db.Uuid
-  company_id        String?             @db.Uuid
-  patient_number    String?
-  first_name        String
-  last_name         String?
-  dob               DateTime?           @db.Date
-  gender            String?
-  identifiers       Json?               @default("{}")
-  contact           Json?               @default("{}")
-  metadata          Json?               @default("{}")
-  created_by        String?             @db.Uuid
-  created_at        DateTime            @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime            @default(now()) @db.Timestamptz(6)
-  external_id       String?
-  status            String?             @default("active")
-  merged_into       String?             @db.Uuid
-  source_system     String?
-  updated_by        String?             @db.Uuid
-  full_name         String?
-  profile_image_url String?
-  blood_group       String?
-  accounting_group  String?             @default("general")
-  branch_id         String?             @db.Uuid
-  hms_admission     hms_admission[]
-  hms_appointments  hms_appointments[]
-  hms_encounter     hms_encounter[]
-  hms_imaging_order hms_imaging_order[]
-  hms_invoice       hms_invoice[]
-  hms_lab_order     hms_lab_order[]
-  branch            hms_branch?         @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  hms_sales_return  hms_sales_return[]
-  hms_vitals        hms_vitals[]
-  prescription      prescription[]
+  id                 String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id          String                  @db.Uuid
+  company_id         String?                 @db.Uuid
+  patient_number     String?
+  first_name         String
+  last_name          String?
+  dob                DateTime?               @db.Date
+  gender             String?
+  identifiers        Json?                   @default("{}")
+  contact            Json?                   @default("{}")
+  metadata           Json?                   @default("{}")
+  created_by         String?                 @db.Uuid
+  created_at         DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime                @default(now()) @db.Timestamptz(6)
+  external_id        String?
+  status             String?                 @default("active")
+  merged_into        String?                 @db.Uuid
+  source_system      String?
+  updated_by         String?                 @db.Uuid
+  full_name          String?
+  profile_image_url  String?
+  blood_group        String?
+  accounting_group   String?                 @default("general")
+  branch_id          String?                 @db.Uuid
+  hms_admission      hms_admission[]
+  hms_appointments   hms_appointments[]
+  hms_encounter      hms_encounter[]
+  hms_imaging_order  hms_imaging_order[]
+  hms_invoice        hms_invoice[]
+  hms_lab_order      hms_lab_order[]
+  branch             hms_branch?             @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hms_sales_return   hms_sales_return[]
+  hms_vitals         hms_vitals[]
+  prescription       prescription[]
+  patient_insurances hms_patient_insurance[]
 
   @@index([contact], map: "hms_patient_contact_gin_idx", type: Gin)
   @@index([identifiers], map: "hms_patient_identifiers_gin_idx", type: Gin)
@@ -1795,6 +1801,7 @@ model hms_product {
   hms_uom                    hms_uom?                     @relation(fields: [uom_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_product_batch          hms_product_batch[]
   hms_product_category_rel   hms_product_category_rel[]
+  hms_product_storage_link   hms_product_storage_link[]
   hms_product_image          hms_product_image[]
   hms_product_price_history  hms_product_price_history[]
   hms_product_stock_ledger   hms_product_stock_ledger[]
@@ -2524,9 +2531,9 @@ model hms_stock_move {
   source                                                              String?
   source_reference                                                    String?               @db.Uuid
   cost                                                                Decimal?              @db.Decimal(18, 4)
-  batch_id                                                            String?               @db.Uuid
   created_by                                                          String?               @db.Uuid
   created_at                                                          DateTime              @default(now()) @db.Timestamptz(6)
+  batch_id                                                            String?               @db.Uuid
   hms_product_batch                                                   hms_product_batch?    @relation(fields: [batch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_stock_location_hms_stock_move_location_fromTohms_stock_location hms_stock_location?   @relation("hms_stock_move_location_fromTohms_stock_location", fields: [location_from], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_stock_location_hms_stock_move_location_toTohms_stock_location   hms_stock_location?   @relation("hms_stock_move_location_toTohms_stock_location", fields: [location_to], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -4803,3 +4810,144 @@ enum visit_status {
   no_show
 }
 
+model hms_storage_locations {
+  id             String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id      String                  @db.Uuid
+  company_id     String                  @db.Uuid
+  name           String
+  type           String
+  parent_id      String?                 @db.Uuid
+  parent         hms_storage_locations?  @relation("LocationHierarchy", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children       hms_storage_locations[] @relation("LocationHierarchy")
+  barcode        String?
+  capacity_limit Decimal?                @db.Decimal(14, 2)
+  is_active      Boolean                 @default(true)
+  created_at     DateTime                @default(now()) @db.Timestamptz(6)
+
+  hms_product_storage hms_product_storage_link[]
+}
+
+model hms_product_storage_link {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id  String   @db.Uuid
+  location_id String   @db.Uuid
+  is_primary  Boolean  @default(true)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  product  hms_product           @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  location hms_storage_locations @relation(fields: [location_id], references: [id], onDelete: Cascade)
+}
+
+model hms_staff_leave {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id  String   @db.Uuid
+  user_id    String   @db.Uuid
+  leave_type String
+  start_date DateTime @db.Date
+  end_date   DateTime @db.Date
+  reason     String?
+  status     String   @default("pending") // pending, approved, rejected
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model hms_staff_salary {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id   String   @db.Uuid
+  user_id     String   @unique @db.Uuid
+  base_salary Decimal  @default(0) @db.Decimal(18, 2)
+  hourly_rate Decimal  @default(0) @db.Decimal(18, 2)
+  allowances  Json?    @default("{}")
+  deductions  Json?    @default("{}")
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model hms_payroll_slip {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id       String   @db.Uuid
+  user_id         String   @db.Uuid
+  month_year      String // e.g. '2026-07'
+  base_salary     Decimal  @default(0) @db.Decimal(18, 2)
+  total_allowance Decimal  @default(0) @db.Decimal(18, 2)
+  total_deduction Decimal  @default(0) @db.Decimal(18, 2)
+  net_pay         Decimal  @default(0) @db.Decimal(18, 2)
+  attendance_data Json?    @default("{}")
+  status          String   @default("draft") // draft, paid
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([user_id, month_year])
+}
+
+model hms_insurance_provider {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id    String   @db.Uuid
+  company_id   String   @db.Uuid
+  name         String   @db.VarChar(255)
+  contact_info String?  @db.Text
+  api_endpoint String?  @db.VarChar(255)
+  is_active    Boolean  @default(true)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  patient_insurances hms_patient_insurance[]
+  claims             hms_insurance_claim[]
+}
+
+model hms_patient_insurance {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id             String    @db.Uuid
+  company_id            String    @db.Uuid
+  patient_id            String    @db.Uuid
+  insurance_provider_id String    @db.Uuid
+  policy_number         String    @db.VarChar(255)
+  group_number          String?   @db.VarChar(255)
+  is_primary            Boolean   @default(true)
+  valid_until           DateTime? @db.Date
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  patient  hms_patient            @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  provider hms_insurance_provider @relation(fields: [insurance_provider_id], references: [id], onDelete: Cascade)
+  claims   hms_insurance_claim[]
+}
+
+model hms_insurance_claim {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id              String    @db.Uuid
+  company_id             String    @db.Uuid
+  invoice_id             String    @unique @db.Uuid
+  patient_insurance_id   String    @db.Uuid
+  provider_id            String    @db.Uuid
+  status                 String    @default("draft") @db.VarChar(50)
+  amount_billed          Decimal   @db.Decimal(10, 2)
+  amount_approved        Decimal?  @db.Decimal(10, 2)
+  amount_paid            Decimal?  @db.Decimal(10, 2)
+  patient_responsibility Decimal?  @db.Decimal(10, 2)
+  denial_reason          String?   @db.Text
+  submitted_at           DateTime? @db.Timestamptz(6)
+  created_at             DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  invoice           hms_invoice                @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+  patient_insurance hms_patient_insurance      @relation(fields: [patient_insurance_id], references: [id], onDelete: Cascade)
+  provider          hms_insurance_provider     @relation(fields: [provider_id], references: [id], onDelete: Cascade)
+  claim_lines       hms_insurance_claim_line[]
+}
+
+model hms_insurance_claim_line {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id       String   @db.Uuid
+  company_id      String   @db.Uuid
+  claim_id        String   @db.Uuid
+  invoice_line_id String   @db.Uuid
+  amount_billed   Decimal  @db.Decimal(10, 2)
+  amount_approved Decimal? @db.Decimal(10, 2)
+  amount_paid     Decimal? @db.Decimal(10, 2)
+  status          String   @default("pending") @db.VarChar(50)
+  denial_reason   String?  @db.Text
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  claim        hms_insurance_claim @relation(fields: [claim_id], references: [id], onDelete: Cascade)
+  invoice_line hms_invoice_lines   @relation(fields: [invoice_line_id], references: [id], onDelete: Cascade)
+}

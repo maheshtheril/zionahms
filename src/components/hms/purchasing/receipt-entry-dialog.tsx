@@ -17,7 +17,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { SearchableSelect, type Option } from "@/components/ui/searchable-select";
 import { Toaster } from "@/components/ui/toaster";
 import { getSuppliersList, getProductsPremium, getProduct, findOrCreateProduct, getUOMs } from "@/app/actions/inventory";
-import { getPendingPurchaseOrders, createPurchaseReceipt, getPurchaseOrder, getPurchaseReceipt } from "@/app/actions/receipt";
+import { getPendingPurchaseOrders, createPurchaseReceipt, getPurchaseOrder, getPurchaseReceipt, updatePurchaseReceipt } from "@/app/actions/receipt";
 import { motion } from "framer-motion";
 import { getCompanyDetails } from "@/app/actions/purchase";
 import { scanInvoiceFromUrl as scanInvoiceAction } from "@/app/actions/scan-invoice";
@@ -33,6 +33,7 @@ import {
 import { FileUpload } from "@/components/ui/file-upload";
 
 type ReceiptItem = {
+    id?: string;
     productId: string;
     productName: string;
     poLineId?: string;
@@ -155,6 +156,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                         setAttachmentUrl(r.attachmentUrl || '');
                         if (r.items) {
                             setItems(r.items.map((i: any) => ({
+                                id: i.id,
                                 productId: i.productId,
                                 productName: i.productName,
                                 receivedQty: i.qty || i.receivedQty || 0,
@@ -629,6 +631,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
             notes,
             attachmentUrl,
             items: items.map(i => ({
+                id: i.id,
                 productId: i.productId,
                 poLineId: i.poLineId,
                 qtyReceived: i.receivedQty,
@@ -653,10 +656,16 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
             }))
         } as any;
 
-        const res = await createPurchaseReceipt(payload) as any;
-        if (res.error) {
+        let res: any;
+        if (viewReceiptId) {
+            res = await updatePurchaseReceipt(viewReceiptId, payload) as any;
+        } else {
+            res = await createPurchaseReceipt(payload) as any;
+        }
+
+        if (res?.error) {
             toast({ title: "Error", description: res.error, variant: "destructive" });
-        } else if (res.warning) {
+        } else if (res?.warning) {
             toast({ title: "Completed with Warning", description: res.warning, variant: "destructive" });
             onSuccess?.();
             onClose();
@@ -1135,9 +1144,14 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                                         <th className="py-2.5 px-2 w-24 text-right">Schm Amt</th>
                                         <th className="py-2.5 px-2 w-28 text-right">Taxable Val</th>
                                         <th className="py-2.5 px-2 w-24 text-right">Tax (%)</th>
-                                        <th className="py-2.5 px-2 w-20 text-right">CGST</th>
-                                        <th className="py-2.5 px-2 w-20 text-right">SGST</th>
-                                        <th className="py-2.5 px-2 w-20 text-right">IGST</th>
+                                        {taxType === 'INTRA' ? (
+                                            <>
+                                                <th className="py-2.5 px-2 w-20 text-right">Tax 1</th>
+                                                <th className="py-2.5 px-2 w-20 text-right">Tax 2</th>
+                                            </>
+                                        ) : (
+                                            <th className="py-2.5 px-2 w-20 text-right">Total Tax</th>
+                                        )}
                                         <th className="py-2.5 px-2 w-24 text-right">Net Cost</th>
                                         <th className="py-2.5 pr-6 text-right w-32 sticky right-0 z-50 bg-muted border-l border-border shadow-2xl">Line Total</th>
                                     </tr>

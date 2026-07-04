@@ -23,6 +23,7 @@ type Receipt = {
     itemCount: number;
     totalAmount: number;
     status: string | null;
+    createdAt?: Date;
 };
 
 export default function PurchaseReceiptsPage() {
@@ -155,7 +156,7 @@ export default function PurchaseReceiptsPage() {
                         <div className="grid gap-4">
                             <div className="grid grid-cols-12 gap-4 px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
                                 <div className="col-span-2">Receipt #</div>
-                                <div className="col-span-2">Date</div>
+                                <div className="col-span-2">Dates (Entry / Inv)</div>
                                 <div className="col-span-3">Supplier</div>
                                 <div className="col-span-1">Ref Invoice</div>
                                 <div className="col-span-1 text-right">Qty</div>
@@ -176,9 +177,15 @@ export default function PurchaseReceiptsPage() {
                                     <div className="col-span-2 font-mono text-sm text-indigo-500 font-medium group-hover:text-indigo-600 dark:text-indigo-400 dark:group-hover:text-indigo-300">
                                         {receipt.number}
                                     </div>
-                                    <div className="col-span-2 flex items-center gap-2 text-sm text-muted-foreground">
-                                        <Calendar className="h-3 w-3 text-muted-foreground/70" />
-                                        {new Date(receipt.date).toLocaleDateString('en-GB')}
+                                    <div className="col-span-2 flex flex-col gap-0.5 text-sm">
+                                        <span className="flex items-center gap-1.5 text-foreground font-medium" title="Entry Date (System GRN Date)">
+                                            <Calendar className="h-3 w-3 text-indigo-500" />
+                                            {receipt.createdAt ? new Date(receipt.createdAt).toLocaleDateString('en-GB') : 'N/A'}
+                                        </span>
+                                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground" title="Invoice Date (Vendor Bill Date)">
+                                            <FileText className="h-3 w-3 text-muted-foreground/50" />
+                                            Inv: {new Date(receipt.date).toLocaleDateString('en-GB')}
+                                        </span>
                                     </div>
                                     <div className="col-span-3 text-sm text-foreground font-medium truncate">
                                         {receipt.supplierName}

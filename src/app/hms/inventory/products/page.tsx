@@ -83,14 +83,16 @@ async function CreateProductActions() {
         uoms,
         categories,
         manufacturers,
-        uomCategories
+        uomCategories,
+        storageLocations
     ] = await Promise.all([
         getSuppliers(),
         getTaxRates(),
         getUOMs(),
         getCategories(),
         getManufacturers(),
-        getUOMCategories()
+        getUOMCategories(),
+        import("@/app/actions/storage-locations").then(m => m.getStorageLocationsFlat())
     ]);
 
     const { serialize } = await import("@/lib/utils");
@@ -103,6 +105,7 @@ async function CreateProductActions() {
             categories={serialize(categories)}
             manufacturers={serialize(manufacturers)}
             uomCategories={serialize(uomCategories)}
+            storageLocations={serialize(storageLocations.data || [])}
         />
     )
 }
@@ -129,14 +132,16 @@ async function ProductTable({ query, currentPage }: { query?: string, currentPag
         uoms,
         categories,
         manufacturers,
-        uomCategories
+        uomCategories,
+        storageLocations
     ] = await Promise.all([
         getSuppliers(),
         getTaxRates(),
         getUOMs(),
         getCategories(),
         getManufacturers(),
-        getUOMCategories()
+        getUOMCategories(),
+        import("@/app/actions/storage-locations").then(m => m.getStorageLocationsFlat())
     ]);
 
     const { serialize } = await import("@/lib/utils");
@@ -152,6 +157,7 @@ async function ProductTable({ query, currentPage }: { query?: string, currentPag
             categories={serialize(categories)}
             manufacturers={serialize(manufacturers)}
             uomCategories={serialize(uomCategories)}
+            storageLocations={serialize(storageLocations.data || [])}
             query={query}
             currentPage={currentPage}
         />

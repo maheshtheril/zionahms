@@ -25,6 +25,21 @@ export type AttendanceFormState = {
     message?: string
 }
 
+function getDistanceInMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const R = 6371e3; // metres
+    const p1 = lat1 * Math.PI / 180;
+    const p2 = lat2 * Math.PI / 180;
+    const dp = (lat2 - lat1) * Math.PI / 180;
+    const dl = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(dp / 2) * Math.sin(dp / 2) +
+        Math.cos(p1) * Math.cos(p2) *
+        Math.sin(dl / 2) * Math.sin(dl / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+}
+
 export async function logAttendance(prevState: AttendanceFormState, formData: FormData): Promise<AttendanceFormState> {
     const session = await auth()
     const user = session?.user
@@ -58,6 +73,29 @@ export async function logAttendance(prevState: AttendanceFormState, formData: Fo
         })
 
         const locationJson = (lat && lng) ? { lat, lng, address } : undefined
+        
+        // Geofencing Validation
+        if (lat && lng) {
+            const employee = await prisma.crm_employee.findUnique({
+                where: { user_id: user.id },
+                include: { branch: true }
+            });
+            
+            if (employee?.branch?.metadata) {
+                const metadata = employee.branch.metadata as any;
+                if (metadata.geofence && metadata.geofence.lat && metadata.geofence.lng && metadata.geofence.radius_meters) {
+                    const branchLat = parseFloat(metadata.geofence.lat);
+                    const branchLng = parseFloat(metadata.geofence.lng);
+                    const radius = parseInt(metadata.geofence.radius_meters);
+                    
+                    const distance = getDistanceInMeters(lat, lng, branchLat, branchLng);
+                    
+                    if (distance > radius) {
+                        return { message: `Geofence block: You are ${Math.round(distance)} meters away from the office. Allowed radius is ${radius} meters.` };
+                    }
+                }
+            }
+        }
 
         if (action === 'check_in') {
             if (existing) {

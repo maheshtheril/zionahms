@@ -210,6 +210,7 @@ export function AppSidebar({ menuItems, currentCompany, tenant, user: initialUse
 function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, setCollapsed, isMobile, onLinkClick, onClose }: any) {
     const canSwitchCompany = user?.isAdmin || user?.isTenantAdmin;
     const [searchText, setSearchText] = useState('');
+    const [globalCollapseSignal, setGlobalCollapseSignal] = useState(0);
     const { theme, toggleTheme } = useTheme();
 
     const filteredMenuItems = menuItems.map((group: any) => ({
@@ -302,11 +303,11 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                 collapsed={collapsed}
             />
 
-            {/* Search (Only Expanded) */}
+            {/* Search and Global Collapse */}
             {
                 !collapsed && !isMobile && (
-                    <div className="px-4 mb-4">
-                        <div className="relative">
+                    <div className="px-4 mb-4 flex gap-2">
+                        <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                             <Input
                                 placeholder="Search modules..."
@@ -315,35 +316,28 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                                 onChange={(e) => setSearchText(e.target.value)}
                             />
                         </div>
+                        <button 
+                            onClick={() => setGlobalCollapseSignal(prev => prev + 1)}
+                            className="h-9 px-3 bg-slate-100/50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-800 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-200/50 transition-all flex items-center justify-center shrink-0"
+                            title="Collapse All Menus"
+                        >
+                            <PanelLeftClose className="h-4 w-4" />
+                        </button>
                     </div>
                 )
             }
 
             {/* Scrollable Navigation */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-8 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-6 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
                 {(filteredMenuItems || []).map((group: any) => (
-                    <div key={group.module.module_key} className={collapsed ? "text-center" : ""}>
-                        {!collapsed && (
-                            <h3 className="px-3 text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-2 font-mono">
-                                {group.module.name}
-                            </h3>
-                        )}
-                        {collapsed && (
-                            <div className="h-px w-8 bg-slate-200 dark:bg-zinc-800 mx-auto mb-4 mt-2"></div>
-                        )}
-
-                        <div className="space-y-1">
-                            {group.items.map((item: any) => (
-                                <MenuItem
-                                    key={item.key}
-                                    item={item}
-                                    collapsed={collapsed}
-                                    onClick={onLinkClick}
-                                    setCollapsed={setCollapsed}
-                                />
-                            ))}
-                        </div>
-                    </div>
+                    <ModuleSection 
+                        key={group.module.module_key}
+                        group={group}
+                        collapsed={collapsed}
+                        onLinkClick={onLinkClick}
+                        setCollapsed={setCollapsed}
+                        globalCollapseSignal={globalCollapseSignal}
+                    />
                 ))}
 
                 {filteredMenuItems.length === 0 && searchText && (
@@ -456,7 +450,87 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
         </div >
     )
 }
-function MenuItem({ item, level = 0, collapsed, onClick, setCollapsed }: { item: any, level?: number, collapsed: boolean, onClick?: () => void, setCollapsed?: (val: boolean) => void }) {
+
+// Add ModuleSection component for collapsible categories
+function ModuleSection({ group, collapsed, onLinkClick, setCollapsed, globalCollapseSignal }: any) {
+    const pathname = usePathname();
+    
+    // Check if any child item is active
+    const isChildActive = (items: any[]): boolean => {
+        return items.some(item => {
+            if (pathname === item.url || (item.url !== '#' && pathname.startsWith(item.url + '/'))) return true;
+            if (item.other_menu_items && item.other_menu_items.length > 0) {
+                return isChildActive(item.other_menu_items);
+            }
+            return false;
+        });
+    };
+
+    const hasActiveItem = isChildActive(group.items);
+    const [expanded, setExpanded] = useState(hasActiveItem);
+
+    // Listen for global collapse
+    useEffect(() => {
+        if (globalCollapseSignal > 0) {
+            setExpanded(false);
+        }
+    }, [globalCollapseSignal]);
+
+    // Auto-expand if navigation makes a child active
+    useEffect(() => {
+        if (hasActiveItem && !expanded) {
+            setExpanded(true);
+        }
+    }, [pathname, hasActiveItem]);
+
+    return (
+        <div className={collapsed ? "text-center" : "mb-2"}>
+            {!collapsed && (
+                <button 
+                    onClick={() => setExpanded(!expanded)}
+                    className="w-full flex items-center justify-between px-3 py-1.5 mb-1 group outline-none hover:bg-slate-100 dark:hover:bg-zinc-800/50 rounded-lg transition-colors cursor-pointer"
+                >
+                    <h3 className="text-sm font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wide group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                        {group.module.name}
+                    </h3>
+                    <ChevronRight className={cn(
+                        "h-3.5 w-3.5 text-slate-400 transition-transform duration-200",
+                        expanded ? "rotate-90 text-indigo-500" : "group-hover:text-indigo-400"
+                    )} />
+                </button>
+            )}
+            {collapsed && (
+                <div className="h-px w-8 bg-slate-200 dark:bg-zinc-800 mx-auto mb-4 mt-2"></div>
+            )}
+
+            <AnimatePresence initial={false}>
+                {(expanded || collapsed) && (
+                    <motion.div
+                        initial={collapsed ? false : { height: 0, opacity: 0 }}
+                        animate={collapsed ? false : { height: "auto", opacity: 1 }}
+                        exit={collapsed ? false : { height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="space-y-1 pb-1">
+                            {group.items.map((item: any) => (
+                                <MenuItem
+                                    key={item.key}
+                                    item={item}
+                                    collapsed={collapsed}
+                                    onClick={onLinkClick}
+                                    setCollapsed={setCollapsed}
+                                />
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
+
+function MenuItem({ item, level = 0, collapsed, onClick, setCollapsed }: any) {
     const pathname = usePathname();
     const isActive = pathname === item.url;
     const hasChildren = item.other_menu_items && item.other_menu_items.length > 0;

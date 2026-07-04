@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SearchableSelect, type Option } from '@/components/ui/searchable-select';
-import { format } from 'date-fns';
+import { format, startOfMonth } from 'date-fns';
 import { useLocalization } from '@/contexts/localization-context';
 
 interface LedgerLine {
@@ -63,6 +63,9 @@ export function AccountLedger({ initialAccountId }: { initialAccountId?: string 
   
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
+  
+  const [dateFrom, setDateFrom] = useState<string>(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [dateTo, setDateTo] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
 
   // SEARCHABLE ACCOUNT FETCHER
   const handleAccountSearch = useCallback(async (query: string): Promise<Option[]> => {
@@ -85,7 +88,7 @@ export function AccountLedger({ initialAccountId }: { initialAccountId?: string 
       }
 
       if (patRes && patRes.length > 0) {
-          const patientOptions = patRes.map(p => ({
+          const patientOptions = patRes.map((p: any) => ({
               id: p.id,
               label: `${p.first_name} ${p.last_name || ''}`.trim().toUpperCase(),
               subLabel: `PATIENT: ${p.patient_number || 'NO ID'}`,
@@ -99,13 +102,7 @@ export function AccountLedger({ initialAccountId }: { initialAccountId?: string 
 
   const handleSelection = (id: string | null, option?: Option | null) => {
       if (!id || !option) return;
-      
-      if (option.type === 'patient') {
-          // REDIRECT TO PATIENT PROFILE / FINANCIAL HUB
-          window.location.href = `/hms/patients/${id}`;
-      } else {
-          setSelectedAccountId(id);
-      }
+      setSelectedAccountId(id);
   };
 
   // 2. Load Ledger Data
@@ -116,7 +113,11 @@ export function AccountLedger({ initialAccountId }: { initialAccountId?: string 
       setLoading(true);
       setError(null);
       try {
-          const res = await getAccountLedger(selectedAccountId);
+          const res = await getAccountLedger(
+              selectedAccountId, 
+              dateFrom ? new Date(dateFrom) : undefined, 
+              dateTo ? new Date(dateTo) : undefined
+          );
           if (res.success) {
             setEntries(res.lines);
             setAccountInfo(res.account);
@@ -131,7 +132,7 @@ export function AccountLedger({ initialAccountId }: { initialAccountId?: string 
       }
     }
     loadLedger();
-  }, [selectedAccountId]);
+  }, [selectedAccountId, dateFrom, dateTo]);
 
   // Calculate Running Balances
   let currentBalance = openingBalance;
@@ -184,7 +185,21 @@ export function AccountLedger({ initialAccountId }: { initialAccountId?: string 
             </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+            <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+                <input 
+                    type="date" 
+                    className="h-14 bg-white dark:bg-[#004d4d] border border-slate-200 dark:border-[#006666] text-slate-900 dark:text-[#ffffcc] font-black uppercase px-4 focus:outline-none focus:border-primary"
+                    value={dateFrom}
+                    onChange={e => setDateFrom(e.target.value)}
+                    title="From Date"
+                />
+                <input 
+                    type="date" 
+                    className="h-14 bg-white dark:bg-[#004d4d] border border-slate-200 dark:border-[#006666] text-slate-900 dark:text-[#ffffcc] font-black uppercase px-4 focus:outline-none focus:border-primary"
+                    value={dateTo}
+                    onChange={e => setDateTo(e.target.value)}
+                    title="To Date"
+                />
             <div className="w-full sm:w-96">
                 <SearchableSelect 
                     placeholder="SEARCH LEDGER NAME / CODE..."
@@ -197,10 +212,17 @@ export function AccountLedger({ initialAccountId }: { initialAccountId?: string 
                 />
             </div>
             <div className="flex items-center gap-1">
-                <button className="h-14 w-14 bg-white dark:bg-[#004d4d] hover:bg-slate-50 dark:hover:bg-[#006666] border border-slate-200 dark:border-[#006666] flex items-center justify-center text-slate-500 dark:text-[#64ffff] transition-all">
+                <button type="button" className="h-14 w-14 bg-white dark:bg-[#004d4d] hover:bg-slate-50 dark:hover:bg-[#006666] border border-slate-200 dark:border-[#006666] flex items-center justify-center text-slate-500 dark:text-[#64ffff] transition-all">
                     <Download className="h-5 w-5" />
                 </button>
-                <button onClick={() => window.print()} className="h-14 px-8 bg-slate-900 dark:bg-[#ffffcc] hover:bg-black dark:hover:bg-white text-white dark:text-black font-black text-xs uppercase tracking-widest transition-all">
+                <button 
+                    type="button"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        if (!selectedAccountId) return;
+                        window.print();
+                    }} 
+                    className="h-14 px-8 bg-slate-900 dark:bg-[#ffffcc] hover:bg-black dark:hover:bg-white text-white dark:text-black font-black text-xs uppercase tracking-widest transition-all print:hidden">
                     <Printer className="h-4 w-4 mr-2 inline" /> PRINT
                 </button>
             </div>
@@ -353,6 +375,118 @@ export function AccountLedger({ initialAccountId }: { initialAccountId?: string 
                 <span>Server Timestamp: {format(new Date(), 'HH:mm:ss')}</span>
             </div>
           </div>
+      )}
+
+      {/* --- WORLD STANDARD PRINT LAYOUT --- */}
+      {selectedAccountId && !loading && !error && (
+        <div className="hidden print:block bg-white text-black font-sans w-full absolute top-0 left-0 p-8 m-0 z-50">
+            {/* --- HEADER --- */}
+            <div className="border-b-2 border-black pb-4 mb-6">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h1 className="text-2xl font-black uppercase tracking-tight">Hospital / Enterprise</h1>
+                        <p className="text-sm mt-1 max-w-sm">Official Ledger Record</p>
+                    </div>
+                    <div className="text-right">
+                        <h2 className="text-3xl font-black uppercase tracking-widest text-slate-800">General Ledger</h2>
+                        <p className="text-sm font-bold mt-2">Date Printed: {format(new Date(), 'dd-MMM-yyyy HH:mm')}</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* --- ACCOUNT INFO & SUMMARY --- */}
+            <div className="flex justify-between items-start mb-8 border border-slate-300 rounded-lg p-4">
+                <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Account Particulars</p>
+                    <h3 className="text-xl font-black uppercase mt-1">{accountInfo?.name}</h3>
+                    <p className="text-sm font-bold text-slate-700">Code: {accountInfo?.code} | Type: {accountInfo?.type}</p>
+                    <p className="text-sm font-bold text-slate-600 mt-2">
+                        Period: {dateFrom ? format(new Date(dateFrom), 'dd-MMM-yyyy') : 'Start'} to {dateTo ? format(new Date(dateTo), 'dd-MMM-yyyy') : 'End'}
+                    </p>
+                </div>
+                <div className="text-right grid grid-cols-2 gap-x-8 gap-y-2">
+                    <p className="text-xs font-bold uppercase text-slate-500">Opening Balance:</p>
+                    <p className="text-sm font-black">{formatCurrency(openingBalance)}</p>
+                    
+                    <p className="text-xs font-bold uppercase text-slate-500">Total Debit:</p>
+                    <p className="text-sm font-black text-slate-700">{formatCurrency(totalDebit)}</p>
+                    
+                    <p className="text-xs font-bold uppercase text-slate-500">Total Credit:</p>
+                    <p className="text-sm font-black text-slate-700">{formatCurrency(totalCredit)}</p>
+                    
+                    <p className="text-xs font-bold uppercase text-slate-800 border-t border-slate-300 pt-1 mt-1">Closing Balance:</p>
+                    <p className="text-sm font-black border-t border-slate-300 pt-1 mt-1">{formatCurrency(Math.abs(currentBalance))} {currentBalance >= 0 ? 'Dr' : 'Cr'}</p>
+                </div>
+            </div>
+
+            {/* --- LEDGER TABLE --- */}
+            <table className="w-full text-left text-sm border-collapse">
+                <thead>
+                    <tr className="border-y-2 border-black">
+                        <th className="py-3 px-2 font-black uppercase text-xs">Date</th>
+                        <th className="py-3 px-2 font-black uppercase text-xs">Voucher</th>
+                        <th className="py-3 px-2 font-black uppercase text-xs">Particulars</th>
+                        <th className="py-3 px-2 font-black uppercase text-xs text-right">Debit</th>
+                        <th className="py-3 px-2 font-black uppercase text-xs text-right">Credit</th>
+                        <th className="py-3 px-2 font-black uppercase text-xs text-right">Balance</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                    <tr>
+                        <td className="py-2 px-2 font-medium">--</td>
+                        <td className="py-2 px-2">--</td>
+                        <td className="py-2 px-2 font-bold italic">Opening Balance B/F</td>
+                        <td className="py-2 px-2 text-right"></td>
+                        <td className="py-2 px-2 text-right"></td>
+                        <td className="py-2 px-2 text-right font-black">{formatCurrency(Math.abs(openingBalance))} {openingBalance >= 0 ? 'Dr' : 'Cr'}</td>
+                    </tr>
+                    
+                    {ledgerWithBalance.slice().reverse().map((entry: any) => (
+                        <tr key={entry.id} className="break-inside-avoid">
+                            <td className="py-2 px-2">
+                                {entry.journal_entries?.date ? format(new Date(entry.journal_entries.date), 'dd-MM-yyyy') : 'N/A'}
+                            </td>
+                            <td className="py-2 px-2">
+                                <span className="font-bold">{entry.journal_entries?.ref || 'AUTO'}</span>
+                            </td>
+                            <td className="py-2 px-2">
+                                <span className="font-medium">{entry.description || 'Institutional Posting'}</span>
+                                {entry.partner_name && (
+                                    <span className="block text-xs font-bold text-slate-600">[{entry.partner_name}]</span>
+                                )}
+                            </td>
+                            <td className="py-2 px-2 text-right">
+                                {Number(entry.debit) > 0 ? formatCurrency(Number(entry.debit)) : '-'}
+                            </td>
+                            <td className="py-2 px-2 text-right">
+                                {Number(entry.credit) > 0 ? formatCurrency(Number(entry.credit)) : '-'}
+                            </td>
+                            <td className="py-2 px-2 text-right font-bold">
+                                {formatCurrency(Math.abs(entry.runningBalance))} <span className="text-xs opacity-70">{entry.runningBalance >= 0 ? 'Dr' : 'Cr'}</span>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+                <tfoot>
+                    <tr className="border-y-2 border-black font-black">
+                        <td colSpan={3} className="py-3 px-2 text-right uppercase tracking-widest text-xs">Total Transacted:</td>
+                        <td className="py-3 px-2 text-right">{formatCurrency(totalDebit)}</td>
+                        <td className="py-3 px-2 text-right">{formatCurrency(totalCredit)}</td>
+                        <td className="py-3 px-2 text-right">{formatCurrency(Math.abs(currentBalance))} {currentBalance >= 0 ? 'Dr' : 'Cr'}</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            {/* --- FOOTER --- */}
+            <div className="mt-16 pt-8 border-t border-slate-300 flex justify-between text-xs text-slate-500 font-bold uppercase tracking-widest break-inside-avoid">
+                <div className="text-center">
+                    <p className="border-t border-slate-400 w-48 pt-2 mx-auto">Prepared By</p>
+                </div>
+                <div className="text-center">
+                    <p className="border-t border-slate-400 w-48 pt-2 mx-auto">Authorized Signatory</p>
+                </div>
+            </div>
+        </div>
       )}
     </div>
   );

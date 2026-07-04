@@ -15,16 +15,17 @@ export default function PaymentsPage() {
     const [payments, setPayments] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState('');
-    const [dateFilter, setDateFilter] = useState<string>(''); // YYYY-MM-DD
+    const [dateFrom, setDateFrom] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+    const [dateTo, setDateTo] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
     const [activeTab, setActiveTab] = useState<'ALL' | 'VENDOR' | 'EXPENSE'>('ALL');
 
     useEffect(() => {
         loadData();
-    }, [dateFilter]);
+    }, [dateFrom, dateTo]);
 
     async function loadData() {
         setIsLoading(true);
-        const res = await getPayments('outbound', undefined, dateFilter || undefined);
+        const res = await getPayments('outbound', undefined, dateFrom || undefined, dateTo || undefined);
         if (res?.success) {
             setPayments(res.data || []);
         }
@@ -185,17 +186,29 @@ export default function PaymentsPage() {
                     </div>
 
                     <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
-                        <div className="relative flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 h-11">
-                            <Calendar className="h-4 w-4 text-slate-400 mr-2" />
-                            <input
-                                type="date"
-                                className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-300 outline-none [color-scheme:light] dark:[color-scheme:dark]"
-                                value={dateFilter}
-                                onChange={(e) => setDateFilter(e.target.value)}
-                            />
-                            {dateFilter && (
+                        <div className="flex items-center gap-2">
+                            <div className="relative flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 h-11">
+                                <Calendar className="h-4 w-4 text-slate-400 mr-2" />
+                                <input
+                                    type="date"
+                                    className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-300 outline-none [color-scheme:light] dark:[color-scheme:dark]"
+                                    value={dateFrom}
+                                    onChange={(e) => setDateFrom(e.target.value)}
+                                />
+                            </div>
+                            <span className="text-slate-400 font-medium text-xs">to</span>
+                            <div className="relative flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 h-11">
+                                <Calendar className="h-4 w-4 text-slate-400 mr-2" />
+                                <input
+                                    type="date"
+                                    className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-300 outline-none [color-scheme:light] dark:[color-scheme:dark]"
+                                    value={dateTo}
+                                    onChange={(e) => setDateTo(e.target.value)}
+                                />
+                            </div>
+                            {(dateFrom || dateTo) && (
                                 <button
-                                    onClick={() => setDateFilter('')}
+                                    onClick={() => { setDateFrom(''); setDateTo(''); }}
                                     className="ml-2 text-xs text-rose-500 hover:underline font-bold"
                                 >
                                     Clear

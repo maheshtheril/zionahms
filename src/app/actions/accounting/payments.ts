@@ -12,7 +12,7 @@ import { ensureDefaultAccounts } from "@/lib/account-seeder"
 export type PaymentType = 'inbound' | 'outbound';
 
 // Fetch Payments (Receipts or Vendor Payments)
-export async function getPayments(type: PaymentType, search?: string, dateFilter?: string) {
+export async function getPayments(type: PaymentType, search?: string, dateFrom?: string, dateTo?: string) {
     const session = await auth();
     let companyId = session?.user?.companyId;
     const tenantId = session?.user?.tenantId;
@@ -36,16 +36,18 @@ export async function getPayments(type: PaymentType, search?: string, dateFilter
             }
         };
 
-        if (dateFilter) {
-            const startOfDay = new Date(dateFilter);
-            startOfDay.setHours(0, 0, 0, 0);
-            const endOfDay = new Date(dateFilter);
-            endOfDay.setHours(23, 59, 59, 999);
-
-            whereClause.created_at = {
-                gte: startOfDay,
-                lte: endOfDay
-            };
+        if (dateFrom || dateTo) {
+            whereClause.created_at = {};
+            if (dateFrom) {
+                const startOfDay = new Date(dateFrom);
+                startOfDay.setHours(0, 0, 0, 0);
+                whereClause.created_at.gte = startOfDay;
+            }
+            if (dateTo) {
+                const endOfDay = new Date(dateTo);
+                endOfDay.setHours(23, 59, 59, 999);
+                whereClause.created_at.lte = endOfDay;
+            }
         }
 
         const payments = await prisma.payments.findMany({

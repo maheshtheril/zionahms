@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,8 +16,28 @@ import { createEmployee, getEmployeeMasters } from '@/app/actions/crm/employees'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 
+function renderDesignationOptions(designations: any[] = [], parentId: string | null = null, depth = 0): any {
+    if (!Array.isArray(designations)) return [];
+    return designations
+        .filter(desig => (desig.parent_id || null) === parentId)
+        .map(desig => {
+            return (
+                <React.Fragment key={desig.id}>
+                    <SelectItem 
+                        value={desig.id} 
+                        className={depth === 0 ? "font-bold text-slate-800" : "text-slate-600"}
+                    >
+                        {"\u00A0".repeat(depth * 4)}{depth > 0 ? "↳ " : ""}{desig.name}
+                    </SelectItem>
+                    {renderDesignationOptions(designations, desig.id, depth + 1)}
+                </React.Fragment>
+            );
+        });
+}
+
 export default function NewEmployeePage() {
     const router = useRouter()
+    const [isMounted, setIsMounted] = useState(false)
     const [loading, setLoading] = useState(false)
     const [masters, setMasters] = useState<{
         designations: any[],
@@ -73,6 +93,7 @@ export default function NewEmployeePage() {
     })
 
     useEffect(() => {
+        setIsMounted(true)
         async function load() {
             const res = await getEmployeeMasters()
             if (res.success) {
@@ -81,6 +102,8 @@ export default function NewEmployeePage() {
         }
         load()
     }, [])
+
+    if (!isMounted) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -203,26 +226,17 @@ export default function NewEmployeePage() {
                                             </div>
                                             <div className="space-y-1">
                                                 <Label>Country</Label>
-                                                <Select value={formData.country} onValueChange={v => setFormData({ ...formData, country: v })}>
-                                                    <SelectTrigger><SelectValue placeholder="India" /></SelectTrigger>
-                                                    <SelectContent><SelectItem value="India">India</SelectItem></SelectContent>
-                                                </Select>
+                                                <Input type="text" placeholder="e.g. India" value={formData.country} onChange={e => setFormData({ ...formData, country: e.target.value })} />
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-1">
-                                                <Label>State</Label>
-                                                <Select value={formData.state} onValueChange={v => setFormData({ ...formData, state: v })}>
-                                                    <SelectTrigger><SelectValue placeholder="Select State" /></SelectTrigger>
-                                                    <SelectContent><SelectItem value="Karnataka">Karnataka</SelectItem><SelectItem value="Kerala">Kerala</SelectItem><SelectItem value="Tamil Nadu">Tamil Nadu</SelectItem></SelectContent>
-                                                </Select>
+                                                <Label>State / Province</Label>
+                                                <Input placeholder="Enter state" value={formData.state} onChange={e => setFormData({ ...formData, state: e.target.value })} />
                                             </div>
                                             <div className="space-y-1">
                                                 <Label>District</Label>
-                                                <Select value={formData.district} onValueChange={v => setFormData({ ...formData, district: v })}>
-                                                    <SelectTrigger><SelectValue placeholder="Select District" /></SelectTrigger>
-                                                    <SelectContent><SelectItem value="Bangalore">Bangalore</SelectItem><SelectItem value="Mysore">Mysore</SelectItem></SelectContent>
-                                                </Select>
+                                                <Input type="text" placeholder="e.g. Ernakulam" value={formData.district} onChange={e => setFormData({ ...formData, district: e.target.value })} />
                                             </div>
                                         </div>
                                         <div className="space-y-1">
@@ -235,8 +249,8 @@ export default function NewEmployeePage() {
                                                 <Input placeholder="City" value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} />
                                             </div>
                                             <div className="space-y-1">
-                                                <Label>Pincode</Label>
-                                                <Input placeholder="Zip/Pin code" value={formData.pincode} onChange={e => setFormData({ ...formData, pincode: e.target.value })} />
+                                                <Label>Zip / Postal Code</Label>
+                                                <Input placeholder="Zip/Postal code" value={formData.pincode} onChange={e => setFormData({ ...formData, pincode: e.target.value })} />
                                             </div>
                                         </div>
                                     </CardContent>
@@ -265,7 +279,7 @@ export default function NewEmployeePage() {
                                             <div className="space-y-1">
                                                 <div className="flex items-center justify-between">
                                                     <Label>Designation</Label>
-                                                    <a href="/settings/designations/new" className="text-[10px] font-bold text-indigo-600 hover:underline">QUICK ADD</a>
+                                                    <a href="/settings/designations/new" target="_blank" className="text-[10px] font-bold text-indigo-600 hover:underline">QUICK ADD (New Tab)</a>
                                                 </div>
                                                 <Select
                                                     value={formData.designation_id}
@@ -280,9 +294,7 @@ export default function NewEmployeePage() {
                                                 >
                                                     <SelectTrigger><SelectValue placeholder="Select Designation" /></SelectTrigger>
                                                     <SelectContent>
-                                                        {masters.designations.map(d => (
-                                                            <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                                                        ))}
+                                                        {renderDesignationOptions(masters.designations)}
                                                     </SelectContent>
                                                 </Select>
                                             </div>
@@ -303,10 +315,14 @@ export default function NewEmployeePage() {
                                                 </Select>
                                             </div>
                                             <div className="space-y-1">
-                                                <Label>Office</Label>
-                                                <Select value={formData.office} onValueChange={v => setFormData({ ...formData, office: v })}>
-                                                    <SelectTrigger><SelectValue placeholder="Select Office" /></SelectTrigger>
-                                                    <SelectContent><SelectItem value="Bangalore">Bangalore</SelectItem><SelectItem value="Delhi">Delhi</SelectItem></SelectContent>
+                                                <Label>Branch / Office</Label>
+                                                <Select value={formData.branch_id} onValueChange={v => setFormData({ ...formData, branch_id: v })}>
+                                                    <SelectTrigger><SelectValue placeholder="Select Branch" /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {masters.branches.map(b => (
+                                                            <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
                                                 </Select>
                                             </div>
                                         </div>

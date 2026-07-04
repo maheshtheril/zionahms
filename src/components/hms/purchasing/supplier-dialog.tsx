@@ -178,7 +178,7 @@ export function SupplierDialog({ isOpen, onClose, onSuccess, initialData }: Supp
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-                                    GSTIN / VAT
+                                    Tax ID / GSTIN / VAT
                                 </label>
                                 <div className="relative">
                                     <FileText className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />

@@ -24,7 +24,7 @@ export default async function LabDashboardPage() {
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
 
-    const [orders, patientsRes, itemsRes, taxRes] = await Promise.all([
+    const [orders, patientsRes, itemsRes, taxRes, labTestsRes] = await Promise.all([
         prisma.hms_lab_order.findMany({
             where: {
                 tenant_id: tenantId,
@@ -53,6 +53,11 @@ export default async function LabDashboardPage() {
                     include: {
                         hms_lab_test: true
                     }
+                },
+                hms_lab_order_lines: {
+                    include: {
+                        hms_lab_test: true
+                    }
                 }
             },
             orderBy: {
@@ -69,22 +74,30 @@ export default async function LabDashboardPage() {
             take: 50
         }),
         getBillableItems(),
-        getTaxConfiguration()
+        getTaxConfiguration(),
+        prisma.hms_lab_test.findMany({
+            where: { tenant_id: tenantId },
+            select: { id: true, name: true, price: true }
+        })
     ])
 
     const patients = patientsRes;
     const billableItems = itemsRes.success ? itemsRes.data : [];
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
+    const availableTests = labTestsRes;
 
     const formattedOrders = orders.map(order => {
-        const tests = order.hms_lab_order_line.map(line => ({
+        const sourceLines = (order.hms_lab_order_lines?.length ? order.hms_lab_order_lines : order.hms_lab_order_line) || [];
+        const tests = sourceLines.map((line: any) => ({
             id: line.id,
-            test_name: line.hms_lab_test?.name || 'Unknown Test',
+            test_id: line.test_id,
+            test_name: line.hms_lab_test?.name || line.requested_name || 'Unknown Test',
             status: line.status,
-            price: Number(line.price) || 0
+            price: Number(line.price) || 0,
+            sourceId: line.id
         }))
 
-        const totalPrice = tests.reduce((sum, test) => sum + test.price, 0)
+        const totalPrice = tests.reduce((sum: number, test: any) => sum + test.price, 0)
 
         const patientName = order.hms_patient
             ? `${order.hms_patient.first_name} ${order.hms_patient.last_name || ''}`.trim()
@@ -95,6 +108,7 @@ export default async function LabDashboardPage() {
             : 'Unknown'
 
         const invoice = order.hms_appointment?.hms_invoice?.[0];
+        const extracted_invoice_id = invoice?.id || (order.metadata as any)?.invoice_id;
 
         return {
             id: order.id,
@@ -108,8 +122,8 @@ export default async function LabDashboardPage() {
             tests: tests,
             report_url: order.report_url,
             totalPrice: totalPrice,
-            invoice_id: invoice?.id,
-            invoice_status: invoice?.status
+            invoice_id: extracted_invoice_id,
+            invoice_status: invoice?.status || null
         }
     })
 
@@ -127,6 +141,7 @@ export default async function LabDashboardPage() {
             patients={patients}
             billableItems={billableItems as any[]}
             taxConfig={taxConfig}
+            availableTests={JSON.parse(JSON.stringify(availableTests))}
         />
     )
 }

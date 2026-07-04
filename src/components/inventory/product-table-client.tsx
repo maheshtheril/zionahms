@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import Link from "next/link"
-import { Package, TrendingUp, TrendingDown, Layers, Check, X, ShieldCheck, ChevronRight, Pencil, Trash2, MousePointerClick, Settings2, Trash } from "lucide-react"
+import { Package, TrendingUp, TrendingDown, Layers, Check, X, ShieldCheck, ChevronRight, Pencil, Trash2, MousePointerClick, Settings2, Trash, MapPin } from "lucide-react"
 import { EditProductModal } from "./edit-product-modal"
 import { BulkEditModal } from "./bulk-edit-modal"
 import { deleteProduct } from "@/app/actions/inventory"
@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 
 interface ProductTableClientProps {
     products: any[];
@@ -41,6 +42,8 @@ export function ProductTableClient({
     const [editingProduct, setEditingProduct] = useState<any>(null);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+    const [isPending, startTransition] = useTransition();
+    const router = useRouter();
 
     // Multi-select logic
     const toggleAll = () => {
@@ -66,6 +69,9 @@ export function ProductTableClient({
         const res = await deleteProduct(product.id);
         if (res.success) {
             toast.success("Product Deleted Successfully");
+            startTransition(() => {
+                router.refresh();
+            });
         } else {
             toast.error("Deletion Blocked", { description: res.error });
         }
@@ -75,8 +81,18 @@ export function ProductTableClient({
     const currencySymbol = (rawCurrency && (rawCurrency.includes('Γé╣') || rawCurrency.length > 3)) ? '₹' : (rawCurrency || '₹');
 
     return (
-        <>
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in fade-in duration-500 relative">
+        <div className="space-y-4 relative">
+            {/* Syncing Overlay */}
+            {isPending && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-[2px] rounded-2xl animate-in fade-in duration-200">
+                    <div className="bg-white/90 shadow-xl border border-indigo-100 px-6 py-4 rounded-full flex items-center gap-3 transform -translate-y-4">
+                        <div className="h-5 w-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-sm font-bold text-indigo-900 tracking-widest uppercase">Syncing Database...</span>
+                    </div>
+                </div>
+            )}
+
+            <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative transition-all duration-300 ${isPending ? 'opacity-50 pointer-events-none filter blur-[1px]' : 'opacity-100'}`}>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -102,6 +118,7 @@ export function ProductTableClient({
                                 <th className="p-4">SKU / Code</th>
                                 <th className="p-4">UOM</th>
                                 <th className="p-4 w-48">Stock Level</th>
+                                <th className="p-4">Tax</th>
                                 <th className="p-4">Price</th>
                                 <th className="p-4 text-right">Actions</th>
                             </tr>
@@ -154,7 +171,17 @@ export function ProductTableClient({
                                             <span className="text-xs font-black text-slate-600 uppercase tracking-tighter">{product.brand || 'No Vendor'}</span>
                                         </td>
                                         <td className="p-4">
-                                            <span className="font-black text-[10px] text-indigo-500 font-mono bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100 uppercase italic tracking-widest">{product.sku}</span>
+                                            <div className="space-y-1.5">
+                                                <span className="font-black text-[10px] text-indigo-500 font-mono bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100 uppercase italic tracking-widest block w-max">{product.sku}</span>
+                                                {(product.locZone || product.locRack || product.locShelf) && (
+                                                    <div className="flex items-center gap-1 text-[9px] font-bold text-slate-500 tracking-wider bg-slate-50 px-1.5 py-0.5 rounded w-max border border-slate-100">
+                                                        <MapPin className="h-2.5 w-2.5" />
+                                                        {product.locZone || '-'} 
+                                                        {product.locRack ? <span className="text-slate-300 mx-0.5">›</span> : ''} {product.locRack || ''} 
+                                                        {product.locShelf ? <span className="text-slate-300 mx-0.5">›</span> : ''} {product.locShelf || ''}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="p-4">
                                             <span className="text-[9px] font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded font-mono uppercase tracking-widest">{product.uom}</span>
@@ -176,6 +203,11 @@ export function ProductTableClient({
                                                     ></div>
                                                 </div>
                                             </div>
+                                        </td>
+                                        <td className="p-4">
+                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
+                                                {product.taxRateId ? taxRates.find(t => t.id === product.taxRateId)?.name || 'Unknown Tax' : 'No Tax'}
+                                            </span>
                                         </td>
                                         <td className="p-4">
                                             <span className="font-black text-slate-900 font-mono">{currencySymbol}{Number(product.price).toFixed(2)}</span>
@@ -279,6 +311,13 @@ export function ProductTableClient({
                     categories={categories}
                     manufacturers={manufacturers}
                     uomCategories={uomCategories}
+                    batches={editingProduct.batches || []}
+                    onSuccess={() => {
+                        setEditingProduct(null);
+                        startTransition(() => {
+                            router.refresh();
+                        });
+                    }}
                 />
             )}
 
@@ -288,9 +327,15 @@ export function ProductTableClient({
                     onClose={() => setIsBulkModalOpen(false)}
                     selectedIds={selectedIds}
                     categories={categories}
-                    onSuccess={() => setSelectedIds([])}
+                    onSuccess={() => {
+                        setIsBulkModalOpen(false);
+                        setSelectedIds([]);
+                        startTransition(() => {
+                            router.refresh();
+                        });
+                    }}
                 />
             )}
-        </>
+        </div>
     )
 }

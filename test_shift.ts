@@ -1,0 +1,1 @@
+const { getShiftSummary } = require('./src/app/actions/shift'); async function test() { const res = await getShiftSummary('0d1aac62-e07e-46a2-902d-91cbf6818d4a'); console.log(JSON.stringify(res.summary, null, 2)); console.log(res.ledger.filter(l => l.type === 'PENDING').length + ' pending ledger items'); } test();

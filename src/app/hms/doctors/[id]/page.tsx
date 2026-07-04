@@ -5,6 +5,7 @@ import { ArrowLeft, Mail, Phone, Award, Briefcase, Calendar, Clock, User } from 
 
 import { DoctorProfileActions } from "@/components/hms/doctors/doctor-profile-actions"
 import { ClinicianDeleteButton } from "@/components/hms/doctors/clinician-delete-button"
+import { getEmployees } from "@/app/actions/crm/employees"
 
 export default async function DoctorDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
@@ -21,7 +22,7 @@ export default async function DoctorDetailPage({ params }: { params: Promise<{ i
     }
 
     // Fetch dropdown data for Edit Form
-    const [departments, roles, specializations] = await Promise.all([
+    const [departments, roles, specializations, employees] = await Promise.all([
         prisma.hms_departments.findMany({
             where: { is_active: true },
             select: { id: true, name: true, parent_id: true }
@@ -33,7 +34,8 @@ export default async function DoctorDetailPage({ params }: { params: Promise<{ i
         prisma.hms_specializations.findMany({
             where: { is_active: true },
             select: { id: true, name: true }
-        })
+        }),
+        getEmployees()
     ])
 
     // Fetch upcoming appointments for this doctor
@@ -89,6 +91,7 @@ export default async function DoctorDetailPage({ params }: { params: Promise<{ i
                         departments={JSON.parse(JSON.stringify(departments))}
                         roles={JSON.parse(JSON.stringify(roles))}
                         specializations={JSON.parse(JSON.stringify(specializations))}
+                        employees={JSON.parse(JSON.stringify(employees))}
                     />
                     <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 flex items-center gap-2 font-medium">
                         <Calendar className="h-4 w-4" />

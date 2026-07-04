@@ -14,7 +14,8 @@ import {
     FileText,
     CheckCircle2,
     Clock,
-    Filter
+    Filter,
+    Printer
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -292,7 +293,13 @@ export default function ShiftAuditPage() {
                                             <User className="h-3 w-3" /> {selectedShift.userName}
                                         </p>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-right flex items-center justify-end gap-2">
+                                        <button 
+                                            onClick={() => window.open(`/api/print/shift_close/${selectedShift.id}`, '_blank')}
+                                            className="text-xs font-bold bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-xl transition-colors flex items-center gap-1.5 border border-white/10"
+                                        >
+                                            <Printer className="h-3.5 w-3.5" /> Print
+                                        </button>
                                         <span className="text-xs font-bold bg-indigo-600/50 text-indigo-100 px-3 py-1 rounded-xl uppercase tracking-widest border border-indigo-400/30">
                                             {selectedShift.status === 'closed' ? 'Pending Audit' : selectedShift.status}
                                         </span>

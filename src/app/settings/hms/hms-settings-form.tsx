@@ -87,6 +87,7 @@ export function HMSSettingsForm({
 
     // Bridge Status
     const [bridgeStatus, setBridgeStatus] = useState<{ connected: boolean, hasQr: boolean } | null>(null)
+    const [bridgeError, setBridgeError] = useState(false)
     const [qrTime, setQrTime] = useState(0)
 
     // Payment Gateway Settings
@@ -127,7 +128,7 @@ export function HMSSettingsForm({
     // AI Settings Mirror
     const [aiEnabled, setAiEnabled] = useState(aiSettings?.enabled ?? true)
     const [aiApiKey, setAiApiKey] = useState('')
-    const [aiModel, setAiModel] = useState(aiSettings?.model || 'gemini-2.5-flash')
+    const [aiModel, setAiModel] = useState(aiSettings?.model || 'gemini-1.5-flash')
     const [showAiApiKey, setShowAiApiKey] = useState(false)
     const [hasExistingAiKey, setHasExistingAiKey] = useState(aiSettings?.hasKey ?? false)
     
@@ -228,16 +229,19 @@ export function HMSSettingsForm({
 
         const checkStatus = async () => {
             try {
-                const res = await fetch(`http://${window.location.hostname}:8081/status`);
+                const res = await fetch(`http://${window.location.hostname}:8081/status`, { signal: AbortSignal.timeout(2000) });
                 if (res.ok) {
                     const data = await res.json();
                     setBridgeStatus(data);
+                    setBridgeError(false);
                     if (data.hasQr) setQrTime(Date.now()); // Force image refresh
                 } else {
                     setBridgeStatus(null);
+                    setBridgeError(true);
                 }
             } catch (err) {
                 setBridgeStatus(null);
+                setBridgeError(true);
             }
         };
 
@@ -720,15 +724,24 @@ export function HMSSettingsForm({
                                                 Wipe Session & Retry
                                             </button>
                                         </div>
+                                    ) : bridgeError && whatsappEnabled ? (
+                                        <div className="text-center space-y-3">
+                                            <div className="h-10 w-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto">
+                                                <AlertCircle className="h-5 w-5 text-red-500" />
+                                            </div>
+                                            <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.1em]">
+                                                Local Bridge Offline
+                                            </p>
+                                            <p className="text-[11px] text-slate-500 max-w-[280px] mx-auto leading-relaxed">
+                                                Could not connect to the WhatsApp Engine. You must start <span className="font-mono font-bold text-red-600 bg-red-50 dark:bg-red-950 px-1 py-0.5 rounded">RUN_WHATSAPP.bat</span> on the server PC to pair your phone.
+                                            </p>
+                                        </div>
                                     ) : (
                                         <div className="text-center space-y-3">
                                             <Loader2 className="h-10 w-10 text-slate-300 animate-spin mx-auto" />
                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                                                 {whatsappEnabled ? "Connecting to local bridge..." : "Enable WhatsApp to pair device."}
                                             </p>
-                                            {whatsappEnabled && (
-                                                <p className="text-[9px] text-slate-400 max-w-[200px] mx-auto leading-relaxed">Ensure RUN_WHATSAPP.bat is active on the server PC.</p>
-                                            )}
                                         </div>
                                     )}
                                 </>
@@ -808,10 +821,11 @@ export function HMSSettingsForm({
                                     </button>
                                 )}
                             </div>
-                            <div className="flex flex-col gap-1 opacity-60">
+                            <div className="flex flex-col gap-1">
                                 <Label className="text-[10px] font-black uppercase text-indigo-300">AI Model Engine</Label>
-                                <select value={aiModel || "gemini-2.0-flash"} onChange={(e) => setAiModel(e.target.value)} className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white outline-none" disabled>
-                                    <option value="gemini-2.5-flash">google/gemini-2.5-flash (Stable)</option>
+                                <select value={aiModel || "dynamic"} onChange={(e) => setAiModel(e.target.value)} className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white outline-none">
+                                    <option value="dynamic">Dynamic Auto-Select (Recommended)</option>
+                                    <option value="gemini-1.5-flash">Legacy (gemini-1.5-flash)</option>
                                 </select>
                             </div>
                         </div>

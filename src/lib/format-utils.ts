@@ -1,5 +1,7 @@
 import { format as dateFnsFormat } from 'date-fns';
 
+import { SYSTEM_DEFAULT_LOCALE } from './currency-constants';
+
 /**
  * Default formats to use if tenant/company settings are not found
  */
@@ -10,19 +12,26 @@ export const DEFAULT_PRECISION = 2;
 /**
  * Formats a date object or string into a string based on the provided format or default
  */
-export function formatDate(date: Date | string | number, formatString?: string): string {
+export function formatDate(date: Date | string | number, formatString?: string, timeZone?: string): string {
   if (!date) return '-';
   const d = new Date(date);
   if (isNaN(d.getTime())) return '-';
   
-  // Construct a shifted date that tricks date-fns into printing the correct local time
-  // regardless of the underlying server timezone.
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Kolkata', 
+  // Resolve timezone dynamically from env or fallback to local
+  const resolvedTimeZone = timeZone || (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_DEFAULT_TIMEZONE : undefined);
+
+  const options: Intl.DateTimeFormatOptions = {
     year: 'numeric', month: 'numeric', day: 'numeric',
     hour: 'numeric', minute: 'numeric', second: 'numeric',
     hour12: false,
-  }).formatToParts(d);
+  };
+  
+  if (resolvedTimeZone) {
+      options.timeZone = resolvedTimeZone;
+  }
+
+  // Construct a shifted date that tricks date-fns into printing the correct local time
+  const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(d);
   
   const vals: any = {};
   parts.forEach(p => vals[p.type] = p.value);
@@ -46,10 +55,10 @@ export function formatDate(date: Date | string | number, formatString?: string):
 /**
  * Formats a number into a currency string with dynamic precision
  */
-export function formatNumber(amount: number, precision: number = DEFAULT_PRECISION): string {
+export function formatNumber(amount: number, precision: number = DEFAULT_PRECISION, locale: string = SYSTEM_DEFAULT_LOCALE): string {
   if (amount === undefined || amount === null) return '0.00';
   
-  return new Intl.NumberFormat('en-IN', {
+  return new Intl.NumberFormat(locale, {
     minimumFractionDigits: precision,
     maximumFractionDigits: precision
   }).format(amount);

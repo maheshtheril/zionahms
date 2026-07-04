@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { auth } from "@/auth";
 import { getAIConfig } from "@/app/actions/settings";
+import { getDynamicAIModels } from "@/lib/ai-models";
 
 export async function POST(request: NextRequest) {
     try {
@@ -29,7 +30,8 @@ export async function POST(request: NextRequest) {
         const base64Image = buffer.toString('base64')
 
         // Use Gemini to extract structured prescription data
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }, { apiVersion: 'v1beta' })
+        const dynamicModels = await getDynamicAIModels(key);
+        const model = genAI.getGenerativeModel({ model: dynamicModels[0] }, { apiVersion: 'v1beta' })
 
         const result = await model.generateContent([
             {
@@ -82,9 +84,17 @@ Rules:
 
     } catch (error: any) {
         console.error('Prescription recognition error:', error)
+        let msg = error.message || 'Unknown error';
+        let friendlyError = 'Failed to recognize prescription';
+
+        if (msg.includes("403") || msg.includes("denied access")) friendlyError = "API Key Permission Denied. Please ensure your Google AI API Key is valid and has billing enabled.";
+        else if (msg.includes("429") && msg.includes("limit: 0")) friendlyError = "API Key Quota Exhausted. Your Google Cloud Free Tier limits have been reached.";
+        else if (msg.includes("429") || msg.includes("Too Many Requests") || msg.includes("Quota exceeded")) friendlyError = "AI Rate Limit Reached. Please wait 1-2 minutes.";
+        else if (msg.includes("503") || msg.includes("Overloaded")) friendlyError = "AI Server Overloaded. Google's servers are busy.";
+
         return NextResponse.json({
-            error: 'Failed to recognize prescription',
-            details: error.message
+            error: friendlyError,
+            details: msg
         }, { status: 500 })
     }
 }

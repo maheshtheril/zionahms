@@ -64,6 +64,7 @@ export async function updateAccountingSettings(data: any) {
             rounding_method,
             retained_earnings_account_id,
             default_tax_mode,
+            default_tax_type_id,
 
             // Journals
             sales_journal_id,
@@ -154,7 +155,10 @@ export async function updateAccountingSettings(data: any) {
                 if (compSettings) {
                     await prisma.company_settings.update({
                         where: { company_id: companyId },
-                        data: { hms_billing_mode: default_tax_mode || 'exclusive' }
+                        data: { 
+                            hms_billing_mode: default_tax_mode || 'exclusive',
+                            default_tax_type_id: default_tax_type_id || null
+                        }
                     });
                 } else {
                     const firstCurr = await prisma.currencies.findFirst({ where: { is_active: true } });
@@ -164,7 +168,8 @@ export async function updateAccountingSettings(data: any) {
                             tenant: { connect: { id: tenantId! } },
                             company: { connect: { id: companyId } },
                             currencies: { connect: { id: firstCurr.id } },
-                            hms_billing_mode: default_tax_mode || 'exclusive'
+                            hms_billing_mode: default_tax_mode || 'exclusive',
+                            default_tax_type_id: default_tax_type_id || null
                         }
                     });
                 }

@@ -3,7 +3,7 @@ import { getPDFConfig, getHMSSettings } from '@/app/actions/settings';
 import { compileTemplate, WORLD_STANDARD_DEFAULTS } from '@/lib/utils/pdf-defaults';
 import { formatDate, DEFAULT_DATE_FORMAT, DEFAULT_TIME_FORMAT } from '@/lib/format-utils';
 
-export type PDFUsage = 'op_slip' | 'sale_bill' | 'sales_return' | 'purchase_return' | 'purchase_receipt' | 'prescription' | 'lab_report' | 'doctor_note';
+export type PDFUsage = 'op_slip' | 'sale_bill' | 'pos_bill' | 'sales_return' | 'purchase_return' | 'purchase_receipt' | 'prescription' | 'lab_report' | 'doctor_note' | 'payment_voucher' | 'shift_close' | 'lab_catalog';
 
 /**
  * WORLD-CLASS UNIFIED PDF ENGINE (v4 - Server-Safe)
@@ -17,6 +17,211 @@ export async function generateUniversalPDF(
     configOverride?: any
 ): Promise<string> {
     try {
+        // ============================================================
+        // [LAB CATALOG] Completely standalone PDF - no invoice template
+        // ============================================================
+        if ((usage as any) === 'lab_catalog') {
+            const doc = new jsPDF('p', 'pt', 'a4');
+            const pw = doc.internal.pageSize.getWidth();
+            const ph = doc.internal.pageSize.getHeight();
+            const margin = 40;
+            let y = margin;
+
+            // ---- HEADER ----
+            const companyMeta = company?.metadata || {};
+            const logoUrl = company?.logo_url;
+
+            // Try to draw logo
+            if (logoUrl) {
+                try {
+                    const res = await fetch(logoUrl);
+                    const buf = await res.arrayBuffer();
+                    const b64 = `data:image/png;base64,${Buffer.from(buf).toString('base64')}`;
+                    doc.addImage(b64, 'PNG', margin, y, 50, 50);
+                } catch (_) {}
+            }
+
+            const nameX = margin + 60;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 0);
+            doc.text(company?.name || 'Hospital', nameX, y + 14);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(80, 80, 80);
+            const addrParts = [companyMeta?.address, company?.phone, company?.email].filter(Boolean).join('  |  ');
+            if (addrParts) doc.text(addrParts, nameX, y + 28);
+            y += 60;
+
+            // Title
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(13);
+            doc.setTextColor(0, 0, 0);
+            doc.text('LABORATORY TEST CATALOG', pw / 2, y, { align: 'center' });
+            y += 8;
+
+            // Underline
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.8);
+            doc.line(margin, y, pw - margin, y);
+            y += 14;
+
+            // Date line
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Printed on: ${new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}`, pw - margin, y, { align: 'right' });
+            y += 14;
+
+            // ---- TABLE HEADER ----
+            const cols = [
+                { title: '#',               w: 24,  align: 'center' },
+                { title: 'INVESTIGATION',   w: 190, align: 'left'   },
+                { title: 'METHOD',          w: 80,  align: 'left'   },
+                { title: 'UNIT',            w: 50,  align: 'center' },
+                { title: 'REF. RANGE',      w: 90,  align: 'center' },
+                { title: 'PRICE (Rs.)',     w: 70,  align: 'right'  },
+            ];
+            const totalW = cols.reduce((s, c) => s + c.w, 0);
+            const startX = (pw - totalW) / 2;
+            const rowH = 18;
+            const headerH = 20;
+
+            const drawRow = (row: string[], isHeader: boolean, isChild: boolean, isPanel: boolean) => {
+                if (y + rowH > ph - margin) {
+                    doc.addPage();
+                    y = margin + 10;
+                }
+
+                if (isHeader) {
+                    doc.setFillColor(40, 40, 40);
+                    doc.rect(startX, y, totalW, headerH, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                } else if (isPanel) {
+                    doc.setFillColor(235, 240, 255);
+                    doc.rect(startX, y, totalW, rowH, 'F');
+                    doc.setTextColor(30, 30, 120);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                } else if (isChild) {
+                    doc.setFillColor(250, 250, 250);
+                    doc.rect(startX, y, totalW, rowH, 'F');
+                    doc.setTextColor(60, 60, 60);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(7.5);
+                } else {
+                    doc.setFillColor(255, 255, 255);
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                }
+
+                let cx = startX;
+                const h = isHeader ? headerH : rowH;
+                const cellY = y + h - 5;
+
+                row.forEach((cell, i) => {
+                    const col = cols[i];
+                    const align = col.align as any;
+                    const textX = align === 'right' ? cx + col.w - 3 : align === 'center' ? cx + col.w / 2 : cx + 3;
+                    doc.text(cell ?? '', textX, cellY, { align });
+                    cx += col.w;
+                });
+
+                // bottom border
+                doc.setDrawColor(210, 210, 210);
+                doc.setLineWidth(0.3);
+                doc.line(startX, y + h, startX + totalW, y + h);
+
+                y += h;
+            };
+
+            // Helpers
+            const resolveRange = (rr: any): string => {
+                if (!rr) return '-';
+                if (typeof rr === 'string') return rr || '-';
+                if (typeof rr === 'object') {
+                    // Common shapes: { range }, { normal }, { min, max }, { low, high }, { text }
+                    return rr.range || rr.normal || rr.text ||
+                        (rr.min !== undefined && rr.max !== undefined ? `${rr.min} - ${rr.max}` : null) ||
+                        (rr.low !== undefined && rr.high !== undefined ? `${rr.low} - ${rr.high}` : null) ||
+                        Object.values(rr).filter(v => typeof v === 'string').join(' ') || '-';
+                }
+                return '-';
+            };
+
+            const resolvePrice = (p: any): string => {
+                if (p === null || p === undefined) return '0.00';
+                const n = Number(p);
+                return isNaN(n) ? '0.00' : n.toFixed(2);
+            };
+
+            // Draw header row
+            drawRow(['#', ...cols.slice(1).map(c => c.title)], true, false, false);
+
+            // ---- DATA ROWS ----
+            const tests: any[] = Array.isArray(data) ? data : [];
+            let sno = 1;
+
+            tests.forEach((test: any) => {
+                if (test.is_panel) {
+                    drawRow([
+                        String(sno++),
+                        test.name || '-',
+                        test.method || '-',
+                        test.units || '-',
+                        resolveRange(test.reference_range),
+                        resolvePrice(test.price)
+                    ], false, false, true);
+
+                    const members = test.hms_lab_test_panel_member_hms_lab_test_panel_member_panel_idTohms_lab_test || [];
+                    members.forEach((m: any) => {
+                        const child = m.hms_lab_test_hms_lab_test_panel_member_member_test_idTohms_lab_test;
+                        if (child) {
+                            drawRow([
+                                '',
+                                `    \u2022 ${child.name}`,
+                                child.method || '-',
+                                child.units || '-',
+                                resolveRange(child.reference_range),
+                                '-'
+                            ], false, true, false);
+                        }
+                    });
+                } else {
+                    drawRow([
+                        String(sno++),
+                        test.name || '-',
+                        test.method || '-',
+                        test.units || '-',
+                        resolveRange(test.reference_range),
+                        resolvePrice(test.price)
+                    ], false, false, false);
+                }
+            });
+
+            // Footer line
+            y += 6;
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.5);
+            doc.line(margin, y, pw - margin, y);
+            y += 10;
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(7);
+            doc.setTextColor(120, 120, 120);
+            doc.text(`Total: ${sno - 1} investigations listed`, margin, y);
+            doc.text('Prices subject to change without prior notice.', pw - margin, y, { align: 'right' });
+
+            if (autoPrint) {
+                doc.autoPrint();
+            }
+            return doc.output('datauristring').split(',')[1];
+        }
+        // ============================================================
+
         console.log(`[ENGINE] Generating ${usage} for ${data.id || 'new document'}`);
         let config = configOverride || await getPDFConfig(data.company_id || company.id, data.tenant_id || company.tenant_id, usage, branchId);
         const hmsSettingsRes = await getHMSSettings();
@@ -61,12 +266,20 @@ export async function generateUniversalPDF(
         const showTaxDetails = config?.showTaxOnBill !== false;
 
         const bMeta = (() => {
-            const m = data.billing_metadata;
-            if (!m) return {};
+            let m = data.billing_metadata;
             if (typeof m === 'string') {
-                try { return JSON.parse(m); } catch (e) { return {}; }
+                try { m = JSON.parse(m); } catch (e) { m = {}; }
             }
-            return m;
+            
+            let genMeta = data.metadata;
+            if (typeof genMeta === 'string') {
+                try { genMeta = JSON.parse(genMeta); } catch (e) { genMeta = {}; }
+            }
+            
+            return {
+                ...(m || {}),
+                ...(genMeta?.walkin_details || {})
+            };
         })();
 
         const resolvedPatientName = (() => {
@@ -117,15 +330,15 @@ export async function generateUniversalPDF(
             ...meta,
             ...data,
             show_tax: showTaxDetails,
-            bill_header_label: (usage === 'sales_return' || usage === 'purchase_return') ? (usage === 'purchase_return' ? "DEBIT NOTE / RETURN" : "CREDIT NOTE") : (usage === 'purchase_receipt' ? "GOODS RECEIVED NOTE (GRN)" : (showTaxDetails ? "TAX INVOICE" : "INVOICE")),
-            subtotal: `Rs. ${subtotalValue.toFixed(2)}`,
-            tax_amount: `Rs. ${taxValue.toFixed(2)}`,
-            total_discount: `Rs. ${Number(data.total_discount || 0).toFixed(2)}`,
-            total_amount: `Rs. ${Number(data.total_amount || data.total || 0).toFixed(2)}`,
-            // [FORCE-CLEANUP] Standardize currency symbol for PDF rendering (Standard fonts use Rs.)
-            currency_symbol: "Rs.",
-            grand_total_label: (usage === 'sales_return' || usage === 'purchase_return') ? (usage === 'purchase_return' ? "DEBIT TOTAL (Rs.)" : "REFUND TOTAL (Rs.)") : (usage === 'purchase_receipt' ? "RECEIPT TOTAL (Rs.)" : "GRAND TOTAL (Rs.)"),
-            doc_number: (usage === 'sales_return' || usage === 'purchase_return') ? (data.return_number || data.id?.slice(0, 8)) : (usage === 'purchase_receipt' ? (data.receipt_number || data.id?.slice(0, 8)) : (data.invoice_number || data.order_number || data.id?.slice(0, 8) || "N/A")),
+            bill_header_label: ((usage as any) === 'shift_close') ? "END OF SHIFT REPORT" : ((usage as any) === 'payment_voucher') ? "PAYMENT VOUCHER" : ((usage as any) === 'sales_return' || (usage as any) === 'purchase_return') ? ((usage as any) === 'purchase_return' ? "DEBIT NOTE / RETURN" : "CREDIT NOTE") : ((usage as any) === 'purchase_receipt' ? "GOODS RECEIVED NOTE (GRN)" : ((usage as any) === 'lab_catalog' ? "LABORATORY TEST CATALOG" : (showTaxDetails ? "TAX INVOICE" : "INVOICE"))),
+            // [FORCE-CLEANUP] Use currency code for PDF rendering to avoid Unicode font issues (e.g. INR instead of ₹)
+            currency_symbol: meta.currency_code || "INR",
+            subtotal: `${meta.currency_code || "INR"} ${subtotalValue.toFixed(2)}`,
+            tax_amount: `${meta.currency_code || "INR"} ${taxValue.toFixed(2)}`,
+            total_discount: `${meta.currency_code || "INR"} ${Number(data.total_discount || 0).toFixed(2)}`,
+            total_amount: `${meta.currency_code || "INR"} ${Number(data.total_amount || data.total || 0).toFixed(2)}`,
+            grand_total_label: ((usage as any) === 'sales_return' || (usage as any) === 'purchase_return') ? ((usage as any) === 'purchase_return' ? `DEBIT TOTAL (${meta.currency_code || "INR"})` : `REFUND TOTAL (${meta.currency_code || "INR"})`) : ((usage as any) === 'purchase_receipt' ? `RECEIPT TOTAL (${meta.currency_code || "INR"})` : `GRAND TOTAL (${meta.currency_code || "INR"})`),
+            doc_number: ((usage as any) === 'sales_return' || (usage as any) === 'purchase_return') ? (data.return_number || data.id?.slice(0, 8)) : ((usage as any) === 'purchase_receipt' ? (data.receipt_number || data.id?.slice(0, 8)) : (data.invoice_number || data.order_number || data.id?.slice(0, 8) || "N/A")),
             formatted_date: formatDate(
                 data.created_at || Date.now(), 
                 `${company.metadata?.date_format || DEFAULT_DATE_FORMAT} ${company.metadata?.time_format || DEFAULT_TIME_FORMAT}`
@@ -143,6 +356,9 @@ export async function generateUniversalPDF(
                 phone: resolvedPatientMobile,
                 id: patientData.patient_number || patientData.id,
                 age: (() => {
+                    const meta = bMeta || {};
+                    if (meta.age) return meta.age;
+                    
                     if (patientData.age) return patientData.age;
                     if (patientData.dob) {
                         const birth = new Date(patientData.dob);
@@ -154,24 +370,25 @@ export async function generateUniversalPDF(
                     }
                     return "N/A";
                 })(),
+                gender: (() => {
+                    const meta = bMeta || {};
+                    if (meta.gender) return meta.gender;
+                    
+                    if (patientData.gender) return patientData.gender;
+                    return "N/A";
+                })(),
                 renew_date: (() => {
                     const storedExpiry = patientData.metadata?.registration_expiry;
                     if (!storedExpiry || isNaN(new Date(storedExpiry).getTime())) return "N/A";
                     
                     const d = new Date(storedExpiry);
-                    // [POLICY-FIX] Force 7-day (or setting-defined) window from patient creation
-                    const createdAt = patientData.created_at ? new Date(patientData.created_at) : new Date();
-                    const validityDays = hmsSettings?.registrationValidity || 7;
-                    const policyExpiry = new Date(createdAt);
-                    policyExpiry.setDate(policyExpiry.getDate() + Number(validityDays));
-                    
-                    const finalDate = (d.getFullYear() > policyExpiry.getFullYear() + 1) ? policyExpiry : d;
-                    return formatDate(finalDate, company.metadata?.date_format || DEFAULT_DATE_FORMAT);
+                    return formatDate(d, company.metadata?.date_format || DEFAULT_DATE_FORMAT);
                 })(),
                 mobile: (() => {
-                    const m = String(resolvedPatientMobile).replace(/\D/g, '');
-                    if (m.length === 10) return m.slice(0, 5) + '   ' + m.slice(5);
-                    return resolvedPatientMobile;
+                    if (resolvedPatientMobile && String(resolvedPatientMobile).trim() !== "") {
+                        return resolvedPatientMobile;
+                    }
+                    return "N/A";
                 })(),
                 address: (() => {
                     const rawAddr = patientData.address || (typeof patientData.contact === 'object' ? (patientData.contact as any)?.address : null);
@@ -194,22 +411,46 @@ export async function generateUniversalPDF(
         context.patient = {
             ...context.patient,
             name: resolvedPatientName,
-            phone: resolvedPatientMobile
+            phone: resolvedPatientMobile,
+            age: context.patient.age,
+            gender: context.patient.gender
         };
 
         const rawDocFirst = clinicianData.first_name || (clinicianData.user as any)?.name || clinicianData.name || "";
         const rawDocLast = clinicianData.last_name || "";
-        const resolvedDocName = rawDocFirst ? `${clinicianData.salutation || 'Dr.'} ${rawDocFirst} ${rawDocLast}`.trim() : "Consulting Physician / Medical Officer";
+        const resolvedDocName = bMeta.doctor_name || (rawDocFirst ? `${clinicianData.salutation || 'Dr.'} ${rawDocFirst} ${rawDocLast}`.trim() : "Consulting Physician / Medical Officer");
+
+        // --- WORLD-CLASS SMART SEAL FALLBACK ---
+        const qual = clinicianData.qualification ? clinicianData.qualification.trim() : "";
+        const desig = clinicianData.designation ? clinicianData.designation.trim() : "";
+        const regNo = clinicianData.license_no || clinicianData.registration_number || (clinicianData.metadata as any)?.registration_number || "";
+        
+        let smartFallback = "";
+        if (qual && desig) {
+            smartFallback = `${qual} | ${desig}`;
+        } else if (qual) {
+            smartFallback = qual;
+        } else if (desig) {
+            smartFallback = desig;
+        }
+
+        if (regNo && regNo !== "REG-PENDING" && regNo.trim() !== "") {
+            if (smartFallback) {
+                smartFallback += `\nReg No: ${regNo}`;
+            } else {
+                smartFallback = `Reg No: ${regNo}`;
+            }
+        }
 
         context.doctor = {
             ...clinicianData,
-            registration_number: clinicianData.license_no || clinicianData.registration_number || (clinicianData.metadata as any)?.registration_number || "REG-PENDING",
+            registration_number: regNo || "REG-PENDING",
             department: (clinicianData.hms_specializations as any)?.name || (clinicianData.metadata as any)?.department || "General Practice",
-            designation: clinicianData.designation || "Consultant",
-            qualification: clinicianData.qualification || "",
+            designation: desig || "Consultant",
+            qualification: qual || "",
             doctor_name: resolvedDocName,
-            doctor_notes: clinicianData.notes || (clinicianData.designation ? `${clinicianData.designation} | ${clinicianData.qualification || ''}` : ""),
-            footer_text: clinicianData.notes || (clinicianData.designation ? `${clinicianData.designation} | ${clinicianData.qualification || ''}` : "Consulting Physician / Medical Officer"),
+            doctor_notes: clinicianData.notes || smartFallback,
+            footer_text: clinicianData.notes || smartFallback,
             digital_print_footer: clinicianData.notes || ""
         };
         context.visit = {
@@ -265,11 +506,15 @@ export async function generateUniversalPDF(
                 // [REFINED SUPPRESSION] ONLY block the specific fields we've hardcoded to prevent overlap
                 const isIdentityElement = (key === 'patient_id' || key === 'patient_name' || key === 'patient_age' || key === 'mobile_number' || key === 'patient_addr' || key === 'age_gender' || key === 'renew_date' || key === 'patient_mob');
 
-                if (usage === 'op_slip' && isIdentityElement) {
+                if ((usage as any) === 'lab_catalog' && (isIdentityElement || key === 'bill_to' || key === 'inv_data_lbl')) {
+                    continue;
+                }
+
+                if ((usage as any) === 'op_slip' && isIdentityElement) {
                     if (key === 'patient_id' || key === 'patient_name' || key.includes('id')) {
                         // [WALK-IN-RECOVERY-LOGIC] Robustly resolve walk-in status from initial invoice data
-                        const resolvedWalkInData = useMemo(() => {
-                          const inv = JSON.parse(JSON.stringify(initialInvoice || activeInvoice || {}));
+                        const resolvedWalkInData = (() => {
+                          const inv = data || {};
                           if (!inv || Object.keys(inv).length === 0) return { isWalkIn: false, name: '', phone: '' };
                           const hasPatientLink = inv.patient_id && String(inv.patient_id).length > 5;
                           if (hasPatientLink) return { isWalkIn: false, name: '', phone: '' };
@@ -283,16 +528,16 @@ export async function generateUniversalPDF(
                           } catch (e) {
                               return { isWalkIn: false, name: '', phone: '' };
                           }
-                        }, [initialInvoice, activeInvoice]);
+                        })();
 
-                        const [isWalkIn, setIsWalkIn] = useState(resolvedWalkInData.isWalkIn);
+                        const isWalkIn = resolvedWalkInData.isWalkIn;
                         // Handled once at the core identity block...
                     }
                 }
 
                 // [LOCKED-FORMAT: 2026-04-22] - CLINICAL FIDELITY GUARD
                 // This block hardcodes the patient identity to prevent accidental Branding Studio shifts.
-                if (usage === 'op_slip' && isIdentityElement) {
+                if ((usage as any) === 'op_slip' && isIdentityElement) {
                     if (!hasRenderedIdentity) {
                         const defaults = WORLD_STANDARD_DEFAULTS.op_slip;
 
@@ -319,7 +564,7 @@ export async function generateUniversalPDF(
 
                         doc.setTextColor(0, 0, 0);
                         doc.setFontSize(11 * scale);
-                        const rawPhone = (patientData.contact?.phone || patientData.phone || "N/A").toString();
+                        const rawPhone = (context.patient_mobile && context.patient_mobile !== "N/A") ? context.patient_mobile : "N/A";
                         doc.text(`Mob: ${rawPhone}`, mobX, mobY);
 
                         if (context.patient.address) {
@@ -334,12 +579,12 @@ export async function generateUniversalPDF(
                 }
 
                 // [FORCE-FIDELITY] Move Clinical Line to appropriate vertical anchor
-                if (usage === 'op_slip' && key === 'line_1_btm') {
+                if ((usage as any) === 'op_slip' && key === 'line_1_btm') {
                     val.y = 185;
                 }
 
                 // [FORCE-FIDELITY] Move Vitals to Vertical Right Sidebar
-                if (usage === 'op_slip' && (key === 'notes_hdr' || key === 'vitals_row')) {
+                if ((usage as any) === 'op_slip' && (key === 'notes_hdr' || key === 'vitals_row')) {
                     if (key === 'notes_hdr') {
                         doc.setFont("Helvetica", "bold");
                         doc.setFontSize(8 * scale);
@@ -370,9 +615,22 @@ export async function generateUniversalPDF(
                 let y = (val.y || 0) * scale;
 
                 // DYNAMIC POSITIONING: If this element started below the table, shift it by the table's actual growth
-                // [USER-REQUEST] Broad suppression for all footer, signature, and bottom-notes in sale bills
                 const isBottomElement = key.toLowerCase().includes('footer') || key.toLowerCase().includes('sign') || key.toLowerCase().includes('signature') || key.toLowerCase().includes('notes') || key.toLowerCase().includes('terms');
-                if (usage === 'sale_bill' && isBottomElement) {
+                const isTotalElement = key === 'total_lbl' || key === 'total_val' || key === 'line_btm';
+                
+                if ((usage as any) === 'sale_bill' || (usage as any) === 'pos_bill') {
+                    // Check World-Standard Advanced overrides
+                    const adv = config?.advanced || {};
+                    let suppress = isBottomElement;
+                    if (adv.showSignature && (key.toLowerCase().includes('sign') || key.toLowerCase().includes('signature'))) suppress = false;
+                    if (adv.showTerms && (key.toLowerCase().includes('terms') || key.toLowerCase().includes('notes'))) suppress = false;
+                    if (suppress) continue;
+                } else if (((usage as any) === 'payment_voucher' || (usage as any) === 'shift_close') && isBottomElement) {
+                    continue;
+                }
+                
+                // Shift close uses custom ledger tally, suppress default totals
+                if ((usage as any) === 'shift_close' && isTotalElement) {
                     continue;
                 }
 
@@ -380,13 +638,16 @@ export async function generateUniversalPDF(
                     // Position footer relative to page bottom safely above physical unprintable printer margin
                     y = pageHeight - (75 * scale);
                     if (key === 'footer_line') y -= (10 * scale);
-                } else if (tableEndOfTableY > 0 && (val.y * scale) > tableStartY) {
+                }
+                
+                const isFooterElement = key.toLowerCase().includes('footer') || key.toLowerCase().includes('qr') || key.toLowerCase().includes('notes_box');
+
+                if (tableEndOfTableY > 0 && (val.y * scale) > tableStartY && !isFooterElement) {
                     const originalGap = (val.y * scale) - tableStartY;
                     y = tableEndOfTableY + originalGap - (20 * scale); // Maintain relative relationship
                 }
 
                 // INTELLIGENT WRAP PROTECTION: Only add page if we are EXCEEDING the current page boundary
-                const isFooterElement = key.toLowerCase().includes('footer') || key.toLowerCase().includes('qr') || key.toLowerCase().includes('notes_box');
                 const pageThreshold = isFooterElement ? (835 * scale) : (785 * scale);
 
                 if (y > pageThreshold && !isFooterElement) {
@@ -437,7 +698,158 @@ export async function generateUniversalPDF(
                 }
                 // D. TABLE (Dynamic Lists)
                 else if (key === 'table' || val.type === 'table') {
-                    tableEndOfTableY = await renderTable(doc, usage, data, val, scale, pageWidth, pageHeight, context);
+                    let yOffsetForTable = val.y * scale;
+
+                    // --- SHIFT REPORT CUSTOM SUMMARY BLOCK (Z-REPORT STANDARD) ---
+                    if ((usage as any) === 'shift_close' && data.shift_summary) {
+                        const s = data.shift_summary;
+                        
+                        // Draw Section Header Background
+                        doc.setFillColor(241, 245, 249); // slate-100
+                        doc.setDrawColor(203, 213, 225); // slate-200
+                        doc.setLineWidth(0.5 * scale);
+                        doc.rect(40 * scale, yOffsetForTable - (10 * scale), 515 * scale, 22 * scale, 'FD');
+                        
+                        doc.setFont("Helvetica", "bold");
+                        doc.setFontSize(11 * scale);
+                        doc.setTextColor(15, 23, 42); // slate-900
+                        doc.text("END OF SHIFT Z-REPORT & AUDIT", 45 * scale, yOffsetForTable + (4 * scale));
+                        
+                        // Add Start and End times explicitly to the right of the header box
+                        doc.setFont("Helvetica", "normal");
+                        doc.setFontSize(8 * scale);
+                        doc.setTextColor(100, 116, 139);
+                        doc.text(`Started: ${s.startedAt}   |   Ended: ${s.endedAt}`, 545 * scale, yOffsetForTable + (3 * scale), { align: 'right' });
+                        
+                        yOffsetForTable += 26 * scale;
+                        
+                        doc.setFont("Helvetica", "normal");
+                        doc.setFontSize(9 * scale);
+                        
+                        // Column 1: Sales / Revenue
+                        doc.setTextColor(100, 116, 139); doc.text("Total Revenue", 45 * scale, yOffsetForTable);
+                        doc.setFont("Helvetica", "bold"); doc.setTextColor(15, 23, 42); doc.text(`${context.currency_symbol} ${Number(s.revenue).toFixed(2)}`, 155 * scale, yOffsetForTable, { align: 'right' });
+                        doc.setFont("Helvetica", "normal");
+                        
+                        doc.setTextColor(100, 116, 139); doc.text("Pending Bills", 45 * scale, yOffsetForTable + (14 * scale));
+                        doc.setFont("Helvetica", "bold"); doc.setTextColor(15, 23, 42); doc.text(`${context.currency_symbol} ${Number(s.pending).toFixed(2)}`, 155 * scale, yOffsetForTable + (14 * scale), { align: 'right' });
+                        doc.setFont("Helvetica", "normal");
+                        
+                        // Column 2: Collections
+                        doc.setTextColor(100, 116, 139); doc.text("Cash Collected", 175 * scale, yOffsetForTable);
+                        doc.setFont("Helvetica", "bold"); doc.setTextColor(15, 23, 42); doc.text(`${context.currency_symbol} ${Number(s.cashCollected).toFixed(2)}`, 295 * scale, yOffsetForTable, { align: 'right' });
+                        doc.setFont("Helvetica", "normal");
+                        
+                        doc.setTextColor(100, 116, 139); doc.text("UPI / Digital", 175 * scale, yOffsetForTable + (14 * scale));
+                        doc.setFont("Helvetica", "bold"); doc.setTextColor(15, 23, 42); doc.text(`${context.currency_symbol} ${Number(s.upi).toFixed(2)}`, 295 * scale, yOffsetForTable + (14 * scale), { align: 'right' });
+                        doc.setFont("Helvetica", "normal");
+                        
+                        doc.setTextColor(100, 116, 139); doc.text("Card (POS)", 175 * scale, yOffsetForTable + (28 * scale));
+                        doc.setFont("Helvetica", "bold"); doc.setTextColor(15, 23, 42); doc.text(`${context.currency_symbol} ${Number(s.card).toFixed(2)}`, 295 * scale, yOffsetForTable + (28 * scale), { align: 'right' });
+                        doc.setFont("Helvetica", "normal");
+                        
+                        // Column 3: Drawer Audit
+                        doc.setFont("Helvetica", "bold");
+                        doc.setTextColor(15, 23, 42); doc.text("Expected Cash", 315 * scale, yOffsetForTable);
+                        doc.text(`${context.currency_symbol} ${Number(s.expectedCash).toFixed(2)}`, 500 * scale, yOffsetForTable, { align: 'right' });
+                        
+                        doc.text("Actual Declared", 315 * scale, yOffsetForTable + (14 * scale));
+                        doc.text(`${context.currency_symbol} ${Number(s.actualCash).toFixed(2)}`, 500 * scale, yOffsetForTable + (14 * scale), { align: 'right' });
+                        
+                        const vNum = Number(s.variance);
+                        doc.setTextColor(vNum < 0 ? 220 : (vNum > 0 ? 22 : 100), vNum < 0 ? 38 : (vNum > 0 ? 163 : 116), vNum < 0 ? 38 : (vNum > 0 ? 74 : 139));
+                        doc.text(vNum < 0 ? "SHORTAGE" : (vNum > 0 ? "SURPLUS" : "VARIANCE"), 315 * scale, yOffsetForTable + (28 * scale));
+                        doc.text(`${context.currency_symbol} ${Math.abs(vNum).toFixed(2)}`, 500 * scale, yOffsetForTable + (28 * scale), { align: 'right' });
+                        
+                        // Vertical Dividers
+                        doc.setDrawColor(226, 232, 240);
+                        doc.setLineWidth(0.5 * scale);
+                        doc.line(165 * scale, yOffsetForTable - (8 * scale), 165 * scale, yOffsetForTable + (30 * scale));
+                        doc.line(305 * scale, yOffsetForTable - (8 * scale), 305 * scale, yOffsetForTable + (30 * scale));
+                        
+                        doc.setTextColor(0, 0, 0);
+                        yOffsetForTable += 48 * scale;
+                        
+                        // Setup the table to start lower!
+                        let dynamicTableConfig = { ...val, y: yOffsetForTable / scale };
+                        
+                        // Add Ledger Header
+                        doc.setFillColor(241, 245, 249);
+                        doc.setDrawColor(203, 213, 225);
+                        doc.rect(40 * scale, yOffsetForTable - (10 * scale), 515 * scale, 22 * scale, 'FD');
+                        doc.setFont("Helvetica", "bold");
+                        doc.setFontSize(11 * scale);
+                        doc.setTextColor(15, 23, 42);
+                        doc.text("DETAILED LEDGER & CASH TRANSACTIONS", 45 * scale, yOffsetForTable + (4 * scale));
+                        
+                        yOffsetForTable += 16 * scale;
+                        dynamicTableConfig.y = yOffsetForTable / scale;
+
+                        // Table of transactions
+                        const ledger = data.ledger || [];
+                        const tConfig = {
+                            columns: [
+                                { key: 'time', title: 'TIME', width: 60, align: 'left' },
+                                { key: 'invoice', title: 'REF NO', width: 80, align: 'left' },
+                                { key: 'patient', title: 'PATIENT / PAYEE', width: 140, align: 'left' },
+                                { key: 'method', title: 'METHOD', width: 60, align: 'center' },
+                                { key: 'amount', title: 'AMOUNT', width: 80, align: 'right' }
+                            ]
+                        };
+                        const formattedLedger = ledger.map((l: any) => ({
+                            time: new Date(l.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                            invoice: l.reference || 'N/A',
+                            patient: l.patient_name || '-',
+                            method: String(l.method).toUpperCase(),
+                            amount: Number(l.amount).toFixed(2)
+                        }));
+                        tableEndOfTableY = await renderTable(doc, usage, formattedLedger, tConfig, scale, pageWidth, pageHeight, context);
+                    } else if ((usage as any) === 'lab_catalog') {
+                        const tConfig = {
+                            columns: [
+                                { key: 'name', title: 'INVESTIGATION NAME', width: 180, align: 'left' },
+                                { key: 'method', title: 'METHOD', width: 80, align: 'left' },
+                                { key: 'unit', title: 'UNIT', width: 50, align: 'center' },
+                                { key: 'range', title: 'REF. RANGE', width: 60, align: 'center' },
+                                { key: 'price', title: 'PRICE', width: 60, align: 'right' }
+                            ]
+                        };
+
+                        const flatCatalog: any[] = [];
+                        if (Array.isArray(data)) {
+                            data.forEach((test: any) => {
+                                flatCatalog.push({
+                                    name: test.is_panel ? `[PACKAGE] ${test.name}` : test.name,
+                                    method: test.method || '-',
+                                    unit: test.units || '-',
+                                    range: typeof test.reference_range === 'object' ? (test.reference_range?.range || '-') : (test.reference_range || '-'),
+                                    price: Number(test.price || 0).toFixed(2),
+                                    is_panel: test.is_panel
+                                });
+                                
+                                if (test.is_panel && test.hms_lab_test_panel_member_hms_lab_test_panel_member_panel_idTohms_lab_test) {
+                                    const members = test.hms_lab_test_panel_member_hms_lab_test_panel_member_panel_idTohms_lab_test;
+                                    members.forEach((m: any) => {
+                                        const child = m.hms_lab_test_hms_lab_test_panel_member_member_test_idTohms_lab_test;
+                                        if (child) {
+                                            flatCatalog.push({
+                                                name: `   • ${child.name}`,
+                                                method: child.method || '-',
+                                                unit: child.units || '-',
+                                                range: typeof child.reference_range === 'object' ? (child.reference_range?.range || '-') : (child.reference_range || '-'),
+                                                price: '-',
+                                                is_child: true
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        tableEndOfTableY = await renderTable(doc, usage, flatCatalog, tConfig, scale, pageWidth, pageHeight, context);
+                    } else {
+                        tableEndOfTableY = await renderTable(doc, usage, data, val, scale, pageWidth, pageHeight, context);
+                    }
+
                     continue;
                 }
                 // E. TEXT & BOX ELEMENTS
@@ -460,7 +872,17 @@ export async function generateUniversalPDF(
                     const label = val.label || '';
                     if (!label && key !== 'name' && key !== 'hosp_name') continue;
 
-                    const compiledText = compileTemplate(label, context);
+                    let compiledText = compileTemplate(label, context);
+                    
+                    if ((usage as any) === 'lab_catalog') {
+                        if (key === 'bill_to' || key === 'inv_data_lbl') continue;
+                    }
+
+                    if ((usage as any) === 'payment_voucher' || (usage as any) === 'shift_close') {
+                        if (key === 'bill_to') compiledText = (usage as any) === 'shift_close' ? "SHIFT HANDLED BY:" : "PAID TO / PAYEE:";
+                        if (key === 'inv_data_lbl') compiledText = (usage as any) === 'shift_close' ? "SHIFT REPORT DETAILS:" : "VOUCHER DETAILS:";
+                        if (key === 'patient_id' || key === 'patient_phone' || key === 'age_gender') continue;
+                    }
                     if (!compiledText && !label.includes('Hospital')) continue;
 
                     const isHospName = key === 'name' || key === 'hosp_name';
@@ -489,7 +911,7 @@ export async function generateUniversalPDF(
 
                     // SMART SIGNATURE LAYER: If we are rendering the doctor's footer notes,
                     // we automatically prepend the Doctor's Name in a larger, bold font.
-                    const isDoctorNotes = (usage === 'op_slip' && (key === 'footer' || key === 'signature' || key === 'doc_notes' || key === 'qualification'));
+                    const isDoctorNotes = ((usage as any) === 'op_slip' && (key === 'footer' || key === 'signature' || key === 'doc_notes' || key === 'qualification'));
  
                     if (isDoctorNotes) {
                         // Official high-fidelity clinical stamp
@@ -500,7 +922,7 @@ export async function generateUniversalPDF(
                         if (cleanName.includes("UNDEFINED") || !cleanName || cleanName.trim() === "DR.") {
                             cleanName = "MEDICAL OFFICER";
                         }
-                        const qualification = (context.doctor?.digital_print_footer || context.doctor?.footer_text || "Consulting Physician / Medical Officer").trim();
+                        const qualification = (context.doctor?.digital_print_footer || context.doctor?.footer_text || "").trim();
                         
                         // Split multi-line strings explicitly to ensure perfect rendering of master form data
                         const splitQual = qualification && qualification.toUpperCase() !== cleanName && !qualification.includes("undefined")
@@ -584,24 +1006,44 @@ export async function generateUniversalPDF(
 
 async function renderTable(doc: jsPDF, usage: string, data: any, tableConfig: any, scale: number, pageWidth: number, pageHeight: number, context: any) {
     const margin = (tableConfig.x || 40) * scale;
-    const bottomMargin = (usage === 'sale_bill' ? 80 : 180) * scale; // REDUCED BUFFER FOR SALE BILL (NO FOOTER)
+    const bottomMargin = ((usage as any) === 'sale_bill' ? 80 : 180) * scale; // REDUCED BUFFER FOR SALE BILL (NO FOOTER)
     let currentY = (tableConfig.y || 250) * scale;
     const rowHeight = 22 * scale;
     const fontSize = (tableConfig.fontSize || 9) * scale;
 
-    let rawItems = (usage === 'prescription')
+    let rawItems = ((usage as any) === 'prescription')
         ? (data.medicines || data.prescription?.[0]?.medicines || [])
-        : (data.hms_invoice_lines || data.items || data.hms_lab_order_line || []);
+        : (data.hms_invoice_lines || data.items || data.hms_lab_order_lines || data.hms_lab_order_line || []);
 
     // Filter out ghost rows/empty inputs saved by older versions
-    const items = rawItems.filter((i: any) => i.hms_product_id || i.product_id || i.description || i.medicine_id || (i.name && i.name !== ''));
+    const items = rawItems.filter((i: any) => i.hms_product_id || i.product_id || i.description || i.metadata?.account_id || i.medicine_id || i.test_id || (i.name && i.name !== '') || i.category || i.memo);
 
-    const qtyX = (tableConfig.qtyX || 380) * scale;
-    const rateX = (tableConfig.rateX || 470) * scale;
-    const totalX = (tableConfig.totalX || 555) * scale;
+    const configCols = context.config?.columns || { showTax: true, showDiscount: true, showUOM: true, showHsn: false };
+    
+    // Dynamic X offsets
+    let qtyX = (tableConfig.qtyX || 380) * scale;
+    let rateX = (tableConfig.rateX || 470) * scale;
+    let taxX = 0;
+    let discX = 0;
+    let totalX = (tableConfig.totalX || 555) * scale;
+    
+    if ((usage as any) === 'sale_bill' || (usage as any) === 'pos_bill') {
+        const isRoll = pageWidth < 300; 
+        if (isRoll) {
+            qtyX = pageWidth - (85 * scale);
+            rateX = pageWidth - (55 * scale);
+            totalX = pageWidth - margin;
+        } else {
+            totalX = pageWidth - margin - (10 * scale);
+            taxX = configCols.showTax ? totalX - (55 * scale) : 0;
+            discX = configCols.showDiscount ? (taxX || totalX) - (55 * scale) : 0;
+            rateX = (discX || taxX || totalX) - (55 * scale);
+            qtyX = rateX - (45 * scale);
+        }
+    }
 
     const addPaging = () => {
-        if (usage === 'sale_bill') return; // [USER-REQUEST] No footer/paging for bills
+        if ((usage as any) === 'sale_bill') return; // [USER-REQUEST] No footer/paging for bills
         const pageNum = (doc as any).internal.getNumberOfPages();
         doc.setFontSize(7 * scale);
         doc.setTextColor(148, 163, 184); // slate-400
@@ -631,20 +1073,30 @@ async function renderTable(doc: jsPDF, usage: string, data: any, tableConfig: an
         const textY = y + (15 * scale);
         doc.text('#', margin + (5 * scale), textY);
 
-        if (usage === 'prescription') {
+        if ((usage as any) === 'prescription') {
             doc.text('MEDICATION', margin + (35 * scale), textY);
             doc.text('DOSAGE', qtyX, textY, { align: 'center' });
             doc.text('PERIOD', rateX, textY, { align: 'right' });
             doc.text('TIMING', totalX, textY, { align: 'right' });
-        } else if (usage === 'lab_report') {
+        } else if ((usage as any) === 'lab_report') {
             doc.text('INVESTIGATION', margin + (35 * scale), textY);
             doc.text('RESULT', qtyX, textY, { align: 'center' });
             doc.text('UNIT', rateX, textY, { align: 'right' });
             doc.text('REF. RANGE', totalX, textY, { align: 'right' });
+        } else if ((usage as any) === 'payment_voucher' || (usage as any) === 'shift_close') {
+            doc.text((usage as any) === 'shift_close' ? 'DETAILS / PARTICULARS' : 'PARTICULARS (LEDGER)', margin + (35 * scale), textY);
+            if ((usage as any) === 'shift_close') {
+                doc.text('OUT (DEBIT)', rateX, textY, { align: 'right' });
+                doc.text('IN (CREDIT)', totalX, textY, { align: 'right' });
+            } else {
+                doc.text('AMOUNT', totalX, textY, { align: 'right' });
+            }
         } else {
             doc.text('DESCRIPTION', margin + (35 * scale), textY);
             doc.text('QTY', qtyX, textY, { align: 'center' });
             doc.text('RATE', rateX, textY, { align: 'right' });
+            if (taxX > 0) doc.text('TAX', taxX, textY, { align: 'right' });
+            if (discX > 0) doc.text('DISC', discX, textY, { align: 'right' });
             doc.text('TOTAL', totalX, textY, { align: 'right' });
         }
 
@@ -653,6 +1105,9 @@ async function renderTable(doc: jsPDF, usage: string, data: any, tableConfig: an
 
     addPaging();
     currentY = renderHeader(currentY);
+
+    let totalDebit = 0;
+    let totalCredit = 0;
 
     items.forEach((item: any, idx: number) => {
         if (currentY + rowHeight > pageHeight - bottomMargin) {
@@ -674,37 +1129,98 @@ async function renderTable(doc: jsPDF, usage: string, data: any, tableConfig: an
         const textY = currentY + (15 * scale);
         doc.text(String(idx + 1), margin + (5 * scale), textY);
 
-        if (usage === 'prescription') {
+        let dynamicRowHeight = rowHeight;
+        
+        if ((usage as any) === 'prescription') {
             const name = (item.hms_product?.name || item.name || "Generic Medicine").toUpperCase();
             const dosage = item.dosage || `${item.morning || 0}-${item.afternoon || 0}-${item.evening || 0}-${item.night || 0}`;
             doc.text(name, margin + (35 * scale), textY);
             doc.text(dosage, qtyX, textY, { align: 'center' });
             doc.text(`${item.days || item.duration || '-'} Days`, rateX, textY, { align: 'right' });
             doc.text(item.timing || 'Post-Meal', totalX, textY, { align: 'right' });
-        } else if (usage === 'lab_report') {
+        } else if ((usage as any) === 'lab_report') {
             const name = (item.hms_lab_test?.name || item.description || "Lab Investigation").toUpperCase();
-            const result = item.metadata?.result || item.result || "-";
-            const unit = item.hms_lab_test?.units || item.unit || "";
-            const range = item.hms_lab_test?.reference_range || item.range || "-";
+            const result = item.hms_lab_result?.[0]?.result_value || item.metadata?.result || item.result || "-";
+            const unit = item.hms_lab_test?.units || item.hms_lab_result?.[0]?.units || item.unit || "";
+                        const range = item.hms_lab_test?.reference_range || item.hms_lab_result?.[0]?.reference_range || item.range || "-";
             
             doc.text(name, margin + (35 * scale), textY);
             doc.text(String(result), qtyX, textY, { align: 'center' });
             doc.text(String(unit), rateX, textY, { align: 'right' });
             doc.text(typeof range === 'string' ? range : JSON.stringify(range), totalX, textY, { align: 'right' });
+        } else if ((usage as any) === 'payment_voucher' || (usage as any) === 'shift_close') {
+            const description = (item.category?.name || item.metadata?.account_name || item.description || "General Ledger").toUpperCase();
+            doc.text(description.length > 50 ? description.substring(0, 47) + '...' : description, margin + (35 * scale), textY);
+            if (item.metadata?.description || item.memo) {
+                doc.setFontSize(fontSize - 1);
+                doc.setTextColor(100, 116, 139);
+                const subTxt = item.metadata?.description || item.memo;
+                // Move memo text properly below the main description
+                doc.text(subTxt.length > 50 ? subTxt.substring(0, 47) + '...' : subTxt, margin + (35 * scale), textY + (10 * scale));
+                dynamicRowHeight = rowHeight + (10 * scale);
+            }
+            doc.setFontSize(fontSize);
+            doc.setTextColor(30, 41, 59);
+            
+            const amtStr = Number(item.amount || item.total || 0).toFixed(2);
+            const amtNum = Number(item.amount || item.total || 0);
+
+            if ((usage as any) === 'shift_close') {
+                let debitStr = '-';
+                let creditStr = '-';
+                
+                if (item.display_val !== undefined) {
+                    debitStr = '';
+                    creditStr = item.display_val;
+                } else if (description.includes('--- DETAILED LEDGER ---') || description.includes('--- SHIFT SUMMARY ---')) {
+                    debitStr = '';
+                    creditStr = '';
+                } else if (item.type === 'OUTBOUND' || description.includes('PETTY CASH')) {
+                    debitStr = amtStr;
+                    totalDebit += amtNum;
+                } else if (item.type === 'INBOUND' || item.type === 'PENDING') {
+                    creditStr = amtStr;
+                    totalCredit += amtNum;
+                } else {
+                    creditStr = amtStr;
+                    totalCredit += amtNum;
+                }
+
+                doc.text(debitStr, rateX, textY, { align: 'right' });
+                doc.text(creditStr, totalX, textY, { align: 'right' });
+            } else {
+                doc.text(amtStr, totalX, textY, { align: 'right' });
+            }
         } else {
             const description = (item.hms_product?.name || item.description || "Medical Service").toUpperCase();
-            doc.text(description.length > 40 ? description.substring(0, 37) + '...' : description, margin + (35 * scale), textY);
+            
+            // Sub-text for UOM or HSN if requested
+            let subTxt = "";
+            if (configCols.showUOM && item.uom) subTxt += `Unit: ${item.uom} `;
+            if (configCols.showHsn && item.hms_product?.hsn_code) subTxt += `| HSN: ${item.hms_product.hsn_code}`;
+            
+            doc.text(description.length > 35 ? description.substring(0, 32) + '...' : description, margin + (35 * scale), textY);
+            if (subTxt) {
+                doc.setFontSize(fontSize - 1);
+                doc.setTextColor(100, 116, 139);
+                doc.text(subTxt, margin + (35 * scale), textY + (10 * scale));
+                dynamicRowHeight = rowHeight + (10 * scale);
+            }
+            doc.setFontSize(fontSize);
+            doc.setTextColor(30, 41, 59);
 
             doc.text(String(item.quantity || 1), qtyX, textY, { align: 'center' });
             doc.text(Number(item.unit_price || item.rate || 0).toFixed(2), rateX, textY, { align: 'right' });
+            if (taxX > 0) doc.text(Number(item.tax_amount || 0).toFixed(2), taxX, textY, { align: 'right' });
+            if (discX > 0) doc.text(Number(item.discount_amount || 0).toFixed(2), discX, textY, { align: 'right' });
             doc.text(Number(item.net_amount || item.total || 0).toFixed(2), totalX, textY, { align: 'right' });
         }
 
-        currentY += rowHeight;
+        currentY += dynamicRowHeight;
     });
 
     // --- FINANCIAL BREAKDOWN (World Class Summary) ---
-    if (usage === 'sale_bill' || usage === 'sales_return' || usage === 'purchase_return' || usage === 'purchase_receipt') {
+    if ((usage as any) === 'sale_bill' || (usage as any) === 'sales_return' || (usage as any) === 'purchase_return' || (usage as any) === 'purchase_receipt' || (usage as any) === 'payment_voucher') {
         const totalDiscount = Number(data.total_discount || 0);
         const totalTax = Number(data.total_tax || data.tax_amount || 0);
         const subtotal = Number(data.subtotal || 0);
@@ -740,6 +1256,25 @@ async function renderTable(doc: jsPDF, usage: string, data: any, tableConfig: an
                 doc.setTextColor(0, 0, 0);
             }
         }
+    }
+
+    // --- LEDGER TALLY (SHIFT REPORT ONLY) ---
+    if ((usage as any) === 'shift_close') {
+        currentY += 10 * scale;
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(1 * scale);
+        doc.line(margin + (35 * scale), currentY, totalX, currentY); // Top line
+        
+        currentY += 15 * scale;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(fontSize);
+        doc.text("LEDGER TALLY / BALANCE:", margin + (35 * scale), currentY);
+        doc.text(totalDebit.toFixed(2), rateX, currentY, { align: 'right' });
+        doc.text(totalCredit.toFixed(2), totalX, currentY, { align: 'right' });
+        
+        currentY += 5 * scale;
+        doc.line(margin + (35 * scale), currentY, totalX, currentY); // Bottom line
+        doc.line(margin + (35 * scale), currentY + (2 * scale), totalX, currentY + (2 * scale)); // Double bottom line (Accountant Standard)
     }
 
     return currentY;

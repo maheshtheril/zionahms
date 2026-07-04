@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Pencil } from 'lucide-react'
 import { EditDoctorDialog } from './edit-doctor-dialog'
 
-export function DoctorProfileActions({ doctor, departments, roles, specializations }: any) {
+export function DoctorProfileActions({ doctor, departments, roles, specializations, employees }: any) {
     const [isEditOpen, setIsEditOpen] = useState(false)
 
     return (
@@ -24,6 +24,7 @@ export function DoctorProfileActions({ doctor, departments, roles, specializatio
                 departments={departments}
                 roles={roles}
                 specializations={specializations}
+                employees={employees}
             />
         </>
     )

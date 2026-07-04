@@ -171,6 +171,12 @@ export async function getBillableItems() {
                     orderBy: { created_at: 'desc' },
                     take: 1
                 },
+                hms_product_batch: {
+                    where: { qty_on_hand: { gt: 0 }, expiry_date: { not: null } },
+                    orderBy: { expiry_date: 'asc' },
+                    take: 1,
+                    select: { expiry_date: true, batch_no: true }
+                },
                 hms_stock_levels: {
                     select: { quantity: true }
                 }
@@ -338,6 +344,9 @@ export async function getBillableItems() {
                 totalStock,
                 metadata: {
                     ...metadata,
+                    // Inject real-time batch expiry
+                    expiryDate: item.hms_product_batch?.[0]?.expiry_date || metadata.expiryDate || metadata.expiry_date,
+                    batchNo: item.hms_product_batch?.[0]?.batch_no || metadata.batchNo,
                     // UOM Pricing (Industry Standard)
                     baseUom: uomData.base_uom || item.uom || 'PCS',
                     basePrice: finalPrice,
@@ -559,6 +568,29 @@ export async function createInvoice(data: {
 
             // 6. Persistence
             const invoiceId = crypto.randomUUID();
+            const linesData = processedLineItems.map((l: any, idx) => ({
+                id: crypto.randomUUID(),
+                tenant_id: tenantId,
+                company_id: companyId,
+                line_idx: idx + 1,
+                description: l.description || "Service",
+                quantity: safeNum(l.quantity) || 1,
+                unit_price: safeNum(l.unit_price),
+                discount_amount: safeNum(l.discount_amount),
+                tax_amount: safeNum(l.tax_amount),
+                net_amount: (safeNum(l.quantity) * safeNum(l.unit_price)) - safeNum(l.discount_amount),
+                product_id: (isUUID(l.product_id) && validProductIds.has(l.product_id)) ? l.product_id : null,
+                tax_rate_id: isUUID(l.tax_rate_id) ? l.tax_rate_id : null,
+                uom: l.uom || 'Unit',
+                metadata: {
+                    sourceId: l.sourceId,
+                    fromClinicalHub: l.fromClinicalHub,
+                    source: l.source,
+                    batchId: l.batch_id || l.batchId,
+                    batch_no: l.batch_no
+                }
+            }));
+
             const invoice = await tx.hms_invoice.create({
                 data: {
                     id: invoiceId,
@@ -578,29 +610,9 @@ export async function createInvoice(data: {
                     appointment_id: isUUID(data.appointment_id) ? data.appointment_id : null,
                     branch_id: isUUID(branchId) ? branchId : null,
                     created_by: isUUID(userId) ? userId : null,
+                    billing_metadata: data.billing_metadata || {},
                     hms_invoice_lines: {
-                        create: processedLineItems.map((l: any, idx) => ({
-                            id: crypto.randomUUID(),
-                            tenant_id: tenantId,
-                            company_id: companyId,
-                            line_idx: idx + 1,
-                            description: l.description || "Service",
-                            quantity: safeNum(l.quantity) || 1,
-                            unit_price: safeNum(l.unit_price),
-                            discount_amount: safeNum(l.discount_amount),
-                            tax_amount: safeNum(l.tax_amount),
-                            net_amount: (safeNum(l.quantity) * safeNum(l.unit_price)) - safeNum(l.discount_amount),
-                            product_id: (isUUID(l.product_id) && validProductIds.has(l.product_id)) ? l.product_id : null,
-                            tax_rate_id: isUUID(l.tax_rate_id) ? l.tax_rate_id : null,
-                            uom: l.uom || 'Unit',
-                            metadata: {
-                                sourceId: l.sourceId,
-                                fromClinicalHub: l.fromClinicalHub,
-                                source: l.source,
-                                batchId: l.batch_id || l.batchId,
-                                batch_no: l.batch_no
-                            }
-                        }))
+                        create: linesData
                     },
                     hms_invoice_payments: payments.length > 0 ? {
                         create: payments.filter(p => safeNum(p.amount) > 0).map(p => ({
@@ -616,6 +628,80 @@ export async function createInvoice(data: {
                     } : undefined
                 }
             });
+
+            // --- [INSURANCE CLAIM ENGINE] ---
+            if (status === 'posted' || status === 'paid') {
+                const patientInsurance = await tx.hms_patient_insurance.findFirst({
+                    where: { patient_id: resolvedPatientId, is_primary: true }
+                });
+
+                if (patientInsurance) {
+                    const claimId = crypto.randomUUID();
+                    await tx.hms_insurance_claim.create({
+                        data: {
+                            id: claimId,
+                            tenant_id: tenantId,
+                            company_id: companyId,
+                            invoice_id: invoiceId,
+                            patient_insurance_id: patientInsurance.id,
+                            provider_id: patientInsurance.insurance_provider_id,
+                            status: 'draft',
+                            amount_billed: grandTotalCalc,
+                            claim_lines: {
+                                create: linesData.map((l) => ({
+                                    id: crypto.randomUUID(),
+                                    tenant_id: tenantId,
+                                    company_id: companyId,
+                                    invoice_line_id: l.id,
+                                    amount_billed: l.net_amount,
+                                    status: 'pending'
+                                }))
+                            }
+                        }
+                    });
+                }
+            }
+
+            // --- [LAB DASHBOARD SYNC] ---
+            if (status === 'posted' || status === 'paid') {
+                const labSourceIds = processedLineItems
+                    .map((l: any) => l.sourceId)
+                    .filter(isUUID);
+                
+                if (labSourceIds.length > 0) {
+                    await tx.hms_lab_order_lines.updateMany({
+                        where: { id: { in: labSourceIds } },
+                        data: { status: 'billed' }
+                    });
+
+                    const updatedLines = await tx.hms_lab_order_lines.findMany({
+                        where: { id: { in: labSourceIds } },
+                        select: { order_id: true }
+                    });
+                    const orderIds = Array.from(new Set(updatedLines.map((l: any) => l.order_id).filter(Boolean)));
+                    if (orderIds.length > 0) {
+                        await tx.hms_lab_order.updateMany({
+                            where: { id: { in: orderIds as string[] }, status: 'requested' },
+                            data: { status: 'in_progress' }
+                        });
+                        
+                        for (const oId of orderIds as string[]) {
+                            const order = await tx.hms_lab_order.findUnique({ where: { id: oId } });
+                            if (order) {
+                                await tx.hms_lab_order.update({
+                                    where: { id: oId },
+                                    data: {
+                                        metadata: {
+                                            ...(order.metadata as any || {}),
+                                            invoice_id: invoiceId
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }
+            }
 
             // --- [WORLD CLASS] BATCH-WISE STOCK SYNC (FEFO Logic) ---
             const pIds = processedLineItems.map(l => l.product_id).filter(isUUID);
@@ -2204,7 +2290,7 @@ export async function shareInvoiceWhatsapp(invoiceId: string, pdfBase64?: string
     }
 }
 
-export async function getPatientBalance(patientId: string) {
+export async function getPatientBalance(patientId: string, excludeInvoiceId?: string) {
     const session = await auth();
     const companyId = session?.user?.companyId || session?.user?.tenantId;
     if (!companyId) return { error: "Unauthorized" };
@@ -2237,14 +2323,15 @@ export async function getPatientBalance(patientId: string) {
             where: {
                 patient_id: patientId,
                 company_id: companyId,
-                status: 'draft' as any
+                status: 'draft' as any,
+                ...(excludeInvoiceId ? { id: { not: excludeInvoiceId } } : {})
             },
             _sum: { outstanding_amount: true }
         });
         const draftAmount = Number(draftInvoices._sum.outstanding_amount || 0);
 
-        // Effective Balance = Ledger (Posted/Paid) + Drafts (Unposted Consumption)
-        const finalBalance = activeBalance + draftAmount;
+        // Effective Balance = Ledger (Posted/Paid) ONLY. We ignore drafts because abandoned POS sessions cause false debt.
+        const finalBalance = activeBalance;
 
         // WORLD CLASS: Final balance cleanup to avoid floating point ghosts
         const cleanBalance = Math.abs(finalBalance) < 0.1 ? 0 : finalBalance;

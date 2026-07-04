@@ -54,6 +54,7 @@ interface EditDoctorDialogProps {
     departments: Department[]
     roles: Role[]
     specializations: Specialization[]
+    employees?: any[]
 }
 
 function renderDepartmentOptions(departments: Department[] = [], parentId: string | null = null, depth = 0): any {
@@ -80,7 +81,7 @@ function renderDepartmentOptions(departments: Department[] = [], parentId: strin
         });
 }
 
-export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initialDepartments, roles, specializations }: EditDoctorDialogProps) {
+export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initialDepartments, roles, specializations, employees = [] }: EditDoctorDialogProps) {
     const [departments, setDepartments] = useState(initialDepartments)
     const [isSeeding, setIsSeeding] = useState(false)
     const [isAddingDept, setIsAddingDept] = useState(false)
@@ -266,8 +267,15 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
                                             Organizational Alignment
                                         </h3>
                                         <div>
-                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider flex items-center gap-2"><Hash className="h-3 w-3" /> Employee ID</label>
-                                            <input type="text" name="employee_id" value={empId} onChange={(e) => setEmpId(e.target.value)} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm" />
+                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider flex items-center gap-2"><Hash className="h-3 w-3" /> Link HR Employee (Optional)</label>
+                                            <select name="employee_id" value={empId} onChange={(e) => setEmpId(e.target.value)} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
+                                                <option value="">-- No HR Profile Linked --</option>
+                                                {employees?.map(emp => (
+                                                    <option key={emp.id} value={emp.id}>
+                                                        {emp.first_name} {emp.last_name} ({emp.email})
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>

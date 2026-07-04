@@ -64,7 +64,6 @@ export default async function BillingPage({
             where: {
                 tenant_id: session.user.tenantId,
                 company_id: session.user.companyId,
-                ...(!isAdmin && { created_by: session.user.id }),
                 ...statusFilter,
                 ...dateFilter,
                 ...methodFilter,
@@ -89,7 +88,6 @@ export default async function BillingPage({
             where: {
                 tenant_id: session.user.tenantId,
                 company_id: session.user.companyId,
-                ...(!isAdmin && { created_by: session.user.id }),
                 status: { not: 'cancelled' },
                 ...statusFilter,
                 ...dateFilter,
@@ -109,7 +107,6 @@ export default async function BillingPage({
             where: {
                 tenant_id: session.user.tenantId,
                 company_id: session.user.companyId,
-                ...(!isAdmin && { created_by: session.user.id }),
                 status: 'draft' as any,
                 ...dateFilter,
                 ...methodFilter
@@ -122,7 +119,6 @@ export default async function BillingPage({
                 company_id: session.user.companyId,
                 method: methodQuery as any,
                 hms_invoice: {
-                    ...(!isAdmin && { created_by: session.user.id }),
                     ...dateFilter,
                     company_id: session.user.companyId,
                     status: { not: 'cancelled' }
@@ -306,10 +302,10 @@ export default async function BillingPage({
                                         ) : (
                                             <div className="flex items-center gap-3">
                                                 <div className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ring-2 ring-white shadow-sm bg-slate-100 text-slate-700 uppercase">
-                                                    G
+                                                    {((inv.billing_metadata as any)?.patient_name)?.[0] || 'G'}
                                                 </div>
                                                 <div>
-                                                    <p className="font-bold text-slate-900 text-sm">Guest / Walk-in</p>
+                                                    <p className="font-bold text-slate-900 text-sm">{(inv.billing_metadata as any)?.patient_name || 'Guest / Walk-in'}</p>
                                                     <p className="text-[10px] text-pink-500 font-black uppercase tracking-widest">Unregistered</p>
                                                 </div>
                                             </div>

@@ -620,6 +620,7 @@ export async function updateBranch(id: string, data: {
     country?: string;
     pincode?: string;
     is_active?: boolean;
+    metadata?: any;
 }) {
     const session = await auth();
     if (!session?.user?.id || !session.user.companyId || !session.user.tenantId) {
@@ -644,7 +645,8 @@ export async function updateBranch(id: string, data: {
                 country: data.country,
                 district: data.district,
                 pincode: data.pincode,
-                is_active: data.is_active ?? true
+                is_active: data.is_active ?? true,
+                metadata: data.metadata ? JSON.parse(JSON.stringify(data.metadata)) : undefined
             }
         });
 

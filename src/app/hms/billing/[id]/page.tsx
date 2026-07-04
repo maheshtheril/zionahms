@@ -21,6 +21,11 @@ export default async function InvoiceDetailsPage({
 
     if (!session?.user?.tenantId) return <div>Unauthorized</div>;
 
+    // Prevent Prisma crash if id is a Next.js interception route artifact like (.)new
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+        return notFound();
+    }
+
     const invoice = await prisma.hms_invoice.findUnique({
         where: {
             id,

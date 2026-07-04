@@ -129,12 +129,12 @@ export async function generateInvoicePDFBase64(invoice: any, company?: any, auto
                 }
             }
 
-            if (coords?.name && coords.name.showSection !== false) {
+            if (coords?.name?.showSection !== false) {
                 renderBlock('name', company?.name?.toUpperCase() || 'HOSPITAL', coords.name, { fontSize: 24, fontWeight: '900', color: '#000000' });
             }
 
             const showContact = (config?.showContactInfo !== false);
-            if (coords?.address && coords.address.showSection !== false && showContact) {
+            if (coords?.address?.showSection !== false && showContact) {
                 renderBlock('address', metadata?.address || '', coords.address, { fontSize: 10, fontWeight: '600', color: '#666666' });
             }
             
@@ -350,9 +350,17 @@ async function fetchImageAsBase64(url: string, timeoutMs: number = 3000): Promis
         if (url.startsWith('data:')) return url;
         const response = await fetch(url);
         const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
+        
+        // Universal Base64 conversion (Works in Browser & Node)
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        const base64String = typeof btoa !== 'undefined' ? btoa(binary) : Buffer.from(arrayBuffer).toString('base64');
+        
         const mimeType = response.headers.get('content-type') || 'image/png';
-        return `data:${mimeType};base64,${buffer.toString('base64')}`;
+        return `data:${mimeType};base64,${base64String}`;
     } catch (error) {
         return null;
     }
@@ -446,21 +454,21 @@ export async function generateOPSlipPDFBase64(visit: any, company: any, autoPrin
         renderBlock('email', `E: ${metadata?.email || ''}`, coords?.email, { fontSize: 9 });
 
         // Meta
-        if (coords?.docTitle && coords.docTitle.showSection !== false) {
-            renderBlock('docTitle', coords.docTitle.label || 'OP SLIP', coords.docTitle, { fontSize: 11, fontWeight: '900' });
+        if (coords?.docTitle?.showSection !== false) {
+            renderBlock('docTitle', coords.docTitle?.label || 'OP SLIP', coords.docTitle, { fontSize: 11, fontWeight: '900' });
         }
         
-        if (coords?.token && coords.token.showSection !== false) {
+        if (coords?.token?.showSection !== false) {
             const tokenDisplay = visit.token_number || (visit.id && visit.id.toString().split('-')[0].toUpperCase()) || '#N/A';
-            renderBlock('token', `${coords.token.label || 'TOKEN:'} ${tokenDisplay}`, coords.token, { fontWeight: '900' });
+            renderBlock('token', `${coords.token?.label || 'TOKEN:'} ${tokenDisplay}`, coords.token, { fontWeight: '900' });
         }
 
-        if (coords?.docId && coords.docId.showSection !== false) {
+        if (coords?.docId?.showSection !== false) {
             const visitId = visit.id?.toString().toUpperCase() || 'N/A';
             renderBlock('docId', `ID: ${visitId}`, coords.docId, { fontSize: 8, color: '#64748b' });
         }
         
-        if (coords?.docDate && coords.docDate.showSection !== false) {
+        if (coords?.docDate?.showSection !== false) {
             const dateObj = new Date(visit.starts_at || visit.date || visit.created_at || new Date());
             const dStr = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
             renderBlock('docDate', `Date: ${dStr}`, coords.docDate, { fontSize: 9 });
@@ -470,22 +478,22 @@ export async function generateOPSlipPDFBase64(visit: any, company: any, autoPrin
         const patient = visit.hms_patient || visit.patient;
         const ptName = `${patient?.first_name || ''} ${patient?.last_name || ''}`.trim() || 'PATIENT';
         
-        if (coords?.patientName && coords.patientName.showSection !== false) {
+        if (coords?.patientName?.showSection !== false) {
             renderBlock('patientName', ptName.toUpperCase(), coords.patientName, { fontSize: 20, fontWeight: '900' });
         }
 
-        if (coords?.patientId && coords.patientId.showSection !== false) {
+        if (coords?.patientId?.showSection !== false) {
             renderBlock('patientId', `MRN: ${patient?.patient_number || 'N/A'}`, coords.patientId, { fontSize: 10, fontWeight: '700' });
         }
         
-        if (coords?.patientDemographics && coords.patientDemographics.showSection !== false) {
+        if (coords?.patientDemographics?.showSection !== false) {
             const demo = `${patient?.gender || ''} / ${patient?.age || ''}Y`.trim();
             renderBlock('patientDemographics', demo, coords.patientDemographics, { fontSize: 10, fontWeight: '700' });
         }
 
         // Doctor
         const clinician = visit.hms_clinician || visit.clinician;
-        if (coords?.doctor && coords.doctor.showSection !== false) {
+        if (coords?.doctor?.showSection !== false) {
             const drName = `DR. ${clinician?.first_name || ''} ${clinician?.last_name || ''}`.trim();
             renderBlock('doctor', drName, coords.doctor, { fontSize: 12, fontWeight: '900' });
         }
@@ -572,8 +580,189 @@ export async function generateOPSlipPDFBase64(visit: any, company: any, autoPrin
     }
 }
 
-export async function generateLabReportPDFBase64(order: any, company?: any): Promise<string> {
-    const doc = new jsPDF();
-    doc.text("Lab Report Atomic Fix", 20, 20);
-    return doc.output('datauristring').split(',')[1];
+export async function generateLabReportPDFBase64(order: any, company?: any, autoPrint: boolean = false): Promise<string> {
+    try {
+        const doc = new jsPDF('p', 'pt', 'a4');
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const scale = pageWidth / 800;
+
+        const config = await getPDFConfig(order.company_id!, order.tenant_id!, 'op_slip'); // Use OP slip config for basic layout
+        const coords = config?.coordinates || {};
+        const logoUrl = company?.logo_url;
+        const metadata = company?.metadata as any;
+
+        const hexToRgb = (hex: string) => {
+            if (!hex || hex === 'transparent') return null;
+            const res = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return res ? { r: parseInt(res[1], 16), g: parseInt(res[2], 16), b: parseInt(res[3], 16) } : null;
+        };
+
+        const LAB_DEFAULTS: any = {
+            logo: { x: 50, y: 50 },
+            name: { x: 150, y: 50 },
+            address: { x: 150, y: 85 },
+            phone: { x: 150, y: 120 },
+            email: { x: 150, y: 135 },
+            docTitle: { x: 520, y: 50 },
+            token: { x: 520, y: 100 },
+            docDate: { x: 520, y: 150 },
+            patientName: { x: 50, y: 200 },
+            patientId: { x: 50, y: 230 },
+            patientDemographics: { x: 50, y: 245 },
+            doctor: { x: 50, y: 310 },
+            department: { x: 50, y: 345 }
+        };
+
+        const renderBlock = (id: string, content: string | string[], blockCoords: any, defaultStyle?: any) => {
+            if (blockCoords?.showSection === false) return;
+            if (!content) return;
+
+            const fallback = LAB_DEFAULTS[id] || { x: 0, y: 0 };
+            const x = (blockCoords?.x ?? fallback.x) * scale;
+            const y = (blockCoords?.y ?? fallback.y) * scale;
+            const fSize = (blockCoords?.fontSize || defaultStyle?.fontSize || 10) * scale;
+            const fWeight = blockCoords?.fontWeight || defaultStyle?.fontWeight || 'normal';
+            const fColor = hexToRgb(blockCoords?.color || defaultStyle?.color || '#000000');
+            const bgColor = hexToRgb(blockCoords?.backgroundColor);
+            const padding = (blockCoords?.padding || 0) * scale;
+            const width = (blockCoords?.width || 0) * scale;
+
+            doc.setFontSize(fSize);
+            doc.setFont('helvetica', fWeight === '900' ? 'bold' : (fWeight === '400' ? 'normal' : 'bold'));
+
+            if (bgColor) {
+                doc.setFillColor(bgColor.r, bgColor.g, bgColor.b);
+                const textHeight = Array.isArray(content) ? content.length * (fSize + 2) : (fSize + 2);
+                const rectW = width || (Array.isArray(content) ? (200 * scale) : doc.getTextWidth(content as string) + (padding * 2));
+                doc.rect(x - padding, y - padding, rectW, textHeight + (padding * 2), 'F');
+            }
+
+            if (fColor) doc.setTextColor(fColor.r, fColor.g, fColor.b);
+            doc.text(content as string, x, y, { baseline: 'top' });
+        };
+
+        // Header Logic
+        const showLogo = (config?.showLogo !== false) && (coords?.logo?.showSection !== false);
+        if (showLogo && logoUrl) {
+            const logoBase64 = await fetchImageAsBase64(logoUrl);
+            if (logoBase64) {
+                const lWidth = (coords?.logo?.width || 80) * scale;
+                doc.addImage(logoBase64, 'PNG', (coords?.logo?.x || 50) * scale, (coords?.logo?.y || 50) * scale, lWidth, lWidth);
+            }
+        }
+
+        renderBlock('name', company?.name?.toUpperCase() || 'HOSPITAL', coords?.name, { fontSize: 24, fontWeight: '900' });
+        renderBlock('address', metadata?.address || '', coords?.address, { fontSize: 10 });
+        renderBlock('phone', `P: ${metadata?.phone || ''}`, coords?.phone, { fontSize: 9 });
+        renderBlock('email', `E: ${metadata?.email || ''}`, coords?.email, { fontSize: 9 });
+
+        // Meta
+        if (coords?.docTitle?.showSection !== false) {
+            renderBlock('docTitle', 'LAB REPORT', coords.docTitle, { fontSize: 12, fontWeight: '900' });
+        }
+        
+        if (coords?.docId?.showSection !== false) {
+            renderBlock('docId', `ID: ${order.order_number || order.id?.toString().toUpperCase() || 'N/A'}`, coords.docId, { fontSize: 8, color: '#64748b' });
+        }
+        
+        if (coords?.docDate?.showSection !== false) {
+            const dateObj = new Date();
+            const dStr = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            renderBlock('docDate', `Date: ${dStr}`, coords.docDate, { fontSize: 9 });
+        }
+
+        // Patient
+        const patient = order.hms_patient;
+        const ptName = `${patient?.first_name || ''} ${patient?.last_name || ''}`.trim() || 'PATIENT';
+        
+        if (coords?.patientName?.showSection !== false) {
+            renderBlock('patientName', ptName.toUpperCase(), coords.patientName, { fontSize: 20, fontWeight: '900' });
+        }
+
+        if (coords?.patientId?.showSection !== false) {
+            renderBlock('patientId', `MRN: ${patient?.patient_number || 'N/A'}`, coords.patientId, { fontSize: 10, fontWeight: '700' });
+        }
+        
+        if (coords?.patientDemographics?.showSection !== false) {
+            const patientAge = patient?.dob ? new Date().getFullYear() - new Date(patient.dob).getFullYear() : '—';
+            const demo = `${patient?.gender || '—'} / ${patientAge}Y`.trim();
+            renderBlock('patientDemographics', demo, coords.patientDemographics, { fontSize: 10, fontWeight: '700' });
+        }
+
+        // Doctor
+        const clinician = order.hms_appointment?.hms_clinician;
+        if (coords?.doctor?.showSection !== false) {
+            const drName = `Ref By: DR. ${clinician?.first_name || ''} ${clinician?.last_name || 'Medical Consultant'}`.trim();
+            renderBlock('doctor', drName, coords.doctor, { fontSize: 10, fontWeight: '900' });
+        }
+
+        // Table Header
+        let currentY = 400 * scale;
+        const margin = 50 * scale;
+        
+        doc.setFillColor(15, 23, 42);
+        doc.rect(margin, currentY, pageWidth - (margin * 2), 22 * scale, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9 * scale); doc.setFont('helvetica', 'bold');
+        doc.text('TEST INVESTIGATION', margin + (10 * scale), currentY + (15 * scale));
+        doc.text('OBSERVED VALUE', margin + (200 * scale), currentY + (15 * scale));
+        doc.text('UNITS', margin + (350 * scale), currentY + (15 * scale));
+        doc.text('REFERENCE INTERVAL', margin + (450 * scale), currentY + (15 * scale));
+
+        currentY += 38 * scale;
+        doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 41, 59); doc.setFontSize(9 * scale);
+
+        const lines = order.hms_lab_order_lines || [];
+        lines.forEach((line: any, i: number) => {
+            const result = line.hms_lab_result?.[0];
+            if (i % 2 === 0) {
+                doc.setFillColor(252, 252, 252);
+                doc.rect(margin, currentY - (12 * scale), pageWidth - (margin * 2), 30 * scale, 'F');
+            }
+
+            doc.setFont('helvetica', 'bold');
+            doc.text((line.hms_lab_test?.name || line.requested_name || '—').toUpperCase(), margin + (10 * scale), currentY);
+            
+            doc.setFontSize(11 * scale); doc.setTextColor(30, 58, 138); // Indigo 900
+            doc.text(result?.result_value || '—', margin + (200 * scale), currentY);
+            
+            doc.setFontSize(9 * scale); doc.setTextColor(100, 116, 139); doc.setFont('helvetica', 'normal');
+            doc.text((line.hms_lab_test?.units || result?.units || '—').toUpperCase(), margin + (350 * scale), currentY);
+            
+            const refRange = typeof line.hms_lab_test?.reference_range === 'object' ? JSON.stringify(line.hms_lab_test?.reference_range) : (line.hms_lab_test?.reference_range || result?.reference_range || '—');
+            doc.text(refRange, margin + (450 * scale), currentY);
+            
+            doc.setTextColor(30, 41, 59);
+            currentY += 30 * scale;
+        });
+
+        // Signatures at bottom
+        const sigY = pageHeight - (150 * scale);
+        doc.setFontSize(10 * scale); doc.setFont('helvetica', 'bold');
+        
+        doc.setDrawColor(226, 232, 240);
+        doc.line(margin + 50*scale, sigY, margin + 200*scale, sigY);
+        doc.text('Technician', margin + 125*scale, sigY + 15*scale, { align: 'center' });
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7 * scale);
+        doc.text('Computer Generated Signature', margin + 125*scale, sigY + 25*scale, { align: 'center' });
+
+        doc.line(pageWidth - margin - 200*scale, sigY, pageWidth - margin - 50*scale, sigY);
+        doc.setFontSize(10 * scale); doc.setFont('helvetica', 'bold');
+        doc.text('Verified By', pageWidth - margin - 125*scale, sigY + 15*scale, { align: 'center' });
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7 * scale);
+        const verifiedText = lines?.[0]?.hms_lab_result?.[0]?.verified_by ? 'Authorized Pathologist' : 'Pending Verification';
+        doc.text(verifiedText, pageWidth - margin - 125*scale, sigY + 25*scale, { align: 'center' });
+
+        if (coords?.footer) {
+            doc.setFontSize(8 * scale); doc.setTextColor(148, 163, 184);
+            const footerString = `ELECTRONICALLY GENERATED LABORATORY REPORT | ${company?.name?.toUpperCase() || 'HOSPITAL SYSTEM'}`;
+            doc.text(footerString, pageWidth / 2, (coords.footer.y || 1080) * scale, { align: 'center' });
+        }
+        
+        if (autoPrint) doc.autoPrint({ variant: 'non-conform' });
+        return doc.output('datauristring').split(',')[1];
+    } catch (err) {
+        throw err;
+    }
 }

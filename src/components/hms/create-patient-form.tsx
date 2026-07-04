@@ -1,8 +1,8 @@
 'use client'
 
-import { createPatientV10 as createPatient, createPatientQuick } from "@/app/actions/patient-v10"
+import { createPatientV10 as createPatient, createPatientQuick, getInsuranceProviders } from "@/app/actions/patient-v10"
 import { recordPayment } from "@/app/actions/billing"
-import { X, User, Phone, Calendar, Camera, FileText, Shield, MapPin, Mail, AlertCircle, CheckCircle2, Fingerprint, Activity, Printer, CreditCard, Banknote, Smartphone, Mic, MicOff } from "lucide-react"
+import { X, User, Phone, Calendar, Camera, FileText, Shield, MapPin, Mail, AlertCircle, CheckCircle2, Fingerprint, Activity, Printer, CreditCard, Banknote, Smartphone, Mic, MicOff, ShieldPlus } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { FileUpload } from "@/components/ui/file-upload"
@@ -55,12 +55,27 @@ export function CreatePatientForm({
         }
     };
 
-    const [activeTab, setActiveTab] = useState<'basic' | 'identity'>('basic');
+    const [activeTab, setActiveTab] = useState<'basic' | 'identity' | 'insurance'>('basic');
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [isPending, setIsPending] = useState(false);
     const [savedPatient, setSavedPatient] = useState<any>(null);
     const [showIDCard, setShowIDCard] = useState(false);
     const [printIDCard, setPrintIDCard] = useState(false);
+
+    // Insurance Providers
+    const [insuranceProviders, setInsuranceProviders] = useState<any[]>([]);
+
+    useEffect(() => {
+        let isMounted = true;
+        const fetchProviders = async () => {
+            const res = await getInsuranceProviders();
+            if (isMounted && res.success) {
+                setInsuranceProviders(res.data);
+            }
+        };
+        fetchProviders();
+        return () => { isMounted = false; };
+    }, []);
 
 
     // Dynamic Settings State
@@ -324,7 +339,8 @@ export function CreatePatientForm({
                     <div className="flex p-1 bg-slate-200/50 dark:bg-slate-800 rounded-xl relative">
                         {[
                             { id: 'basic', label: 'Patient Details', icon: User },
-                            { id: 'identity', label: 'Digital Identity & Docs', icon: Shield }
+                            { id: 'identity', label: 'Digital Identity & Docs', icon: Shield },
+                            { id: 'insurance', label: 'Insurance Info', icon: ShieldPlus }
                         ].map((tab) => (
                             <button
                                 key={tab.id}
@@ -382,6 +398,26 @@ export function CreatePatientForm({
                             }
                         }
                     }
+
+                    // 3. Conditional Validation for Insurance Billing
+                    if (accountingGroup === 'insurance') {
+                        const providerId = formData.get('insurance_provider_id');
+                        const policyNum = formData.get('insurance_policy_number');
+                        
+                        if (!providerId || !policyNum || providerId.toString().trim() === '' || policyNum.toString().trim() === '') {
+                            if (activeTab !== 'insurance') {
+                                setActiveTab('insurance');
+                                await new Promise(resolve => setTimeout(resolve, 100));
+                            }
+                            setMessage({ type: 'error', text: 'Insurance Provider and Policy Number are required when Patient Billing Category is Insurance.' });
+                            setTimeout(() => {
+                                const el = document.querySelector(!providerId || providerId.toString().trim() === '' ? `[name="insurance_provider_id"]` : `[name="insurance_policy_number"]`) as HTMLElement;
+                                el?.focus();
+                            }, 150);
+                            return;
+                        }
+                    }
+
 
                     setIsPending(true);
                     setMessage(null);
@@ -676,8 +712,8 @@ export function CreatePatientForm({
                                                         <input defaultValue={initialData?.contact?.address?.city} name="city" type="text" placeholder="City" className="w-full h-9 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 outline-none focus:border-indigo-500 transition-all text-xs" />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Pincode</label>
-                                                        <input defaultValue={initialData?.contact?.address?.zip} name="zip" type="text" placeholder="Pincode" className="w-full h-9 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 outline-none focus:border-indigo-500 transition-all text-xs" />
+                                                        <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Zip / Postal Code</label>
+                                                        <input defaultValue={initialData?.contact?.address?.zip} name="zip" type="text" placeholder="Zip / Postal Code" className="w-full h-9 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 outline-none focus:border-indigo-500 transition-all text-xs" />
                                                     </div>
                                                 </div>
                                             </div>
@@ -724,6 +760,47 @@ export function CreatePatientForm({
                                             <p className="text-xs text-amber-700 dark:text-amber-500 leading-relaxed">
                                                 Documents uploaded here are encrypted at rest. Access is restricted to authorized clinical and administrative staff only.
                                             </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* TAB 3: INSURANCE DETAILS */}
+                            <div className={activeTab === 'insurance' ? 'block' : 'hidden'}>
+                                <div className="max-w-3xl mx-auto space-y-6">
+                                    <div className="bg-white dark:bg-slate-900/50 p-6 rounded-3xl border-2 border-emerald-100 dark:border-emerald-900/30 shadow-sm relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 p-12 bg-emerald-500/5 rounded-full blur-3xl"></div>
+                                        
+                                        <div className="flex items-center gap-3 mb-6 relative z-10">
+                                            <div className="h-10 w-10 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center text-emerald-600">
+                                                <ShieldPlus className="h-5 w-5" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Insurance Coverage</h3>
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Optional Patient TPA/Policy</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-5 relative z-10">
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Insurance Provider</label>
+                                                <select name="insurance_provider_id" className="w-full h-12 px-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-white text-sm outline-none focus:border-emerald-500 transition-all cursor-pointer">
+                                                    <option value="">-- No Insurance Selected --</option>
+                                                    {insuranceProviders.map(p => (
+                                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Policy Number</label>
+                                                    <input name="insurance_policy_number" type="text" placeholder="e.g. POL-123456" className="w-full h-12 px-4 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-white text-sm outline-none focus:border-emerald-500 transition-all" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Group Number (Optional)</label>
+                                                    <input name="insurance_group_number" type="text" placeholder="e.g. GRP-789" className="w-full h-12 px-4 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-white text-sm outline-none focus:border-emerald-500 transition-all" />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

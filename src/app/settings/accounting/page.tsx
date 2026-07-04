@@ -100,17 +100,25 @@ export default async function AccountingSettingsPage() {
     const mappingRes = await getPaymentMappings();
     const paymentMappings = mappingRes.success ? mappingRes.mappings : {};
 
+    // 7. Fetch Tax Types (for Global setting)
+    const taxTypes = await prisma.tax_types.findMany({
+        where: { is_active: true },
+        orderBy: { name: 'asc' }
+    });
+
     return (
         <AccountingSettingsForm
             settings={{
                 ...settings,
-                default_tax_mode: companySettings?.hms_billing_mode || 'exclusive'
+                default_tax_mode: companySettings?.hms_billing_mode || 'exclusive',
+                default_tax_type_id: companySettings?.default_tax_type_id || ''
             }}
             accounts={accounts}
             taxRates={taxRates}
             taxLabel={taxLabel}
             journals={journals}
             paymentMappings={paymentMappings}
+            taxTypes={taxTypes}
         />
     )
 }
