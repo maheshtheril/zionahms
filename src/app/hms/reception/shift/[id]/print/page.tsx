@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { useLocalization } from "@/contexts/localization-context";
 
-export default async function PrintShiftReport({ params }: { params: Promise<{ id: string }> }) {
+export default async function PrintShiftReport(props: { params: Promise<any> }) {
+    const params = await props.params;
     const { currencySymbol } = useLocalization();
     const session = await auth();
     if (!session?.user?.id) return notFound();

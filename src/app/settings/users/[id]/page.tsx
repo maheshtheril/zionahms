@@ -5,7 +5,8 @@ import { ArrowLeft, Mail, User, Shield, Activity, AlertTriangle } from "lucide-r
 import { DeleteUserButton } from "@/components/users/delete-user-button"
 import { notFound } from "next/navigation"
 
-export default async function ManageUserPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ManageUserPage(props: { params: Promise<any> }) {
+    const params = await props.params;
     try {
         const { id } = await params
         const user = await getUser(id)

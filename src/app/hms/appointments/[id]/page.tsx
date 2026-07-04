@@ -3,7 +3,8 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, Calendar, Clock, User, FileText, IndianRupee, Stethoscope } from "lucide-react"
 
-export default async function AppointmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function AppointmentDetailPage(props: { params: Promise<any> }) {
+    const params = await props.params;
     const { id } = await params
 
     const appointment = await prisma.hms_appointments.findUnique({

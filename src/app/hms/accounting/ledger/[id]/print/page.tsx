@@ -4,7 +4,8 @@ import { format } from "date-fns";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
-export default async function GeneralLedgerPrintPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function GeneralLedgerPrintPage(props: { params: Promise<any> }) {
+    const params = await props.params;
     const session = await auth();
     if (!session?.user?.id) redirect('/login');
 

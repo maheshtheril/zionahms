@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import {
-    Users, Calendar, Activity, IndianRupee, Plus, Search,
+    Users, Calendar, Activity, Banknote, Plus, Search,
     Filter, MoreHorizontal, Clock, MapPin, Video, Phone,
     CheckCircle2, XCircle, AlertCircle, Stethoscope, Receipt
 } from "lucide-react"
@@ -108,8 +108,8 @@ export function DashboardClient({ user, stats, appointments, patients, doctors, 
                     <Link href="/hms/billing" className="block transition-transform hover:scale-[1.02]">
                         <StatsCard
                             title="Total Revenue"
-                            value={mounted ? `${currencySymbol}${stats.revenue.toLocaleString('en-IN')}` : `${currencySymbol}${stats.revenue}`}
-                            icon={IndianRupee}
+                            value={mounted ? `${currencySymbol}${stats.revenue.toLocaleString()}` : `${currencySymbol}${stats.revenue}`}
+                            icon={Banknote}
                             trend="Monthly collection"
                             color="green"
                         />
@@ -269,7 +269,7 @@ export function DashboardClient({ user, stats, appointments, patients, doctors, 
                                                             className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-all"
                                                             title="Create Bill"
                                                         >
-                                                            <IndianRupee className="h-4 w-4" />
+                                                            <Banknote className="h-4 w-4" />
                                                         </Link>
                                                         <button className="p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-all">
                                                             <MoreHorizontal className="h-4 w-4" />

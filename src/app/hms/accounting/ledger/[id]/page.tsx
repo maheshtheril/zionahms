@@ -6,7 +6,8 @@ export const metadata: Metadata = {
     description: "Detailed transaction history and account audit trail"
 };
 
-export default async function LedgerPage({ params }: { params: any }) {
+export default async function LedgerPage(props: { params: Promise<any> }) {
+    const params = await props.params;
     const { id } = await params;
 
     return (

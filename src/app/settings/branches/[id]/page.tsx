@@ -4,7 +4,8 @@ import { auth } from "@/auth"
 import { notFound, redirect } from "next/navigation"
 import EditBranchForm from "./edit-branch-form"
 
-export default async function EditBranchPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditBranchPage(props: { params: Promise<any> }) {
+    const params = await props.params;
     const { id } = await params
     const session = await auth()
     if (!session?.user?.id) redirect('/login')

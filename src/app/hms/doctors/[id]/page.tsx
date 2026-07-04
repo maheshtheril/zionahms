@@ -8,7 +8,8 @@ import { ClinicianDeleteButton } from "@/components/hms/doctors/clinician-delete
 import { getEmployees } from "@/app/actions/crm/employees"
 import { useLocalization } from "@/contexts/localization-context";
 
-export default async function DoctorDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function DoctorDetailPage(props: { params: Promise<any> }) {
+    const params = await props.params;
     const { currencySymbol } = useLocalization();
     const { id } = await params
     const doctor = await prisma.hms_clinicians.findUnique({

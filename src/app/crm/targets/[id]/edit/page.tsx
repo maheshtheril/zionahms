@@ -16,7 +16,8 @@ interface PageProps {
     }
 }
 
-export default async function EditTargetPage({ params }: PageProps) {
+export default async function EditTargetPage(props: { params: Promise<any> }) {
+    const params = await props.params;
     const target = await getTarget(params.id)
     if (!target) return notFound()
 

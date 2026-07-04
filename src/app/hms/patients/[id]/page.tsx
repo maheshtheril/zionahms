@@ -15,7 +15,8 @@ import { PatientLedger } from "@/components/patients/patient-ledger"
 import { AdmissionDialog } from "@/components/hms/patients/admission-dialog"
 import { useLocalization } from "@/contexts/localization-context";
 
-export default async function PatientDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PatientDetailPage(props: { params: Promise<any> }) {
+    const params = await props.params;
     const { currencySymbol } = useLocalization();
     const { id } = await params;
 

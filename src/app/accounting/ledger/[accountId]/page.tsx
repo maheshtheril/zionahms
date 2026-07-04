@@ -5,7 +5,8 @@ import { ArrowLeft, ArrowDownLeft, ArrowUpRight, Calendar, Filter } from "lucide
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
-export default async function LedgerPage({ params }: { params: { accountId: string } }) {
+export default async function LedgerPage(props: { params: Promise<any> }) {
+    const params = await props.params;
     const session = await auth()
 
     // Default to last 365 days? Or all time?

@@ -3,11 +3,10 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { UsageForm } from "@/components/hms/nursing/usage-form"
 
-export default async function NursingUsagePage({
-    searchParams,
-}: {
-    searchParams: { patientId?: string; encounterId?: string }
+export default async function NursingUsagePage(props: {
+    searchParams: Promise<{ patientId?: string; encounterId?: string }>
 }) {
+    const searchParams = await props.searchParams;
     const session = await auth()
     if (!session?.user?.id) {
         redirect("/login")
