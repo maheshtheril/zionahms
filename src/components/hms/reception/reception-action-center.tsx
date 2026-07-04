@@ -5,13 +5,7 @@ import { cn } from "@/lib/utils"
 
 import React, { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import {
-    UserPlus, CalendarPlus, LogIn, CreditCard,
-    PhoneIncoming, IdCard, Users, Search,
-    Clock, Stethoscope, ChevronRight, Filter, ChevronDown, CheckCircle, Smartphone, MoreVertical, Edit, Activity, IndianRupee,
-    Printer, Wallet, Banknote, Fingerprint, Receipt, LayoutDashboard, Kanban, AlertTriangle, Syringe, Zap, Eye, EyeOff, Wifi, Bed as BedIcon,
-    RotateCcw, ShieldAlert, Trash2, Loader2, History, BookOpen, MessageSquare, Maximize2, Minimize2, X, FileText
-} from "lucide-react"
+import { UserPlus, CalendarPlus, LogIn, CreditCard, PhoneIncoming, IdCard, Users, Search, Clock, Stethoscope, ChevronRight, Filter, ChevronDown, CheckCircle, Smartphone, MoreVertical, Edit, Activity, Banknote, Printer, Wallet, Fingerprint, Receipt, LayoutDashboard, Kanban, AlertTriangle, Syringe, Zap, Eye, EyeOff, Wifi, Bed as BedIcon, RotateCcw, ShieldAlert, Trash2, Loader2, History, BookOpen, MessageSquare, Maximize2, Minimize2, X, FileText } from "lucide-react"
 import { ExpenseDialog } from "./expense-dialog"
 import { PaymentVoucherForm } from "@/components/accounting/payment-voucher-form"
 import { PettyCashVoucher } from "./petty-cash-voucher"
@@ -492,7 +486,7 @@ export function ReceptionActionCenter({
                             </h3>
                         </div>
                         <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/40 border border-emerald-500/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                            <IndianRupee className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                            <Banknote className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                         </div>
                     </Card>
                 </Link>
@@ -1105,7 +1099,7 @@ export function ReceptionActionCenter({
                             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl pointer-events-none -mr-8 -mt-8" />
                             <div className="flex items-center gap-4 mb-3">
                                 <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform duration-300">
-                                    <IndianRupee className="h-6 w-6" />
+                                    <Banknote className="h-6 w-6" />
                                 </div>
                                 <div>
                                     <div className="text-3xl font-black italic tracking-tighter bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">{currencySymbol}{dailyCollection.toLocaleString()}</div>
@@ -1362,7 +1356,7 @@ export function ReceptionActionCenter({
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-4">
                                 <div className="h-14 w-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
-                                    <IndianRupee className="h-8 w-8 text-white" />
+                                    <Banknote className="h-8 w-8 text-white" />
                                 </div>
                                 <div>
                                     <h3 className="text-2xl font-black italic uppercase tracking-tighter">Daily Payment Register</h3>
@@ -1722,7 +1716,7 @@ function PatientCard({
                         </Button>
                         {apt.hasPrescription && apt.invoiceStatus !== 'paid' && (
                             <Button size="sm" onClick={onBill} className="h-7 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm px-2">
-                                <IndianRupee className="h-3 w-3 mr-1" />
+                                <Banknote className="h-3 w-3 mr-1" />
                                 Bill
                             </Button>
                         )}
@@ -1746,7 +1740,7 @@ function PatientCard({
                                 {apt.pendingConsumablesCount > 0 ? (
                                     <><Clock className="h-3 w-3 mr-1 animate-pulse" /> NYP</>
                                 ) : (
-                                    <><IndianRupee className="h-3 w-3 mr-1" /> Bill</>
+                                    <><Banknote className="h-3 w-3 mr-1" /> Bill</>
                                 )}
                             </Button>
                         )}

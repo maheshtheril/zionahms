@@ -5,10 +5,7 @@ import {
     BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts'
 import { Card } from "@/components/ui/card"
-import {
-    TrendingUp, Users, Calendar, IndianRupee,
-    ArrowUpRight, ArrowDownRight, Activity, Filter, Download
-} from "lucide-react"
+import { TrendingUp, Users, Calendar, Banknote, ArrowUpRight, ArrowDownRight, Activity, Filter, Download } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useLocalization } from "@/contexts/localization-context";
 
@@ -99,7 +96,7 @@ export function AnalyticsClient({ data }: { data: any }) {
                 <MetricCard
                     title="Total Revenue"
                     value={`${currencySymbol}${stats.totalRevenue.toLocaleString()}`}
-                    icon={IndianRupee}
+                    icon={Banknote}
                     trend="+18%"
                     isUp={true}
                     color="orange"

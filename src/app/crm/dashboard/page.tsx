@@ -3,7 +3,7 @@ import CRMCalendar from '@/components/crm/scheduler/calendar'
 
 import Link from 'next/link'
 import { getDashboardData } from '@/app/actions/crm/dashboard'
-import { Sparkles, DollarSign, Activity, Target, TrendingUp, Zap, IndianRupee, Euro, PoundSterling, Plus, Calendar } from 'lucide-react'
+import { Sparkles, DollarSign, Activity, Target, TrendingUp, Zap, Banknote, Euro, PoundSterling, Plus, Calendar } from "lucide-react"
 import { Button } from '@/components/ui/button'
 
 export default async function DashboardPage() {
@@ -13,7 +13,7 @@ export default async function DashboardPage() {
     const getCurrencyIcon = () => {
         // ... (keep logic)
         switch (currencyCode) {
-            case 'INR': return <IndianRupee className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            case 'INR': return <Banknote className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             case 'EUR': return <Euro className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             case 'GBP': return <PoundSterling className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             default: return <DollarSign className="h-5 w-5 text-purple-600 dark:text-purple-400" />

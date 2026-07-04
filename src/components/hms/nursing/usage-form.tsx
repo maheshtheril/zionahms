@@ -9,11 +9,7 @@ import { getConsumptionHistory } from "@/app/actions/nursing-history"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from "date-fns"
 import { getProductsPremium } from "@/app/actions/inventory"
-import { 
-    Loader2, Check, PackageMinus, Plus, Trash2, ShoppingCart, 
-    Info, ScanLine, Clock, X, Search, IndianRupee, 
-    ChevronDown, Edit, ArrowRight, Activity, Beaker
-} from "lucide-react"
+import { Loader2, Check, PackageMinus, Plus, Trash2, ShoppingCart, Info, ScanLine, Clock, X, Search, Banknote, ChevronDown, Edit, ArrowRight, Activity, Beaker } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command"

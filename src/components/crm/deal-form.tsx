@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { DollarSign, Calendar as CalendarIcon, Briefcase, IndianRupee, Euro, PoundSterling } from 'lucide-react'
+import { DollarSign, Calendar as CalendarIcon, Briefcase, Banknote, Euro, PoundSterling } from "lucide-react"
 import { useState } from 'react'
 import { SYSTEM_DEFAULT_CURRENCY_CODE, SYSTEM_DEFAULT_CURRENCY_SYMBOL } from '@/lib/currency-constants'
 
@@ -46,7 +46,7 @@ export function DealForm({
     const CurrencyIcon = () => {
         const { currencySymbol } = useLocalization();
         switch (currency) {
-            case 'INR': return <IndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
+            case 'INR': return <Banknote className="absolute left-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
             case 'EUR': return <Euro className="absolute left-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
             case 'GBP': return <PoundSterling className="absolute left-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
             default: return <span className="absolute left-3 top-2 h-4 w-4 text-gray-500 font-bold pointer-events-none select-none">{currentCurrencySymbol}</span>

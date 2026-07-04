@@ -3,7 +3,7 @@ import { auth } from '@/auth'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Edit, ArrowLeft, Target, Calendar, TrendingUp, DollarSign, IndianRupee } from 'lucide-react'
+import { Edit, ArrowLeft, Target, Calendar, TrendingUp, DollarSign, Banknote } from "lucide-react"
 import { formatCurrency } from '@/lib/currency'
 import { Badge } from '@/components/ui/badge'
 
@@ -62,7 +62,7 @@ export default async function ViewDealPage(props: PageProps) {
                                 <div>
                                     <p className="text-sm font-medium text-slate-500 mb-1">Value</p>
                                     <div className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                                        {deal.currency === 'INR' ? <IndianRupee className="w-5 h-5" /> : <DollarSign className="w-5 h-5" />}
+                                        {deal.currency === 'INR' ? <Banknote className="w-5 h-5" /> : <DollarSign className="w-5 h-5" />}
                                         {formatCurrency(Number(deal.value), deal.currency)}
                                     </div>
                                 </div>

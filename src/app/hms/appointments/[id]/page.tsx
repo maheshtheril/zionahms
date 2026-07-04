@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Calendar, Clock, User, FileText, IndianRupee, Stethoscope } from "lucide-react"
+import { ArrowLeft, Calendar, Clock, User, FileText, Banknote, Stethoscope } from "lucide-react"
 
 export default async function AppointmentDetailPage(props: { params: Promise<any> }) {
     const params = await props.params;
@@ -48,7 +48,7 @@ export default async function AppointmentDetailPage(props: { params: Promise<any
                         href={`/hms/billing/new?patientId=${appointment.patient_id}&appointmentId=${appointment.id}`}
                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium flex items-center gap-2"
                     >
-                        <IndianRupee className="h-4 w-4" />
+                        <Banknote className="h-4 w-4" />
                         Bill This Visit
                     </Link>
                 </div>

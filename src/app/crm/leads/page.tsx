@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 import { Button } from '@/components/ui/button'
-import { Plus, Sparkles, TrendingUp, IndianRupee, PieChart, Filter, Search, DollarSign } from 'lucide-react'
+import { Plus, Sparkles, TrendingUp, Banknote, PieChart, Filter, Search, DollarSign } from "lucide-react"
 import { formatCurrency } from '@/lib/currency'
 import { LeadTable } from '@/components/crm/lead-table'
 import { Input } from '@/components/ui/input'
@@ -218,7 +218,7 @@ export default async function LeadsPage(props: PageProps) {
                         </div>
                         <div className="h-12 w-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center border border-emerald-500/20">
                             {defaultCurrency.code === 'INR' ? (
-                                <IndianRupee className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                                <Banknote className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                             ) : (
                                 <DollarSign className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                             )}

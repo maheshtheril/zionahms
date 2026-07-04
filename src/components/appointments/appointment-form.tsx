@@ -1,7 +1,7 @@
 'use client'
 
 import { createAppointment, updateAppointmentDetails } from "@/app/actions/appointment"
-import { ArrowLeft, Calendar, Clock, FileText, CheckCircle, MapPin, Video, Phone, AlertCircle, Stethoscope, IndianRupee, Save, Zap, ChevronRight } from "lucide-react"
+import { ArrowLeft, Calendar, Clock, FileText, CheckCircle, MapPin, Video, Phone, AlertCircle, Stethoscope, Banknote, Save, Zap, ChevronRight } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { ChevronDown, Edit } from "lucide-react"

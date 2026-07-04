@@ -1,5 +1,5 @@
 import { QRCodeSVG } from 'qrcode.react'
-import { User, Phone, Calendar, MapPin, Activity, IndianRupee, CreditCard, Wifi } from 'lucide-react'
+import { User, Phone, Calendar, MapPin, Activity, Banknote, CreditCard, Wifi } from "lucide-react"
 import { useRef, useState } from 'react'
 import { useToast } from "@/components/ui/use-toast"
 import { ZionaLogo } from '@/components/branding/ziona-logo'
