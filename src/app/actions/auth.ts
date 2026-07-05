@@ -118,6 +118,14 @@ export async function signup(prevState: any, formData: FormData) {
             }
         });
 
+        // 4. Seed default tax mappings for the new company (inventory transactions)
+        try {
+            const taxSeedResult = await seedCompanyTaxes(companyId, prisma);
+            console.log('[AUTH] Tax seeding result:', taxSeedResult);
+        } catch (taxErr) {
+            console.error('[AUTH] Failed to seed company taxes:', taxErr);
+        }
+
         // 3. Create Default Main Branch
         const isHms = selectedModules.includes('hms');
         await prisma.hms_branch.create({

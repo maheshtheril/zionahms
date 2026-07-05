@@ -1884,3 +1884,18 @@ export async function getRawDatabaseInventory() {
         return { success: false, error: e.message };
     }
 }
+
+
+export async function getCompanyName() {
+    try {
+        const { auth } = require('@/auth');
+        const session = await auth();
+        if (!session || !session.user) return { success: false, name: null };
+        return { 
+            success: true, 
+            name: (session.user as any).companyName || 'Your Hospital' 
+        };
+    } catch (e) {
+        return { success: false, name: null };
+    }
+}

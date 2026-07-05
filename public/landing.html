@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ziona ERP — Complete Hospital Management System</title>
+  <meta name="description" content="Ziona ERP is a complete cloud-based Hospital Management System with CRM, HR & Payroll, Inventory, Accounts, and more. Built for modern healthcare in India." />
+  <meta name="keywords" content="hospital management system, HMS software India, healthcare ERP, hospital billing software, clinic management, SaaS ERP India" />
+  <meta property="og:title" content="Ziona ERP — Complete Hospital Management System" />
+  <meta property="og:description" content="All-in-one cloud ERP for hospitals, clinics & healthcare providers. Manage patients, billing, pharmacy, HR, payroll & accounts from one platform." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo: #4F46E5;
+      --indigo-dark: #3730A3;
+      --indigo-light: #6366F1;
+      --emerald: #10B981;
+      --emerald-dark: #059669;
+      --emerald-light: #34D399;
+      --navy: #0F172A;
+      --navy-800: #1E293B;
+      --navy-700: #334155;
+      --navy-600: #475569;
+      --slate-400: #94A3B8;
+      --slate-200: #E2E8F0;
+      --white: #FFFFFF;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--navy);
+      color: var(--white);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--navy-800); }
+    ::-webkit-scrollbar-thumb { background: var(--indigo); border-radius: 3px; }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 1rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      transition: all 0.3s ease;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
+    .nav-logo-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--indigo), var(--emerald));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 1.1rem; color: white; letter-spacing: -1px;
+      box-shadow: 0 0 20px rgba(79,70,229,0.4);
+    }
+    .nav-logo-text { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 1.3rem;
+      background: linear-gradient(135deg, #fff, var(--emerald-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .nav-links { display: flex; align-items: center; gap: 2rem; }
+    .nav-links a { color: var(--slate-400); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--white); }
+    .nav-cta {
+      background: linear-gradient(135deg, var(--indigo), var(--indigo-light));
+      color: white; padding: 0.55rem 1.4rem; border-radius: 8px;
+      text-decoration: none; font-weight: 600; font-size: 0.9rem;
+      box-shadow: 0 4px 15px rgba(79,70,229,0.4);
+      transition: all 0.3s; border: 1px solid rgba(255,255,255,0.1);
+    }
+    .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(79,70,229,0.5); }
+
+    /* ─── HERO ─── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 8rem 2rem 4rem;
+      position: relative; overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(79,70,229,0.25) 0%, transparent 70%),
+                  radial-gradient(ellipse 50% 40% at 80% 80%, rgba(16,185,129,0.12) 0%, transparent 60%),
+                  radial-gradient(ellipse 40% 30% at 20% 60%, rgba(79,70,229,0.1) 0%, transparent 50%);
+    }
+    .hero-grid {
+      position: absolute; inset: 0; z-index: 0; opacity: 0.04;
+      background-image: linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: rgba(79,70,229,0.15); border: 1px solid rgba(79,70,229,0.3);
+      color: var(--indigo-light); padding: 0.4rem 1rem; border-radius: 100px;
+      font-size: 0.8rem; font-weight: 600; margin-bottom: 1.5rem;
+      animation: fadeInDown 0.6s ease;
+    }
+    .badge-dot { width: 6px; height: 6px; background: var(--emerald); border-radius: 50%; animation: pulse 2s infinite; }
+    .hero h1 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 900; line-height: 1.1; letter-spacing: -2px;
+      margin-bottom: 1.5rem; max-width: 900px;
+      animation: fadeInUp 0.7s ease 0.1s both;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--indigo-light), var(--emerald-light));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero-sub {
+      font-size: 1.15rem; color: var(--slate-400); max-width: 640px;
+      line-height: 1.8; margin-bottom: 2.5rem;
+      animation: fadeInUp 0.7s ease 0.2s both;
+    }
+    .hero-actions {
+      display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
+      margin-bottom: 3.5rem; animation: fadeInUp 0.7s ease 0.3s both;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--indigo), var(--indigo-light));
+      color: white; padding: 0.85rem 2rem; border-radius: 10px;
+      text-decoration: none; font-weight: 700; font-size: 1rem;
+      box-shadow: 0 8px 30px rgba(79,70,229,0.4);
+      transition: all 0.3s; border: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(79,70,229,0.5); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.05); color: white;
+      padding: 0.85rem 2rem; border-radius: 10px;
+      text-decoration: none; font-weight: 600; font-size: 1rem;
+      border: 1px solid rgba(255,255,255,0.12);
+      transition: all 0.3s; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+    .hero-stats {
+      display: flex; gap: 3rem; justify-content: center; flex-wrap: wrap;
+      animation: fadeInUp 0.7s ease 0.4s both;
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat-num { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.8rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--white), var(--slate-400)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero-stat-label { font-size: 0.8rem; color: var(--slate-400); font-weight: 500; }
+
+    /* Dashboard preview */
+    .hero-preview {
+      margin-top: 4rem; position: relative; z-index: 1;
+      animation: fadeInUp 0.8s ease 0.5s both;
+    }
+    .hero-preview-wrapper {
+      position: relative; border-radius: 20px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 50px 100px rgba(0,0,0,0.5), 0 0 0 1px rgba(79,70,229,0.1),
+                  inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .hero-preview-bar {
+      background: var(--navy-800); padding: 0.7rem 1rem;
+      display: flex; align-items: center; gap: 0.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-red { background: #FF5F57; }
+    .dot-yellow { background: #FEBC2E; }
+    .dot-green { background: #28C840; }
+    .preview-url { flex: 1; text-align: center; }
+    .preview-url-bar {
+      display: inline-block; background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px; padding: 0.25rem 1rem; font-size: 0.75rem; color: var(--slate-400);
+    }
+    .hero-preview img { width: 100%; max-width: 960px; display: block; }
+
+    /* Glow overlay */
+    .preview-glow {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 150px;
+      background: linear-gradient(to top, var(--navy), transparent);
+      pointer-events: none;
+    }
+
+    /* ─── SECTION COMMON ─── */
+    section { padding: 6rem 2rem; position: relative; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .section-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      color: var(--emerald); font-size: 0.8rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;
+    }
+    .section-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: clamp(2rem, 4vw, 3rem); font-weight: 800;
+      letter-spacing: -1px; line-height: 1.2; margin-bottom: 1rem;
+    }
+    .section-sub { color: var(--slate-400); font-size: 1.05rem; max-width: 560px; line-height: 1.8; }
+
+    /* ─── MODULES SECTION ─── */
+    .modules-section { background: var(--navy); }
+    .modules-header { text-align: center; margin-bottom: 4rem; }
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .module-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px; padding: 1.75rem;
+      transition: all 0.3s; cursor: default;
+      position: relative; overflow: hidden;
+    }
+    .module-card::before {
+      content: ''; position: absolute; inset: 0; border-radius: 16px;
+      background: linear-gradient(135deg, rgba(79,70,229,0.05), transparent);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .module-card:hover { transform: translateY(-6px); border-color: rgba(79,70,229,0.3);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3), 0 0 0 1px rgba(79,70,229,0.15); }
+    .module-card:hover::before { opacity: 1; }
+    .module-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; margin-bottom: 1.25rem;
+    }
+    .module-card h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .module-card p { color: var(--slate-400); font-size: 0.875rem; line-height: 1.7; margin-bottom: 1rem; }
+    .module-features { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .module-tag {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      color: var(--slate-400); font-size: 0.72rem; font-weight: 500;
+      padding: 0.2rem 0.6rem; border-radius: 100px;
+    }
+
+    /* ─── WHY SECTION ─── */
+    .why-section { background: linear-gradient(180deg, var(--navy) 0%, rgba(30,41,59,0.5) 100%); }
+    .why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+    .why-features { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 2.5rem; }
+    .why-feature { display: flex; gap: 1rem; align-items: flex-start; }
+    .why-feature-icon {
+      width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+    }
+    .why-feature h4 { font-weight: 700; margin-bottom: 0.25rem; font-size: 0.95rem; }
+    .why-feature p { color: var(--slate-400); font-size: 0.875rem; line-height: 1.6; }
+    .why-visual {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px; padding: 2rem; position: relative; overflow: hidden;
+    }
+    .why-visual::before {
+      content: ''; position: absolute; top: -50%; right: -30%;
+      width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(79,70,229,0.15), transparent 70%);
+    }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .stat-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 1.25rem; text-align: center;
+    }
+    .stat-card-num { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 2rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--indigo-light), var(--emerald-light));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .stat-card-label { color: var(--slate-400); font-size: 0.8rem; margin-top: 0.25rem; }
+
+    /* ─── TECH STACK ─── */
+    .tech-section { padding: 3rem 2rem; }
+    .tech-strip {
+      display: flex; gap: 2rem; justify-content: center; align-items: center;
+      flex-wrap: wrap; opacity: 0.5;
+    }
+    .tech-item { display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; font-weight: 600; color: var(--slate-400); }
+    .tech-sep { width: 4px; height: 4px; background: var(--navy-700); border-radius: 50%; }
+
+    /* ─── PRICING ─── */
+    .pricing-section { background: var(--navy); }
+    .pricing-header { text-align: center; margin-bottom: 4rem; }
+    .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; max-width: 1000px; margin: 0 auto; }
+    .pricing-card {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px; padding: 2rem; position: relative;
+      transition: all 0.3s;
+    }
+    .pricing-card.featured {
+      background: linear-gradient(135deg, rgba(79,70,229,0.15), rgba(16,185,129,0.08));
+      border-color: rgba(79,70,229,0.4);
+      box-shadow: 0 20px 60px rgba(79,70,229,0.2);
+    }
+    .pricing-badge {
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--indigo), var(--emerald));
+      color: white; font-size: 0.75rem; font-weight: 700;
+      padding: 0.3rem 1rem; border-radius: 100px; white-space: nowrap;
+    }
+    .pricing-card h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .pricing-price { margin: 1.5rem 0; }
+    .pricing-amount { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 2.8rem; font-weight: 900; line-height: 1; }
+    .pricing-currency { font-size: 1.2rem; vertical-align: top; margin-top: 0.3rem; display: inline-block; }
+    .pricing-period { color: var(--slate-400); font-size: 0.85rem; margin-top: 0.25rem; }
+    .pricing-desc { color: var(--slate-400); font-size: 0.875rem; margin-bottom: 1.5rem; line-height: 1.6; }
+    .pricing-features { list-style: none; display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 2rem; }
+    .pricing-features li { display: flex; gap: 0.6rem; align-items: center; font-size: 0.875rem; }
+    .check { color: var(--emerald); font-size: 1rem; }
+    .pricing-btn {
+      display: block; text-align: center; padding: 0.85rem;
+      border-radius: 10px; font-weight: 700; text-decoration: none;
+      transition: all 0.3s; font-size: 0.95rem;
+    }
+    .pricing-btn-primary {
+      background: linear-gradient(135deg, var(--indigo), var(--indigo-light));
+      color: white; box-shadow: 0 8px 25px rgba(79,70,229,0.35);
+    }
+    .pricing-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 15px 35px rgba(79,70,229,0.45); }
+    .pricing-btn-secondary {
+      background: rgba(255,255,255,0.06); color: white;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .pricing-btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+    /* ─── TESTIMONIALS ─── */
+    .testimonials-section { background: rgba(30,41,59,0.4); }
+    .testimonials-header { text-align: center; margin-bottom: 3rem; }
+    .testimonials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+    .testimonial-card {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px; padding: 1.75rem;
+    }
+    .testimonial-stars { color: #F59E0B; font-size: 1rem; margin-bottom: 1rem; }
+    .testimonial-text { color: var(--slate-200); font-size: 0.9rem; line-height: 1.8; margin-bottom: 1.25rem; font-style: italic; }
+    .testimonial-author { display: flex; align-items: center; gap: 0.75rem; }
+    .author-avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.9rem; color: white;
+    }
+    .author-name { font-weight: 700; font-size: 0.9rem; }
+    .author-role { color: var(--slate-400); font-size: 0.8rem; }
+
+    /* ─── CTA SECTION ─── */
+    .cta-section {
+      text-align: center; padding: 8rem 2rem;
+      background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(79,70,229,0.2) 0%, transparent 70%);
+    }
+    .cta-section h2 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 900;
+      letter-spacing: -1.5px; margin-bottom: 1.5rem;
+    }
+    .cta-section p { color: var(--slate-400); font-size: 1.1rem; margin-bottom: 2.5rem; }
+    .cta-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: var(--navy-800); border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 3rem 2rem 2rem;
+    }
+    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 3rem; }
+    .footer-brand p { color: var(--slate-400); font-size: 0.875rem; line-height: 1.8; margin-top: 1rem; max-width: 280px; }
+    .footer-col h4 { font-weight: 700; font-size: 0.9rem; margin-bottom: 1.25rem; color: var(--white); }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
+    .footer-col ul li a { color: var(--slate-400); text-decoration: none; font-size: 0.875rem; transition: color 0.2s; }
+    .footer-col ul li a:hover { color: var(--white); }
+    .footer-bottom {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.06);
+      flex-wrap: wrap; gap: 1rem;
+    }
+    .footer-bottom p { color: var(--slate-400); font-size: 0.8rem; }
+    .footer-bottom-links { display: flex; gap: 1.5rem; }
+    .footer-bottom-links a { color: var(--slate-400); text-decoration: none; font-size: 0.8rem; }
+
+    /* ─── CONTACT FORM ─── */
+    .contact-section { padding: 6rem 2rem; }
+    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
+    .form-card {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px; padding: 2rem;
+    }
+    .form-group { margin-bottom: 1.25rem; }
+    .form-group label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--slate-200); }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 0.75rem 1rem;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; color: white; font-size: 0.9rem; font-family: 'Inter', sans-serif;
+      outline: none; transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
+    }
+    .form-group select option { background: var(--navy-800); }
+    .form-group textarea { resize: vertical; min-height: 120px; }
+    .form-btn {
+      width: 100%; padding: 0.9rem; border: none; cursor: pointer;
+      background: linear-gradient(135deg, var(--indigo), var(--indigo-light));
+      color: white; font-weight: 700; font-size: 1rem; border-radius: 10px;
+      box-shadow: 0 8px 25px rgba(79,70,229,0.35); transition: all 0.3s;
+      font-family: 'Inter', sans-serif;
+    }
+    .form-btn:hover { transform: translateY(-2px); box-shadow: 0 15px 35px rgba(79,70,229,0.45); }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .float { animation: float 4s ease-in-out infinite; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .why-grid, .contact-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      .hero-stats { gap: 1.5rem; }
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .footer-grid { grid-template-columns: 1fr; }
+      .hero-actions { flex-direction: column; align-items: center; }
+    }
+
+    /* Scroll reveal */
+    .reveal { opacity: 0; transform: translateY(30px); transition: all 0.7s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- ─── NAVIGATION ─── -->
+<nav id="navbar">
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-icon">Z</div>
+    <span class="nav-logo-text">Ziona ERP</span>
+  </a>
+  <div class="nav-links">
+    <a href="#modules">Modules</a>
+    <a href="#why">Why Ziona</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#contact">Contact</a>
+  </div>
+  <a href="#contact" class="nav-cta">Get a Demo →</a>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section class="hero" id="home">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+
+  <div style="position:relative;z-index:1;width:100%;display:flex;flex-direction:column;align-items:center;">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      Complete SaaS ERP for Healthcare
+    </div>
+
+    <h1>
+      The Smartest ERP for<br/>
+      <span>Modern Hospitals</span>
+    </h1>
+
+    <p class="hero-sub">
+      Manage your entire hospital operations — patients, billing, pharmacy, HR, payroll, inventory, accounts, and more — from one powerful cloud platform.
+    </p>
+
+    <div class="hero-actions">
+      <a href="#contact" class="btn-primary" id="hero-demo-btn">
+        🚀 Request Live Demo
+      </a>
+      <a href="#modules" class="btn-secondary" id="hero-modules-btn">
+        📋 Explore Modules
+      </a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num">15+</div>
+        <div class="hero-stat-label">ERP Modules</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">Multi-tenant</div>
+        <div class="hero-stat-label">SaaS Architecture</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">Cloud</div>
+        <div class="hero-stat-label">Always Available</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">Role-based</div>
+        <div class="hero-stat-label">Access Control</div>
+      </div>
+    </div>
+
+    <!-- Dashboard preview -->
+    <div class="hero-preview float" style="z-index:1;width:100%;max-width:960px;margin-top:4rem;">
+      <div class="hero-preview-wrapper">
+        <div class="hero-preview-bar">
+          <div class="dot dot-red"></div>
+          <div class="dot dot-yellow"></div>
+          <div class="dot dot-green"></div>
+          <div class="preview-url">
+            <span class="preview-url-bar">🔒 app.zionaerp.com/dashboard</span>
+          </div>
+        </div>
+        <!-- Synthetic Dashboard UI -->
+        <div style="background:#1E293B;padding:1.5rem;min-height:400px;">
+          <!-- KPI Cards -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;">
+            <div style="background:rgba(79,70,229,0.15);border:1px solid rgba(79,70,229,0.3);border-radius:12px;padding:1rem;">
+              <div style="color:#94A3B8;font-size:0.75rem;margin-bottom:0.5rem;">Today's Patients</div>
+              <div style="font-size:1.8rem;font-weight:800;color:white;">128</div>
+              <div style="color:#10B981;font-size:0.75rem;margin-top:0.25rem;">↑ 12% from yesterday</div>
+            </div>
+            <div style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);border-radius:12px;padding:1rem;">
+              <div style="color:#94A3B8;font-size:0.75rem;margin-bottom:0.5rem;">Today's Revenue</div>
+              <div style="font-size:1.8rem;font-weight:800;color:white;">₹84.2K</div>
+              <div style="color:#10B981;font-size:0.75rem;margin-top:0.25rem;">↑ 8% from yesterday</div>
+            </div>
+            <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:1rem;">
+              <div style="color:#94A3B8;font-size:0.75rem;margin-bottom:0.5rem;">Pending Bills</div>
+              <div style="font-size:1.8rem;font-weight:800;color:white;">17</div>
+              <div style="color:#F59E0B;font-size:0.75rem;margin-top:0.25rem;">⚠ Needs attention</div>
+            </div>
+            <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:12px;padding:1rem;">
+              <div style="color:#94A3B8;font-size:0.75rem;margin-bottom:0.5rem;">Active Staff</div>
+              <div style="font-size:1.8rem;font-weight:800;color:white;">89</div>
+              <div style="color:#6366F1;font-size:0.75rem;margin-top:0.25rem;">✓ All checked in</div>
+            </div>
+          </div>
+          <!-- Chart area -->
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:1rem;">
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:1.25rem;">
+              <div style="font-size:0.85rem;font-weight:600;margin-bottom:1rem;">Monthly Revenue Trend</div>
+              <div style="display:flex;align-items:flex-end;gap:0.5rem;height:120px;">
+                <div style="flex:1;background:linear-gradient(to top,#4F46E5,rgba(79,70,229,0.3));border-radius:4px 4px 0 0;height:55%;"></div>
+                <div style="flex:1;background:linear-gradient(to top,#4F46E5,rgba(79,70,229,0.3));border-radius:4px 4px 0 0;height:70%;"></div>
+                <div style="flex:1;background:linear-gradient(to top,#4F46E5,rgba(79,70,229,0.3));border-radius:4px 4px 0 0;height:60%;"></div>
+                <div style="flex:1;background:linear-gradient(to top,#4F46E5,rgba(79,70,229,0.3));border-radius:4px 4px 0 0;height:80%;"></div>
+                <div style="flex:1;background:linear-gradient(to top,#4F46E5,rgba(79,70,229,0.3));border-radius:4px 4px 0 0;height:65%;"></div>
+                <div style="flex:1;background:linear-gradient(to top,#10B981,rgba(16,185,129,0.3));border-radius:4px 4px 0 0;height:90%;"></div>
+                <div style="flex:1;background:linear-gradient(to top,#10B981,rgba(16,185,129,0.3));border-radius:4px 4px 0 0;height:100%;"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:0.5rem;color:#64748B;font-size:0.7rem;">
+                <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span>
+              </div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:1.25rem;">
+              <div style="font-size:0.85rem;font-weight:600;margin-bottom:1rem;">Dept Utilization</div>
+              <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                <div>
+                  <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:0.25rem;"><span>OPD</span><span style="color:#10B981;">82%</span></div>
+                  <div style="background:rgba(255,255,255,0.08);border-radius:100px;height:6px;"><div style="background:linear-gradient(90deg,#4F46E5,#10B981);border-radius:100px;width:82%;height:100%;"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:0.25rem;"><span>IPD</span><span style="color:#10B981;">64%</span></div>
+                  <div style="background:rgba(255,255,255,0.08);border-radius:100px;height:6px;"><div style="background:linear-gradient(90deg,#4F46E5,#10B981);border-radius:100px;width:64%;height:100%;"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:0.25rem;"><span>Lab</span><span style="color:#F59E0B;">45%</span></div>
+                  <div style="background:rgba(255,255,255,0.08);border-radius:100px;height:6px;"><div style="background:linear-gradient(90deg,#F59E0B,#F97316);border-radius:100px;width:45%;height:100%;"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:0.25rem;"><span>Pharmacy</span><span style="color:#10B981;">91%</span></div>
+                  <div style="background:rgba(255,255,255,0.08);border-radius:100px;height:6px;"><div style="background:linear-gradient(90deg,#10B981,#34D399);border-radius:100px;width:91%;height:100%;"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="preview-glow"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── TECH STRIP ─── -->
+<div class="tech-section">
+  <div class="container">
+    <div class="tech-strip">
+      <div class="tech-item">⚡ Next.js 16</div>
+      <div class="tech-sep"></div>
+      <div class="tech-item">🗄 PostgreSQL + Prisma</div>
+      <div class="tech-sep"></div>
+      <div class="tech-item">☁️ Vercel + Neon</div>
+      <div class="tech-sep"></div>
+      <div class="tech-item">🔐 Role-Based Access Control</div>
+      <div class="tech-sep"></div>
+      <div class="tech-item">📱 WhatsApp Integration</div>
+      <div class="tech-sep"></div>
+      <div class="tech-item">🤖 AI-Powered</div>
+      <div class="tech-sep"></div>
+      <div class="tech-item">💳 Razorpay</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MODULES ─── -->
+<section class="modules-section" id="modules">
+  <div class="container">
+    <div class="modules-header reveal">
+      <div class="section-badge">⚡ Complete Suite</div>
+      <h2 class="section-title">Everything Your Hospital Needs</h2>
+      <p class="section-sub" style="margin:0 auto;">15+ integrated modules covering every department — from OPD to payroll, pharmacy to accounts.</p>
+    </div>
+    <div class="modules-grid">
+
+      <div class="module-card reveal">
+        <div class="module-icon" style="background:rgba(79,70,229,0.15);">🏥</div>
+        <h3>Hospital Management (HMS)</h3>
+        <p>Complete patient lifecycle management — OPD, IPD, appointments, wards, doctor scheduling & clinical notes.</p>
+        <div class="module-features">
+          <span class="module-tag">Patient Registration</span>
+          <span class="module-tag">OPD / IPD</span>
+          <span class="module-tag">Appointments</span>
+          <span class="module-tag">Ward Management</span>
+          <span class="module-tag">Lab Orders</span>
+        </div>
+      </div>
+
+      <div class="module-card reveal">
+        <div class="module-icon" style="background:rgba(16,185,129,0.15);">💰</div>
+        <h3>Billing & Accounts</h3>
+        <p>End-to-end billing with GST, insurance claims, payment collection, receipt printing & financial reports.</p>
+        <div class="module-features">
+          <span class="module-tag">GST Billing</span>
+          <span class="module-tag">Insurance Claims</span>
+          <span class="module-tag">Receipts</span>
+          <span class="module-tag">Ledger</span>
+          <span class="module-tag">P&L Reports</span>
+        </div>
+      </div>
+
+      <div class="module-card reveal">
+        <div class="module-icon" style="background:rgba(245,158,11,0.15);">💊</div>
+        <h3>Pharmacy & Inventory</h3>
+        <p>Full pharmacy operations with stock tracking, batch management, expiry alerts, purchase orders and supplier management.</p>
+        <div class="module-features">
+          <span class="module-tag">Stock Management</span>
+          <span class="module-tag">Batch Tracking</span>
+          <span class="module-tag">Purchase Orders</span>
+          <span class="module-tag">Expiry Alerts</span>
+        </div>
+      </div>
+
+      <div class="module-card reveal">
+        <div class="module-icon" style="background:rgba(99,102,241,0.15);">👥</div>
+        <h3>HR & Payroll</h3>
+        <p>Complete human resource management with attendance, leave, shift scheduling, payroll processing and salary slips.</p>
+        <div class="module-features">
+          <span class="module-tag">Attendance</span>
+          <span class="module-tag">Leave Management</span>
+          <span class="module-tag">Payroll</span>
+          <span class="module-tag">Salary Slips</span>
+        </div>
+      </div>
+
+      <div class="module-card reveal">
+        <div class="module-icon" style="background:rgba(236,72,153,0.15);">📞</div>
+        <h3>CRM</h3>
+        <p>Patient relationship management with follow-ups, lead tracking, campaign management and WhatsApp communication.</p>
+        <div class="module-features">
+          <span class="module-tag">Patient Follow-up</span>
+          <span class="module-tag">Lead Tracking</span>
+          <span class="module-tag">WhatsApp</span>
+          <span class="module-tag">Campaigns</span>
+        </div>
+      </div>
+
+      <div class="module-card reveal">
+        <div class="module-icon" style="background:rgba(20,184,166,0.15);">🛒</div>
+        <h3>Point of Sale (POS)</h3>
+        <p>Fast counter sales for pharmacy, optical, and retail with barcode scanning, quick billing and shift reports.</p>
+        <div class="module-features">
+          <span class="module-tag">Quick Billing</span>
+          <span class="module-tag">Barcode Scan</span>
+          <span class="module-tag">Shift Reports</span>
+          <span class="module-tag">Returns</span>
+        </div>
+      </div>
+
+      <div class="module-card reveal">
+        <div class="module-icon" style="background:rgba(168,85,247,0.15);">🔬</div>
+        <h3>Laboratory (LIS)</h3>
+        <p>Lab information system with test request management, result entry, report generation and reference ranges.</p>
+        <div class="module-features">
+          <span class="module-tag">Test Requests</span>
+          <span class="module-tag">Result Entry</span>
+          <span class="module-tag">Lab Reports</span>
+          <span class="module-tag">Reference Ranges</span>
+        </div>
+      </div>
+
+      <div class="module-card reveal">
+        <div class="module-icon" style="background:rgba(239,68,68,0.15);">📊</div>
+        <h3>Reports & Analytics</h3>
+        <p>Real-time dashboards and 50+ reports across all departments — revenue, patients, pharmacy, HR and more.</p>
+        <div class="module-features">
+          <span class="module-tag">Live Dashboards</span>
+          <span class="module-tag">Financial Reports</span>
+          <span class="module-tag">Audit Logs</span>
+          <span class="module-tag">Excel Export</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── WHY ZIONA ─── -->
+<section class="why-section" id="why">
+  <div class="container">
+    <div class="why-grid">
+      <div class="reveal">
+        <div class="section-badge">✨ Why Choose Us</div>
+        <h2 class="section-title">Built for Real<br/>Hospitals, Not Just Demo</h2>
+        <p class="section-sub">Ziona ERP is not a generic software. It's purpose-built for Indian healthcare with real-world workflows tested in live hospital environments.</p>
+        <div class="why-features">
+          <div class="why-feature">
+            <div class="why-feature-icon" style="background:rgba(79,70,229,0.15);">🏗️</div>
+            <div>
+              <h4>Multi-Tenant SaaS Architecture</h4>
+              <p>Each hospital gets their own secure, isolated database. Scale from 1 to 100 hospitals without code changes.</p>
+            </div>
+          </div>
+          <div class="why-feature">
+            <div class="why-feature-icon" style="background:rgba(16,185,129,0.15);">🔐</div>
+            <div>
+              <h4>Granular Role-Based Access</h4>
+              <p>Control exactly what each user sees — Doctor, Nurse, Receptionist, Admin — down to individual form fields.</p>
+            </div>
+          </div>
+          <div class="why-feature">
+            <div class="why-feature-icon" style="background:rgba(245,158,11,0.15);">📱</div>
+            <div>
+              <h4>WhatsApp & Email Notifications</h4>
+              <p>Automated appointment reminders, lab results, and payment receipts via WhatsApp and email.</p>
+            </div>
+          </div>
+          <div class="why-feature">
+            <div class="why-feature-icon" style="background:rgba(168,85,247,0.15);">☁️</div>
+            <div>
+              <h4>Cloud + Offline Ready</h4>
+              <p>Works seamlessly in the cloud and supports hybrid local-cloud sync for clinics with unreliable internet.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="why-visual reveal">
+        <div style="font-size:0.8rem;color:var(--slate-400);margin-bottom:1.5rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Live System Metrics</div>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-card-num">15+</div>
+            <div class="stat-card-label">Integrated Modules</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-num">99.9%</div>
+            <div class="stat-card-label">Uptime SLA</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-num">100%</div>
+            <div class="stat-card-label">Cloud Native</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-num">GST</div>
+            <div class="stat-card-label">Compliant Billing</div>
+          </div>
+        </div>
+        <div style="margin-top:1.5rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:1.25rem;">
+          <div style="font-size:0.8rem;color:var(--slate-400);margin-bottom:0.75rem;font-weight:600;">Tech Stack</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+            <span style="background:rgba(79,70,229,0.15);border:1px solid rgba(79,70,229,0.25);color:#A5B4FC;padding:0.3rem 0.7rem;border-radius:6px;font-size:0.75rem;font-weight:600;">Next.js 16</span>
+            <span style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);color:#6EE7B7;padding:0.3rem 0.7rem;border-radius:6px;font-size:0.75rem;font-weight:600;">PostgreSQL</span>
+            <span style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);color:#FCD34D;padding:0.3rem 0.7rem;border-radius:6px;font-size:0.75rem;font-weight:600;">Prisma ORM</span>
+            <span style="background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);color:#C4B5FD;padding:0.3rem 0.7rem;border-radius:6px;font-size:0.75rem;font-weight:600;">React 19</span>
+            <span style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);color:#FCA5A5;padding:0.3rem 0.7rem;border-radius:6px;font-size:0.75rem;font-weight:600;">Razorpay</span>
+            <span style="background:rgba(20,184,166,0.12);border:1px solid rgba(20,184,166,0.25);color:#5EEAD4;padding:0.3rem 0.7rem;border-radius:6px;font-size:0.75rem;font-weight:600;">Vercel</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PRICING ─── -->
+<section class="pricing-section" id="pricing">
+  <div class="container">
+    <div class="pricing-header reveal">
+      <div class="section-badge">💎 Pricing</div>
+      <h2 class="section-title">Transparent. Fair. Scalable.</h2>
+      <p class="section-sub" style="margin:0 auto 0.5rem;">Choose what works for you — source code, white-label, or SaaS subscription.</p>
+    </div>
+    <div class="pricing-grid reveal">
+
+      <div class="pricing-card">
+        <h3>Source Code License</h3>
+        <div class="pricing-price">
+          <div class="pricing-amount"><span class="pricing-currency">₹</span>75,000</div>
+          <div class="pricing-period">One-time payment</div>
+        </div>
+        <p class="pricing-desc">Full source code access for a single hospital implementation. Own it forever.</p>
+        <ul class="pricing-features">
+          <li><span class="check">✓</span> Complete source code (Next.js)</li>
+          <li><span class="check">✓</span> All current modules</li>
+          <li><span class="check">✓</span> Prisma schema & migrations</li>
+          <li><span class="check">✓</span> Setup documentation</li>
+          <li><span class="check">✓</span> 30-day bug support</li>
+          <li style="color:var(--slate-400);">✗ White-label rights</li>
+          <li style="color:var(--slate-400);">✗ Future module updates</li>
+        </ul>
+        <a href="#contact" class="pricing-btn pricing-btn-secondary" id="src-license-btn">Enquire Now</a>
+      </div>
+
+      <div class="pricing-card featured">
+        <div class="pricing-badge">⭐ Most Popular</div>
+        <h3>White-Label License</h3>
+        <div class="pricing-price">
+          <div class="pricing-amount"><span class="pricing-currency">₹</span>1,50,000</div>
+          <div class="pricing-period">One-time + ₹10,000/yr updates</div>
+        </div>
+        <p class="pricing-desc">Rebrand and sell as your own product. Perfect for IT companies & system integrators.</p>
+        <ul class="pricing-features">
+          <li><span class="check">✓</span> Everything in Source Code</li>
+          <li><span class="check">✓</span> Full white-label rights</li>
+          <li><span class="check">✓</span> Unlimited reselling</li>
+          <li><span class="check">✓</span> Your own branding</li>
+          <li><span class="check">✓</span> 90-day priority support</li>
+          <li><span class="check">✓</span> Annual module updates</li>
+          <li><span class="check">✓</span> Training session included</li>
+        </ul>
+        <a href="#contact" class="pricing-btn pricing-btn-primary" id="white-label-btn">Get White-Label</a>
+      </div>
+
+      <div class="pricing-card">
+        <h3>SaaS Subscription</h3>
+        <div class="pricing-price">
+          <div class="pricing-amount"><span class="pricing-currency">₹</span>8,000</div>
+          <div class="pricing-period">per hospital / month</div>
+        </div>
+        <p class="pricing-desc">We host, you use. No server setup required. Best for hospitals wanting a plug-and-play solution.</p>
+        <ul class="pricing-features">
+          <li><span class="check">✓</span> Hosted & managed by us</li>
+          <li><span class="check">✓</span> All modules included</li>
+          <li><span class="check">✓</span> Unlimited users</li>
+          <li><span class="check">✓</span> Daily backups</li>
+          <li><span class="check">✓</span> 99.9% uptime SLA</span></li>
+          <li><span class="check">✓</span> Ongoing updates</li>
+          <li><span class="check">✓</span> Email + WhatsApp support</li>
+        </ul>
+        <a href="#contact" class="pricing-btn pricing-btn-secondary" id="saas-plan-btn">Start Free Trial</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── TESTIMONIALS ─── -->
+<section class="testimonials-section">
+  <div class="container">
+    <div class="testimonials-header reveal">
+      <div class="section-badge">💬 Testimonials</div>
+      <h2 class="section-title">Trusted by Healthcare Professionals</h2>
+    </div>
+    <div class="testimonials-grid">
+      <div class="testimonial-card reveal">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Ziona ERP transformed our 80-bed hospital. Patient billing that used to take 20 minutes now takes 2. The role-based access is exactly what we needed."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar" style="background:linear-gradient(135deg,#4F46E5,#10B981);">DR</div>
+          <div>
+            <div class="author-name">Dr. Rajesh Kumar</div>
+            <div class="author-role">Medical Director, City Hospital</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card reveal">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"The pharmacy module with batch tracking and expiry alerts alone saved us from regulatory issues twice. Excellent software for the price."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar" style="background:linear-gradient(135deg,#10B981,#6366F1);">PM</div>
+          <div>
+            <div class="author-name">Priya Menon</div>
+            <div class="author-role">Chief Pharmacist, Apollo Clinic</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card reveal">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"We white-labeled Ziona for 3 of our hospital clients. The multi-tenant architecture made deployment effortless. Outstanding ROI for our IT firm."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar" style="background:linear-gradient(135deg,#8B5CF6,#EC4899);">SK</div>
+          <div>
+            <div class="author-name">Suresh Krishnan</div>
+            <div class="author-role">CEO, MedTech Solutions Kerala</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CONTACT ─── -->
+<section class="contact-section" id="contact">
+  <div class="container">
+    <div class="contact-grid">
+      <div class="reveal">
+        <div class="section-badge">📩 Get in Touch</div>
+        <h2 class="section-title">Let's Get You<br/>Started Today</h2>
+        <p class="section-sub">Request a live demo, ask about pricing, or get a custom quote. We respond within 24 hours.</p>
+        <div style="margin-top:2rem;display:flex;flex-direction:column;gap:1rem;">
+          <div style="display:flex;align-items:center;gap:0.75rem;color:var(--slate-400);font-size:0.9rem;">
+            <span style="font-size:1.2rem;">📧</span> contact@zionaerp.com
+          </div>
+          <div style="display:flex;align-items:center;gap:0.75rem;color:var(--slate-400);font-size:0.9rem;">
+            <span style="font-size:1.2rem;">📱</span> +91 98765 43210
+          </div>
+          <div style="display:flex;align-items:center;gap:0.75rem;color:var(--slate-400);font-size:0.9rem;">
+            <span style="font-size:1.2rem;">🌐</span> Kerala, India (Serving Pan-India)
+          </div>
+          <div style="display:flex;align-items:center;gap:0.75rem;color:var(--slate-400);font-size:0.9rem;">
+            <span style="font-size:1.2rem;">💬</span> WhatsApp Available
+          </div>
+        </div>
+      </div>
+      <div class="form-card reveal">
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;margin-bottom:1.5rem;font-size:1.2rem;">Request a Demo</h3>
+        <form id="contact-form" onsubmit="handleSubmit(event)">
+          <div class="form-group">
+            <label for="name">Full Name *</label>
+            <input type="text" id="name" name="name" placeholder="Dr. John Thomas" required />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div class="form-group">
+              <label for="email">Email *</label>
+              <input type="email" id="email" name="email" placeholder="you@hospital.com" required />
+            </div>
+            <div class="form-group">
+              <label for="phone">Phone *</label>
+              <input type="tel" id="phone" name="phone" placeholder="+91 98765 43210" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="interest">I'm interested in</label>
+            <select id="interest" name="interest">
+              <option value="">Select an option</option>
+              <option value="saas">SaaS Subscription (Hosted)</option>
+              <option value="source">Source Code License</option>
+              <option value="whitelabel">White-Label License</option>
+              <option value="demo">Just a Demo First</option>
+              <option value="custom">Custom Development</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="hospital">Hospital / Organization</label>
+            <input type="text" id="hospital" name="hospital" placeholder="City General Hospital" />
+          </div>
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" placeholder="Tell us about your requirements, number of beds, departments..."></textarea>
+          </div>
+          <button type="submit" class="form-btn" id="submit-btn">🚀 Send Request</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FINAL CTA ─── -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Ready to Modernize<br/><span style="background:linear-gradient(135deg,#6366F1,#10B981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Your Hospital?</span></h2>
+    <p>Join hospitals across India using Ziona ERP to streamline operations and deliver better patient care.</p>
+    <div class="cta-actions">
+      <a href="#contact" class="btn-primary" id="final-cta-btn">🏥 Get Started Today</a>
+      <a href="tel:+919876543210" class="btn-secondary" id="call-btn">📞 Call Us Now</a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#" class="nav-logo" style="margin-bottom:0.5rem;display:inline-flex;">
+          <div class="nav-logo-icon">Z</div>
+          <span class="nav-logo-text" style="margin-left:0.75rem;">Ziona ERP</span>
+        </a>
+        <p>Complete cloud-based Hospital ERP — built for Indian healthcare with global standards.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Modules</h4>
+        <ul>
+          <li><a href="#modules">Hospital (HMS)</a></li>
+          <li><a href="#modules">Billing & Accounts</a></li>
+          <li><a href="#modules">Pharmacy</a></li>
+          <li><a href="#modules">HR & Payroll</a></li>
+          <li><a href="#modules">CRM</a></li>
+          <li><a href="#modules">Laboratory</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="#pricing">Source Code</a></li>
+          <li><a href="#pricing">White-Label</a></li>
+          <li><a href="#pricing">SaaS Plan</a></li>
+          <li><a href="#contact">Custom Build</a></li>
+          <li><a href="#contact">Implementation</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#why">About Us</a></li>
+          <li><a href="#contact">Contact</a></li>
+          <li><a href="#contact">Support</a></li>
+          <li><a href="#contact">WhatsApp</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Ziona ERP. All rights reserved. Made with ❤️ in Kerala, India.</p>
+      <div class="footer-bottom-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Refund Policy</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const revealEls = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  }, { threshold: 0.12 });
+  revealEls.forEach(el => observer.observe(el));
+
+  // Nav scroll effect
+  window.addEventListener('scroll', () => {
+    const nav = document.getElementById('navbar');
+    if (window.scrollY > 50) {
+      nav.style.background = 'rgba(15,23,42,0.98)';
+      nav.style.boxShadow = '0 4px 30px rgba(0,0,0,0.3)';
+    } else {
+      nav.style.background = 'rgba(15,23,42,0.85)';
+      nav.style.boxShadow = 'none';
+    }
+  });
+
+  // Form submit
+  function handleSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    btn.textContent = '✅ Request Sent!';
+    btn.style.background = 'linear-gradient(135deg, #059669, #10B981)';
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = '🚀 Send Request';
+      btn.style.background = '';
+      btn.disabled = false;
+      e.target.reset();
+    }, 3000);
+  }
+</script>
+
+</body>
+</html>
