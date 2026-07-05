@@ -288,9 +288,6 @@ export async function getTaxRates() {
             }
         }
 
-        // Fallback: Filter out VAT per user request if no tax type explicitly set
-        allTaxes = allTaxes.filter(t => t.name && !t.name.toUpperCase().includes('VAT'));
-        
         return allTaxes;
     } catch (error) {
         logDebug(`getTaxRates Error: ${error}`);
