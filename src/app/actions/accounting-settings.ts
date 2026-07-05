@@ -174,6 +174,28 @@ export async function updateAccountingSettings(data: any) {
                     });
                 }
             })()
+            // 3. Save Payment Method Mappings if provided
+            (async () => {
+                if (data.paymentMap) {
+                    await prisma.hms_settings.deleteMany({
+                        where: { company_id: companyId, tenant_id: tenantId!, key: 'payment_method_mapping' }
+                    });
+                    await prisma.hms_settings.create({
+                        data: {
+                            id: crypto.randomUUID(),
+                            tenant_id: tenantId!,
+                            company_id: companyId,
+                            key: 'payment_method_mapping',
+                            value: data.paymentMap,
+                            scope: 'company',
+                            version: 1,
+                            is_active: true,
+                            created_by: session.user.id,
+                            updated_by: session.user.id
+                        }
+                    });
+                }
+            })()
         ]);
 
         revalidatePath('/settings/accounting');

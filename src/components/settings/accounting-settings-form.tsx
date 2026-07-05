@@ -97,12 +97,13 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
     const handleSave = async () => {
         setLoading(true)
         try {
-            // Save main accounting settings
-            const res = await updateAccountingSettings(formData)
-            // Save payment method mappings
-            const mappingRes = await updatePaymentMappings(paymentMap)
+            // Run a single server action to prevent Next.js client-router transition conflicts
+            const res = await updateAccountingSettings({
+                ...formData,
+                paymentMap
+            });
 
-            if (res.success && mappingRes.success) {
+            if (res.success) {
                 toast({
                     title: "Success",
                     description: "Accounting settings and mappings updated successfully.",
@@ -111,7 +112,7 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
             } else {
                 toast({
                     title: "Warning",
-                    description: res.error || mappingRes.error || 'Some settings failed to save',
+                    description: res.error || 'Some settings failed to save',
                     variant: "destructive"
                 })
             }
