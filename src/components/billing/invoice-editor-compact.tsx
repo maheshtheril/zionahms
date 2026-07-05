@@ -1849,7 +1849,7 @@ export function CompactInvoiceEditor({
       )}
 
       {/* Mobile Floating Action Button for Hubs */}
-      <div className="fixed bottom-6 right-6 z-[250] lg:hidden animate-in zoom-in slide-in-from-bottom-8 duration-500">
+      <div className="fixed bottom-16 right-6 z-[250] lg:hidden animate-in zoom-in slide-in-from-bottom-8 duration-500">
         <button
           onClick={() => setIsHubOpen(!isHubOpen)}
           className="h-14 w-14 bg-indigo-600 dark:bg-[#64ffff] rounded-full shadow-[0_0_30px_rgba(79,70,229,0.5)] flex items-center justify-center transition-all hover:scale-105 active:scale-95"
@@ -2485,7 +2485,7 @@ export function CompactInvoiceEditor({
         </div>
 
         {/* 3. Global Control Bar (Compact World-Standard Layout) */}
-        <div className="sticky bottom-0 lg:static bg-white/95 dark:bg-[#0c1222]/95 backdrop-blur-xl border-t border-slate-100 dark:border-slate-800 px-4 py-4 lg:px-8 z-[200] shadow-[0_-10px_40px_rgba(0,0,0,0.1)] lg:shadow-none">
+        <div className="sticky bottom-0 lg:static bg-white/95 dark:bg-[#0c1222]/95 backdrop-blur-xl border-t border-slate-100 dark:border-slate-800 px-4 pt-4 pb-6 lg:px-8 lg:py-4 z-[200] shadow-[0_-10px_40px_rgba(0,0,0,0.1)] lg:shadow-none">
           <div className="max-w-[1400px] mx-auto flex flex-col xl:flex-row justify-between items-center gap-6">
 
               <div className="flex gap-10">
