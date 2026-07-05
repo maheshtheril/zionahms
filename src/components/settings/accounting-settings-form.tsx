@@ -97,17 +97,21 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
     const handleSave = async () => {
         setLoading(true)
         try {
+            // Save main accounting settings
             const res = await updateAccountingSettings(formData)
-            if (res.success) {
+            // Save payment method mappings
+            const mappingRes = await updatePaymentMappings(paymentMap)
+
+            if (res.success && mappingRes.success) {
                 toast({
                     title: "Success",
-                    description: "Accounting settings updated successfully.",
+                    description: "Accounting settings and mappings updated successfully.",
                 })
                 router.refresh()
             } else {
                 toast({
-                    title: "Error",
-                    description: res.error || 'Failed to save settings',
+                    title: "Warning",
+                    description: res.error || mappingRes.error || 'Some settings failed to save',
                     variant: "destructive"
                 })
             }
