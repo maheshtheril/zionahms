@@ -630,7 +630,7 @@ export async function createInvoice(data: {
             });
 
             // --- [INSURANCE CLAIM ENGINE] ---
-            if (status === 'posted' || status === 'paid') {
+            if ((status === 'posted' || status === 'paid') && resolvedPatientId) {
                 const patientInsurance = await tx.hms_patient_insurance.findFirst({
                     where: { patient_id: resolvedPatientId, is_primary: true }
                 });
