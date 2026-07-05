@@ -1662,14 +1662,29 @@ export class AccountingService {
         // Define account ranges/codes based on standard COA (including legacy fallback)
         const codes = type === 'cash' ? ['1610', '1600'] : ['1710', '1700'];
 
+        // DYNAMIC MAPPING: Look up if they custom-mapped a specific account to 'cash' or other payment methods
+        const mappingRecord = await prisma.hms_settings.findFirst({
+            where: { company_id: companyId, key: 'payment_method_mapping' }
+        });
+        const mapping = (mappingRecord?.value as any) || {};
+        const mappedAccountIds: string[] = [];
+        
+        if (type === 'cash' && mapping['cash']) mappedAccountIds.push(mapping['cash']);
+        if (type === 'bank') {
+            ['card', 'upi', 'bank_transfer', 'cheque', 'insurance'].forEach(m => {
+                if (mapping[m]) mappedAccountIds.push(mapping[m]);
+            });
+        }
+
         try {
-            // 1. Find the target accounts for this company by codes AND by name
+            // 1. Find the target accounts for this company by codes, name, OR mapped settings
             const startAccounts = await prisma.accounts.findMany({
                 where: { 
                     company_id: companyId,
                     OR: [
                         { code: { in: codes } },
-                        { name: { contains: type === 'cash' ? 'Cash' : 'Bank', mode: 'insensitive' } }
+                        { name: { contains: type === 'cash' ? 'Cash' : 'Bank', mode: 'insensitive' } },
+                        ...(mappedAccountIds.length > 0 ? [{ id: { in: mappedAccountIds } }] : [])
                     ]
                 }
             });
@@ -1831,13 +1846,27 @@ export class AccountingService {
     static async getCategoryAccounts(companyId: string, type: 'cash' | 'bank') {
         const codes = type === 'cash' ? ['1610', '1600'] : ['1710', '1700'];
         
+        const mappingRecord = await prisma.hms_settings.findFirst({
+            where: { company_id: companyId, key: 'payment_method_mapping' }
+        });
+        const mapping = (mappingRecord?.value as any) || {};
+        const mappedAccountIds: string[] = [];
+        
+        if (type === 'cash' && mapping['cash']) mappedAccountIds.push(mapping['cash']);
+        if (type === 'bank') {
+            ['card', 'upi', 'bank_transfer', 'cheque', 'insurance'].forEach(m => {
+                if (mapping[m]) mappedAccountIds.push(mapping[m]);
+            });
+        }
+
         try {
             const rootAccounts = await prisma.accounts.findMany({
                 where: {
                     company_id: companyId,
                     OR: [
                         { code: { in: codes } },
-                        { name: { contains: type === 'cash' ? 'Cash' : 'Bank', mode: 'insensitive' } }
+                        { name: { contains: type === 'cash' ? 'Cash' : 'Bank', mode: 'insensitive' } },
+                        ...(mappedAccountIds.length > 0 ? [{ id: { in: mappedAccountIds } }] : [])
                     ]
                 }
             });
