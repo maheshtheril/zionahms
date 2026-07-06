@@ -165,6 +165,69 @@ export class AccountingService {
                     });
                 }
                 // --- ACCRUAL LOGIC END ---
+
+                // --- COGS POSTING (World Standard Inventory Accounting) ---
+                // Only posts if cogs_account_id and inventory_asset_account_id are configured.
+                // DR: Cost of Goods Sold | CR: Inventory / Stock-in-Hand
+                const cogsAccountId = (settings as any).cogs_account_id;
+                const inventoryAccountId = (settings as any).inventory_asset_account_id;
+
+                if (cogsAccountId && inventoryAccountId) {
+                    // Calculate total cost from invoice lines
+                    let totalCost = 0;
+                    for (const line of invoice.hms_invoice_lines) {
+                        const qty = Number(line.quantity || 1);
+                        const costPrice = Number((line as any).cost_price || (line.hms_product as any)?.cost_price || 0);
+                        totalCost += qty * costPrice;
+                    }
+
+                    if (totalCost > 0) {
+                        const cogsRef = `COGS-${invoice.invoice_number}`;
+                        const existingCogs = await prisma.journal_entries.findFirst({
+                            where: { company_id: invoice.company_id, ref: cogsRef }
+                        });
+                        if (!existingCogs) {
+                            await prisma.journal_entries.create({
+                                data: {
+                                    id: crypto.randomUUID(),
+                                    tenant_id: invoice.tenant_id,
+                                    company_id: invoice.company_id,
+                                    invoice_id: invoice.id,
+                                    date: new Date(journalDate),
+                                    posted: true,
+                                    posted_at: new Date(),
+                                    created_by: userId,
+                                    currency_id: settings.currency_id,
+                                    amount_in_company_currency: totalCost,
+                                    ref: cogsRef,
+                                    journal_entry_lines: {
+                                        create: [
+                                            {
+                                                id: crypto.randomUUID(),
+                                                tenant_id: invoice.tenant_id,
+                                                company_id: invoice.company_id,
+                                                account_id: cogsAccountId,
+                                                debit: totalCost,
+                                                credit: 0,
+                                                description: `${patientName} | COGS - ${invoice.invoice_number}`,
+                                            },
+                                            {
+                                                id: crypto.randomUUID(),
+                                                tenant_id: invoice.tenant_id,
+                                                company_id: invoice.company_id,
+                                                account_id: inventoryAccountId,
+                                                debit: 0,
+                                                credit: totalCost,
+                                                description: `${patientName} | Stock Consumed - ${invoice.invoice_number}`,
+                                            }
+                                        ]
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+                // --- COGS POSTING END ---
             }
 
             // 4. Post Payments (Check individually)
@@ -223,7 +286,7 @@ export class AccountingService {
                         }
                     }
 
-                    const creditAccount = settings.ar_account_id; // Credit AR to reduce debt
+                    const creditAccount = await AccountingService.resolvePatientARAccount(invoice.company_id, settings.ar_account_id, invoice.hms_patient); // Credit AR to reduce debt
 
                     if (debitAccount && creditAccount) {
                         await prisma.journal_entries.create({
@@ -561,13 +624,14 @@ export class AccountingService {
                         data: {
                             company_id: invoice.company_id,
                             tenant_id: invoice.tenant_id,
-                            ar_account_id: findId('1200'),
-                            ap_account_id: findId('2000'),
+                            ar_account_id: findId('1810') || findId('1800'),   // Patient AR
+                            ap_account_id: findId('2110') || findId('2100'),   // Accounts Payable
                             sales_account_id: findId('4000'),
-                            purchase_account_id: findId('5000'),
-                            output_tax_account_id: findId('2200'),
-                            input_tax_account_id: findId('2210'),
-                            inventory_asset_account_id: findId('1400'),
+                            purchase_account_id: findId('5100') || findId('5000'),
+                            output_tax_account_id: findId('2210'),
+                            input_tax_account_id: findId('2220'),
+                            inventory_asset_account_id: findId('1900'),        // Stock-in-Hand
+                            cogs_account_id: findId('5100'),                   // COGS
                             fiscal_year_start: new Date(new Date().getFullYear(), 3, 1),
                             fiscal_year_end: new Date(new Date().getFullYear() + 1, 2, 31),
                         }
@@ -580,16 +644,23 @@ export class AccountingService {
             if (!settings) throw new Error("Accounting settings not configured.");
 
             // 3. Determine Accounts
-            // DEBIT: Purchase/Expense Account
-            const debitAccountId = settings.purchase_account_id;
+            // SUSPENSE FALLBACK (World Standard: 9000)
+            const suspenseAccount = await prisma.accounts.findFirst({
+                where: { company_id: invoice.company_id, code: '9000' }
+            });
+            const suspenseAccountId = suspenseAccount?.id || null;
+
+            // DEBIT: Inventory Account (Preferred) or Purchase/Expense Account
+            // In a perpetual inventory system, purchases debit Inventory.
+            const debitAccountId = settings.inventory_asset_account_id || settings.purchase_account_id || suspenseAccountId;
             if (!debitAccountId) throw new Error("Purchase Account not configured.");
 
             // CREDIT: Accounts Payable
-            const creditAccountId = settings.ap_account_id;
+            const creditAccountId = settings.ap_account_id || suspenseAccountId;
             if (!creditAccountId) throw new Error("Accounts Payable Account not configured.");
 
             // TAX: Input Tax (Debit)
-            const inputTaxAccountId = settings.input_tax_account_id;
+            const inputTaxAccountId = settings.input_tax_account_id || suspenseAccountId;
 
             // 4. Prepare Lines
             const journalLines: any[] = [];
@@ -1324,9 +1395,14 @@ export class AccountingService {
             });
             if (!settings) throw new Error("Accounting settings not configured.");
 
-            const apAccount = settings.ap_account_id;
-            const inventoryAccount = settings.inventory_asset_account_id || settings.purchase_account_id;
-            if (!apAccount || !inventoryAccount) throw new Error("Accounts not configured.");
+            const suspenseAccount = await prisma.accounts.findFirst({
+                where: { company_id: pReturn.company_id, code: '9000' }
+            });
+            const suspenseAccountId = suspenseAccount?.id || null;
+
+            const apAccount = settings.ap_account_id || suspenseAccountId;
+            const inventoryAccount = settings.inventory_asset_account_id || settings.purchase_account_id || suspenseAccountId;
+            if (!apAccount || !inventoryAccount) throw new Error("Accounts not configured and no Suspense account available.");
 
             const journal = await prisma.journal_entries.create({
                 data: {
@@ -1394,9 +1470,15 @@ export class AccountingService {
             });
             if (!settings) throw new Error("Accounting settings not configured.");
 
-            const arAccount = settings.ar_account_id;
-            const salesAccount = settings.sales_account_id;
-            if (!arAccount || !salesAccount) throw new Error("Accounts not configured.");
+            const suspenseAccount = await prisma.accounts.findFirst({
+                where: { company_id: sReturn.company_id, code: '9000' }
+            });
+            const suspenseAccountId = suspenseAccount?.id || null;
+
+            const arAccount = (await AccountingService.resolvePatientARAccount(sReturn.company_id, settings.ar_account_id, null)) || suspenseAccountId;
+            const salesAccount = settings.sales_account_id || (await prisma.accounts.findFirst({ where: { company_id: sReturn.company_id, code: '4000' } }))?.id || suspenseAccountId;
+            
+            if (!arAccount || !salesAccount) throw new Error("Accounts not configured and no Suspense account available.");
 
             const meta = (sReturn.metadata as any) || {};
             const isCashRefund = meta.refund_method === 'cash';
@@ -1473,9 +1555,14 @@ export class AccountingService {
             });
             if (!settings) throw new Error("Accounting settings not configured.");
 
-            const inventoryAccount = settings.inventory_asset_account_id;
-            const expenseAccount = settings.purchase_account_id; // Usually Stock Loss/Adjustment expense, default to Purchase/COGS
-            if (!inventoryAccount || !expenseAccount) throw new Error("Accounts not configured.");
+            const suspenseAccount = await prisma.accounts.findFirst({
+                where: { company_id: adj.company_id, code: '9000' }
+            });
+            const suspenseAccountId = suspenseAccount?.id || null;
+
+            const inventoryAccount = settings.inventory_asset_account_id || suspenseAccountId;
+            const expenseAccount = settings.purchase_account_id || suspenseAccountId; // Usually Stock Loss/Adjustment expense, default to Purchase/COGS
+            if (!inventoryAccount || !expenseAccount) throw new Error("Accounts not configured and no Suspense account available.");
 
             let totalValue = 0;
             for (const line of adj.lines) {

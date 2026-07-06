@@ -118,7 +118,8 @@ async function ensureLedgerReports() {
 
     const reports = [
         { key: 'acc-shift-audit', label: 'Daily Shift Audit', url: '/hms/accounting/shifts', icon: 'ShieldCheck', sort: 10 },
-        { key: 'acc-cb', label: 'Cash / Bank Book', url: '/hms/accounting/cashbook', icon: 'Banknote', sort: 20 },
+        { key: 'acc-cb', label: 'Cash Book', url: '/hms/accounting/cashbook', icon: 'Banknote', sort: 20 },
+        { key: 'acc-bb', label: 'Bankbook', url: '/hms/accounting/bankbook', icon: 'CreditCard', sort: 25 },
         { key: 'acc-db', label: 'Day Book', url: '/hms/accounting/daybook', icon: 'BookOpen', sort: 30 },
         { key: 'acc-tb', label: 'Trial Balance', url: '/hms/accounting/trial-balance', icon: 'Activity', sort: 40 },
         { key: 'acc-pl', label: 'Profit & Loss A/c', url: '/hms/accounting/profit-and-loss', icon: 'TrendingUp', sort: 50 },
@@ -135,7 +136,7 @@ async function ensureLedgerReports() {
         } else {
             await prisma.menu_items.update({
                 where: { id: existing.id },
-                data: { sort_order: r.sort, parent_id: reportParent.id }
+                data: { label: r.label, url: r.url, icon: r.icon, sort_order: r.sort, parent_id: reportParent.id }
             });
         }
     }

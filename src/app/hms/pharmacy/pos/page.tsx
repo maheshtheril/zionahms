@@ -2,6 +2,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { POSClient } from "@/components/pharmacy/pos-client"
+import { AccountingWarningBanner } from "@/components/accounting/accounting-warning-banner"
 
 export const metadata = {
     title: 'POS Terminal | Pharmacy | Enterprise ERP'
@@ -133,6 +134,9 @@ export default async function POSPage() {
 
     return (
         <div className="fixed inset-0 z-[100] bg-slate-50 dark:bg-zinc-950 overflow-hidden flex flex-col">
+            <div className="shrink-0">
+                <AccountingWarningBanner />
+            </div>
             <POSClient products={formattedProducts} availableTaxes={availableTaxes} />
         </div>
     )

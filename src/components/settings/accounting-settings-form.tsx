@@ -185,9 +185,19 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
 
     // Styles
     const sectionClass = "bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm relative overflow-hidden";
-    const labelClass = "block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5";
     const inputClass = "w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all";
-    const subLabelClass = "text-xs text-slate-500";
+    const subLabelClass = "text-xs text-slate-500 mt-1 block";
+
+    const LabelWithStatus = ({ label, isConfigured }: { label: string, isConfigured: boolean }) => (
+        <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+            {isConfigured ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            ) : (
+                <AlertCircle className="w-4 h-4 text-amber-500" />
+            )}
+            {label}
+        </label>
+    );
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500 pb-24">
@@ -289,36 +299,36 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-1">
-                        <label className={labelClass}>Accounts Receivable</label>
+                        <LabelWithStatus label="Accounts Receivable (AR)" isConfigured={!!formData.ar_account_id} />
                         <select value={formData.ar_account_id} onChange={e => setFormData({ ...formData, ar_account_id: e.target.value })} className={inputClass}>
                             <option value="">Select Account...</option>
                             {accounts.filter(a => a.type === 'Asset' || a.type === 'Receivable').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className={subLabelClass}>Tracks money owed by customers/patients.</p>
+                        <span className={subLabelClass}>Tracks money owed by customers/patients.</span>
                     </div>
                     <div className="space-y-1">
-                        <label className={labelClass}>Default Income Account</label>
+                        <LabelWithStatus label="Sales Revenue Account" isConfigured={!!formData.sales_account_id} />
                         <select value={formData.sales_account_id} onChange={e => setFormData({ ...formData, sales_account_id: e.target.value })} className={inputClass}>
                             <option value="">Select Account...</option>
                             {accounts.filter(a => a.type === 'Revenue' || a.type === 'Income').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className={subLabelClass}>Default revenue category for invoices.</p>
+                        <span className={subLabelClass}>Default revenue category for invoices.</span>
                     </div>
                     <div className="space-y-1">
-                        <label className={labelClass}>Sales Discount Account</label>
+                        <LabelWithStatus label="Sales Discount Account" isConfigured={!!formData.sales_discount_account_id} />
                         <select value={formData.sales_discount_account_id} onChange={e => setFormData({ ...formData, sales_discount_account_id: e.target.value })} className={inputClass}>
                             <option value="">Select Account...</option>
                             {accounts.filter(a => a.type === 'Expense' || a.type === 'Revenue').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className={subLabelClass}>Tracks discounts given to customers.</p>
+                        <span className={subLabelClass}>Tracks discounts given to customers.</span>
                     </div>
                     <div className="space-y-1">
-                        <label className={labelClass}>Output Tax Account</label>
+                        <LabelWithStatus label="Output Tax Account" isConfigured={!!formData.output_tax_account_id} />
                         <select value={formData.output_tax_account_id} onChange={e => setFormData({ ...formData, output_tax_account_id: e.target.value })} className={inputClass}>
                             <option value="">Select Account...</option>
                             {accounts.filter(a => a.type === 'Liability').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className={subLabelClass}>Tax collected from customers (Liability).</p>
+                        <span className={subLabelClass}>Tax collected from customers (Liability).</span>
                     </div>
                     <div className="space-y-1">
                         <label className={labelClass}>Default Tax Mode (Billing)</label>
@@ -438,36 +448,36 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-1">
-                        <label className={labelClass}>Accounts Payable</label>
+                        <LabelWithStatus label="Accounts Payable (AP)" isConfigured={!!formData.ap_account_id} />
                         <select value={formData.ap_account_id} onChange={e => setFormData({ ...formData, ap_account_id: e.target.value })} className={inputClass}>
                             <option value="">Select Account...</option>
                             {accounts.filter(a => a.type === 'Liability' || a.type === 'Payable').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className={subLabelClass}>Tracks money owed to suppliers.</p>
+                        <span className={subLabelClass}>Tracks money owed to suppliers.</span>
                     </div>
                     <div className="space-y-1">
-                        <label className={labelClass}>Default Expense Account</label>
+                        <LabelWithStatus label="Purchase Account" isConfigured={!!formData.purchase_account_id} />
                         <select value={formData.purchase_account_id} onChange={e => setFormData({ ...formData, purchase_account_id: e.target.value })} className={inputClass}>
                             <option value="">Select Account...</option>
                             {accounts.filter(a => a.type === 'Expense').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className={subLabelClass}>Default cost category for bills.</p>
+                        <span className={subLabelClass}>Default cost category for bills.</span>
                     </div>
                     <div className="space-y-1">
-                        <label className={labelClass}>Purchase Discount Account</label>
+                        <LabelWithStatus label="Purchase Discount Account" isConfigured={!!formData.purchase_discount_account_id} />
                         <select value={formData.purchase_discount_account_id} onChange={e => setFormData({ ...formData, purchase_discount_account_id: e.target.value })} className={inputClass}>
                             <option value="">Select Account...</option>
                             {accounts.filter(a => a.type === 'Revenue' || a.type === 'Expense').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className={subLabelClass}>Tracks discounts received from vendors.</p>
+                        <span className={subLabelClass}>Tracks discounts received from vendors.</span>
                     </div>
                     <div className="space-y-1">
-                        <label className={labelClass}>Input Tax Account</label>
+                        <LabelWithStatus label="Input Tax Account" isConfigured={!!formData.input_tax_account_id} />
                         <select value={formData.input_tax_account_id} onChange={e => setFormData({ ...formData, input_tax_account_id: e.target.value })} className={inputClass}>
                             <option value="">Select Account...</option>
                             {accounts.filter(a => a.type === 'Asset' || a.type === 'Liability').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className={subLabelClass}>Tax paid to vendors (Claimable).</p>
+                        <span className={subLabelClass}>Tax paid to vendors (Claimable).</span>
                     </div>
                 </div>
             </div>
@@ -483,28 +493,28 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     <div className="space-y-1">
-                        <label className={labelClass}>Inventory Asset</label>
+                        <LabelWithStatus label="Inventory Asset" isConfigured={!!formData.inventory_asset_account_id} />
                         <select value={formData.inventory_asset_account_id} onChange={e => setFormData({ ...formData, inventory_asset_account_id: e.target.value })} className={inputClass}>
                             <option value="">Select Account...</option>
                             {accounts.filter(a => a.type === 'Asset').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className={subLabelClass}>Value of stock on hand.</p>
+                        <span className={subLabelClass}>Value of stock on hand.</span>
                     </div>
                     <div className="space-y-1">
-                        <label className={labelClass}>Cost of Goods Sold (COGS)</label>
+                        <LabelWithStatus label="Cost of Goods Sold (COGS)" isConfigured={!!formData.cogs_account_id} />
                         <select value={formData.cogs_account_id} onChange={e => setFormData({ ...formData, cogs_account_id: e.target.value })} className={inputClass}>
                             <option value="">Select Account...</option>
                             {accounts.filter(a => a.type === 'Expense' || a.type === 'Cost of Goods Sold').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className={subLabelClass}>Expense recognized when stock is sold.</p>
+                        <span className={subLabelClass}>Expense recognized when stock is sold.</span>
                     </div>
                     <div className="space-y-1">
-                        <label className={labelClass}>Stock Adjustment</label>
+                        <LabelWithStatus label="Stock Adjustment" isConfigured={!!formData.stock_adjustment_account_id} />
                         <select value={formData.stock_adjustment_account_id} onChange={e => setFormData({ ...formData, stock_adjustment_account_id: e.target.value })} className={inputClass}>
                             <option value="">Select Account...</option>
                             {accounts.filter(a => a.type === 'Expense' || a.type === 'Cost of Goods Sold').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className={subLabelClass}>For shrinkage, damage, or corrections.</p>
+                        <span className={subLabelClass}>For shrinkage, damage, or corrections.</span>
                     </div>
                 </div>
             </div>

@@ -22,6 +22,17 @@ const DynamicEditor = dynamic(
     }
 );
 
+import { AccountingWarningBanner } from "@/components/accounting/accounting-warning-banner";
+
 export default function BillingClientEntry(props: any) {
-    return <DynamicEditor {...props} />;
+    return (
+        <div className="flex flex-col h-screen overflow-hidden">
+            <div className="shrink-0 z-50">
+                <AccountingWarningBanner />
+            </div>
+            <div className="flex-1 overflow-hidden">
+                <DynamicEditor {...props} />
+            </div>
+        </div>
+    );
 }

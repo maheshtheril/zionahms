@@ -323,7 +323,7 @@ export function DetailedLedgerReport({
                                                     <ChevronRight className={cn("h-4 w-4 text-slate-400 transition-transform", isExpanded && "rotate-90")} />
                                                 </td>
                                                 <td className="px-5 py-3 text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">{format(new Date(e.created_at || e.date), 'dd MMM yyyy')}</td>
-                                                <td className="px-5 py-3 text-sm font-bold text-slate-700 dark:text-slate-300">{e.ref}</td>
+                                                <td className="px-5 py-3 text-sm font-bold text-slate-700 dark:text-slate-300">{e.ref?.length > 15 && e.ref?.includes('-') ? `${e.ref.split('-')[0]}-...${e.ref.slice(-6).toUpperCase()}` : (e.ref || '-')}</td>
                                                 <td className="px-5 py-3 text-sm font-semibold text-slate-900 dark:text-white uppercase">
                                                     {m.particulars}
                                                     {type === 'daybook' && (

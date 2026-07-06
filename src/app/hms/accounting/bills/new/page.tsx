@@ -29,6 +29,8 @@ import { scanInvoiceFromUrl } from "@/app/actions/scan-invoice";
 import { getSuppliers, getProductsPremium } from "@/app/actions/inventory";
 import { useLocalization } from "@/contexts/localization-context";
 
+import { AccountingWarningBanner } from "@/components/accounting/accounting-warning-banner";
+
 export default function NewPurchaseBillPage() {
     const { currencySymbol } = useLocalization();
     const router = useRouter();
@@ -170,6 +172,7 @@ export default function NewPurchaseBillPage() {
 
     return (
         <div className="p-6 space-y-6 max-w-7xl mx-auto">
+            <AccountingWarningBanner />
             {/* Header section with Glassmorphism */}
             <div className="flex items-center justify-between mb-8">
                 <div className="space-y-1">

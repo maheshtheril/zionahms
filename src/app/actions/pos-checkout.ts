@@ -207,6 +207,12 @@ export async function processPOSCheckout(data: POSCheckoutPayload) {
                     await NotificationService.sendInvoiceEmail(result.id, tenantId).catch(console.error);
                 }
             }
+
+            // [ACCOUNTING INTEGRATION] Post POS Sale to General Ledger instantly
+            const { AccountingService } = await import('@/lib/services/accounting');
+            await AccountingService.postSalesInvoice(result.id, tenantId, companyId, session.user.id)
+                .catch(err => console.error("POS Accounting Posting Error:", err));
+
         } catch (autoErr) {
             console.error("POS Automation failed (non-blocking):", autoErr);
         }
