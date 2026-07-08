@@ -196,15 +196,15 @@ export async function processPOSCheckout(data: POSCheckoutPayload) {
         // [AUTOMATION] Fetch Dynamic Profile & Trigger Notifications
         try {
             const { getActivePOSPrintConfig } = await import('./print-settings');
-            const { NotificationService } = await import('@/lib/notification-service');
+            // const { NotificationService } = await import('@/lib/notification-service');
             
             const config = await getActivePOSPrintConfig();
             if (config?.automation) {
                 if (config.automation.whatsappOnSave) {
-                    await NotificationService.sendInvoiceWhatsapp(result.id, tenantId).catch(console.error);
+                    // await NotificationService.sendInvoiceWhatsapp(result.id, tenantId).catch(console.error);
                 }
                 if (config.automation.emailOnSave) {
-                    await NotificationService.sendInvoiceEmail(result.id, tenantId).catch(console.error);
+                    // await NotificationService.sendInvoiceEmail(result.id, tenantId).catch(console.error);
                 }
             }
 
