@@ -1337,20 +1337,25 @@ export async function getPDFConfig(providedCompanyId: string, providedTenantId: 
         console.log(`[getPDFConfig] Resolving FIDELITY for Template: ${activeTemplate.name} (${activeTemplate.id})`);
     }
 
-    const hasKeys = (obj: any) => obj && typeof obj === 'object' && Object.keys(obj).length > 0;
+    const isCoordinateMap = (obj: any) => {
+        if (!obj || typeof obj !== 'object') return false;
+        // Check if any key holds an object with typical coordinate properties
+        return Object.values(obj).some((v: any) => v && typeof v === 'object' && ('x' in v || 'y' in v || 'showSection' in v || 'qtyX' in v));
+    };
+
     let coordinates: Record<string, any> = {};
     
-    if (hasKeys(activeTemplate?.config?.coordinates)) {
+    if (isCoordinateMap(activeTemplate?.config?.coordinates)) {
         coordinates = activeTemplate.config.coordinates;
     } 
-    else if (hasKeys(activeTemplate?.config)) {
+    else if (isCoordinateMap(activeTemplate?.config)) {
         coordinates = activeTemplate.config;
     } 
     
     let source = 'modern_db';
     // FINAL SAFETY: If we ended up with zero coordinates (even from a saved DB template),
     // we MUST fallback to standard defaults to prevent "Blank Page" syndrome.
-    if (!hasKeys(coordinates)) {
+    if (!isCoordinateMap(coordinates)) {
         console.warn(`[getPDFConfig] RESOLUTION-FAILURE: No valid coordinates found for ${normUsage}. Injecting Static Defaults.`);
         coordinates = getUsageDefault(normUsage) as Record<string, any>;
         source = 'static_fallback';
