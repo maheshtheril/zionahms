@@ -10,7 +10,7 @@ const DEFAULT_CONFIG = {
         previewBeforePrint: true,
         whatsappOnSave: false,
         emailOnSave: false,
-        actionAfterSave: 'list'
+        actionAfterSave: 'success_screen'
     },
     columns: {
         showTax: true,

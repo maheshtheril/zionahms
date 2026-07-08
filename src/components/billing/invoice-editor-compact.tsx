@@ -1334,7 +1334,7 @@ export function CompactInvoiceEditor({
           }
         }
 
-        const actionAfterSave = printProfile?.automation?.actionAfterSave || 'list';
+        const actionAfterSave = printProfile?.automation?.actionAfterSave || 'success_screen';
 
         if (!onClose) {
           if (actionAfterSave === 'list') {

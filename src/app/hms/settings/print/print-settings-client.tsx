@@ -25,7 +25,20 @@ export function PrintSettingsClient({ templates }: { templates: any }) {
         
         // Ensure default structure exists
         const config = tpl.config || {};
-        const automation = config.automation || { autoPrint: false, previewBeforePrint: true, whatsappOnSave: false, emailOnSave: false };
+        const baseAutomation = config.automation || {};
+        const automation = { 
+            autoPrint: false, 
+            previewBeforePrint: true, 
+            whatsappOnSave: false, 
+            emailOnSave: false, 
+            actionAfterSave: 'success_screen',
+            ...baseAutomation 
+        };
+        // Ensure actionAfterSave exists even if baseAutomation was missing it
+        if (!automation.actionAfterSave) {
+            automation.actionAfterSave = 'success_screen';
+        }
+        
         const columns = config.columns || { showTax: true, showDiscount: true, showUOM: true, showHsn: false };
         const advanced = config.advanced || { showBankDetails: false, showQRCode: false, showTerms: false, showSignature: false };
         
