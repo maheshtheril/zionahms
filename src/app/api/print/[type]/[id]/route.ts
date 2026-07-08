@@ -214,6 +214,7 @@ export async function GET(
         if (!data) return new NextResponse("Document Data Not Found", { status: 404 });
 
         const autoPrint = req.nextUrl.searchParams.get('autoPrint') === 'true';
+        const templateId = req.nextUrl.searchParams.get('templateId') || undefined;
 
         // 3. GENERATE WORLD-CLASS PDF
         const pdfBase64 = await generateUniversalPDF(
@@ -221,7 +222,9 @@ export async function GET(
             data,
             companyData,
             data.branch_id || session.user.branchId as string,
-            autoPrint
+            autoPrint,
+            undefined, // configOverride
+            templateId
         );
 
         const pdfBuffer = Buffer.from(pdfBase64, 'base64');

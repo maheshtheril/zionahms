@@ -14,7 +14,8 @@ export async function generateUniversalPDF(
     company: any,
     branchId?: string,
     autoPrint: boolean = false,
-    configOverride?: any
+    configOverride?: any,
+    templateId?: string
 ): Promise<string> {
     try {
         // ============================================================
@@ -223,7 +224,7 @@ export async function generateUniversalPDF(
         // ============================================================
 
         console.log(`[ENGINE] Generating ${usage} for ${data.id || 'new document'}`);
-        let config = configOverride || await getPDFConfig(data.company_id || company.id, data.tenant_id || company.tenant_id, usage, branchId);
+        let config = configOverride || await getPDFConfig(data.company_id || company.id, data.tenant_id || company.tenant_id, usage, branchId, templateId);
         const hmsSettingsRes = await getHMSSettings();
         const hmsSettings = hmsSettingsRes?.success ? hmsSettingsRes.settings : null;
 

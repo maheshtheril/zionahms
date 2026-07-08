@@ -19,6 +19,7 @@ import { generateConsultationInvoice, generateRegistrationInvoice } from "@/app/
 import { PatientPaymentDialog } from "@/components/hms/billing/patient-payment-dialog";
 import { getPatientById } from "@/app/actions/patient-v10"
 import { CreditCard as CardIcon, X, Printer, Plus, Receipt } from "lucide-react"
+import { PrintFormatSelector } from "@/components/print/print-format-selector"
 import { OpSlipDialog } from "@/components/hms/reception/op-slip-dialog"
 import { DEFAULT_REGISTRATION_FEE } from "@/lib/hms-constants"
 import { useLocalization } from "@/contexts/localization-context";
@@ -814,15 +815,18 @@ export function AppointmentForm({
                                 </div>
                                 {/* Quick-print button — only shown when editing an existing appointment */}
                                 {editingAppointment?.id && (
-                                    <button
-                                        type="button"
-                                        title="Print OP Slip"
-                                        onClick={() => window.open(`/api/print/appointment/${editingAppointment.id}?autoPrint=true`, '_blank')}
-                                        className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-md shadow-indigo-500/20"
-                                    >
-                                        <Printer className="h-3.5 w-3.5" />
-                                        Print
-                                    </button>
+                                    <div className="flex gap-2 items-center">
+                                        <button
+                                            type="button"
+                                            title="Print OP Slip"
+                                            onClick={() => window.open(`/api/print/appointment/${editingAppointment.id}?autoPrint=true`, '_blank')}
+                                            className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-md shadow-indigo-500/20"
+                                        >
+                                            <Printer className="h-3.5 w-3.5" />
+                                            Print
+                                        </button>
+                                        <PrintFormatSelector usage="op_slip" documentId={editingAppointment.id} buttonLabel="Options" className="rounded-xl font-black text-[10px] uppercase tracking-widest bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 shadow-sm" />
+                                    </div>
                                 )}
                             </div>
                         </div>

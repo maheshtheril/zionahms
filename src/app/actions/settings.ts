@@ -1289,7 +1289,7 @@ export async function getUnifiedPrintConfig(usage: string, branchId?: string) {
     }
 }
 
-export async function getPDFConfig(providedCompanyId: string, providedTenantId: string, usage: string = 'sale_bill', providedBranchId?: string) {
+export async function getPDFConfig(providedCompanyId: string, providedTenantId: string, usage: string = 'sale_bill', providedBranchId?: string, templateId?: string) {
     noStore();
     const cleanCompanyId = providedCompanyId === 'undefined' ? undefined : providedCompanyId;
     const cleanTenantId = providedTenantId === 'undefined' ? undefined : providedTenantId;
@@ -1311,8 +1311,8 @@ export async function getPDFConfig(providedCompanyId: string, providedTenantId: 
     // 1. Filter templates for this specific usage
     const usageTemplates = settings.templates?.filter((t: any) => (t.usage || 'sale_bill') === normUsage) || [];
     
-    // 2. Resolve Active ID: Explicit Mapping > Default Flag > Most Recent > 'default'
-    let activeId = settings.usageDefaults?.[normUsage];
+    // 2. Resolve Active ID: Explicit templateId > Explicit Mapping > Default Flag > Most Recent > 'default'
+    let activeId = templateId || settings.usageDefaults?.[normUsage];
     
     if (!activeId || !usageTemplates.some(t => t.id === activeId)) {
         const bestTemplate = usageTemplates.sort((a, b) => {

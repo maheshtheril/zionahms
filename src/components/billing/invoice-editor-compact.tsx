@@ -9,7 +9,10 @@ import {
 } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import { QRCodeSVG } from 'qrcode.react'
-import { createInvoice, updateInvoice, cancelInvoice, restoreInvoice, createQuickPatient, getPatientBalance, getPatientLedger, getNextVoucherNumber, shareInvoiceWhatsapp } from '@/app/actions/billing'
+import { createInvoice, updateInvoice, cancelInvoice, restoreInvoice, createQuickPatient, getNextVoucherNumber } from '@/app/actions/billing'
+import { PrintFormatSelector } from "@/components/print/print-format-selector";
+import { shareInvoiceWhatsapp } from "@/app/actions/whatsapp";
+import { getPatientBalance, getPatientLedger } from "@/app/actions/accounting";
 import { getInitialInvoiceData, getPatientActiveAppointmentForBilling } from "@/app/actions/clinical"
 import { getActiveGeneralBillingConfig } from "@/app/actions/print-settings";
 import { NotificationService } from "@/lib/notification-service";
@@ -1701,7 +1704,7 @@ export function CompactInvoiceEditor({
               {isReturn ? "Credit Note Node Synced" : `Serial: ${initialInvoice?.invoice_number || 'NEW_ENTRY'} | Ledger Node Synced`}
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 w-full mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 w-full mb-12">
               {/* PRINT RECEIPT */}
               <a
                 href={`/api/invoice-printer/${lastSavedId}?autoPrint=true`}
@@ -1717,6 +1720,21 @@ export function CompactInvoiceEditor({
                   {isReturn ? "CREDIT NOTE" : "RECEIPT"}
                 </p>
               </a>
+
+              {/* PRINT OPTIONS */}
+              <PrintFormatSelector usage="sale_bill" documentId={lastSavedId}>
+                <button
+                  className="group p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-indigo-500 transition-all text-center w-full"
+                >
+                  <div className="bg-indigo-600/20 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 text-indigo-600 dark:text-indigo-400 shadow-xl shadow-indigo-600/10 group-hover:scale-110 transition-transform">
+                    <Printer className="h-6 w-6" />
+                  </div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Alternate</p>
+                  <p className="text-[11px] font-black text-slate-900 dark:text-white mt-1">
+                    FORMATS
+                  </p>
+                </button>
+              </PrintFormatSelector>
 
               {/* WHATSAPP RECEIPT */}
               <button
