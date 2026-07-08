@@ -1334,10 +1334,17 @@ export function CompactInvoiceEditor({
           }
         }
 
-        // [USER REQUEST] Bypass popup and redirect to billing dashboard directly
+        const actionAfterSave = printProfile?.automation?.actionAfterSave || 'list';
+
         if (!onClose) {
-          window.location.href = '/hms/billing';
-          return;
+          if (actionAfterSave === 'list') {
+            window.location.href = '/hms/billing';
+            return;
+          } else if (actionAfterSave === 'new_bill') {
+            window.location.href = '/hms/billing/new';
+            return;
+          }
+          // if 'success_screen', fall through to setIsSuccess(true)
         }
 
         setIsSuccess(true);

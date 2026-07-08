@@ -181,6 +181,19 @@ export function PrintSettingsClient({ templates }: { templates: any }) {
                             <div className="space-y-4">
                                 <h4 className="text-sm font-bold text-slate-500 uppercase tracking-widest border-b pb-2">Post-Save Automation</h4>
                                 
+                                <div className="flex flex-col gap-2 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+                                    <Label className="text-slate-700 dark:text-slate-300">Action After Save</Label>
+                                    <select 
+                                        className="flex h-10 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-900 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus:ring-indigo-500"
+                                        value={editingConfig.config.automation.actionAfterSave || 'list'}
+                                        onChange={(e) => updateAutomation('actionAfterSave', e.target.value)}
+                                    >
+                                        <option value="success_screen">Show Success Overlay (Default)</option>
+                                        <option value="new_bill">Ready for New Bill (Fast)</option>
+                                        <option value="list">Return to Bill List</option>
+                                    </select>
+                                </div>
+                                
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <Power className="w-4 h-4 text-slate-400" />

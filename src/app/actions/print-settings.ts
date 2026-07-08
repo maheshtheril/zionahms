@@ -9,7 +9,8 @@ const DEFAULT_CONFIG = {
         autoPrint: false,
         previewBeforePrint: true,
         whatsappOnSave: false,
-        emailOnSave: false
+        emailOnSave: false,
+        actionAfterSave: 'list'
     },
     columns: {
         showTax: true,
