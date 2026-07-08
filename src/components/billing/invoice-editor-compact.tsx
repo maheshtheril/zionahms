@@ -5,7 +5,7 @@ import {
   Loader2, CreditCard, Banknote, Smartphone, Maximize2,
   Minimize2, Check, QrCode, Clock, ArrowRight, Activity, Package, Landmark,
   Copy, AlertTriangle, Info, SidebarOpen, SidebarClose, FlaskConical, Zap,
-  ShieldCheck, CheckCircle2, PlusCircle, RefreshCcw, RotateCcw, Hash
+  ShieldCheck, CheckCircle2, PlusCircle, RefreshCcw, RotateCcw, Hash, Printer
 } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import { QRCodeSVG } from 'qrcode.react'
