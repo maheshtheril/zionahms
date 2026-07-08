@@ -73,7 +73,7 @@ export function PrintFormatSelector({
                     </Button>
                 )}
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 z-[200]">
+            <DropdownMenuContent align="end" className="w-56 z-[400]">
                 {loading ? (
                     <div className="p-4 text-center text-xs text-slate-500">Loading formats...</div>
                 ) : templates.length === 0 ? (
