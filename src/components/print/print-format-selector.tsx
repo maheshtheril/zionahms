@@ -79,22 +79,38 @@ export function PrintFormatSelector({
                 ) : templates.length === 0 ? (
                     <div className="p-4 text-center text-xs text-slate-500">No custom formats available.</div>
                 ) : (
-                    templates.map((template) => (
-                        <DropdownMenuItem
-                            key={template.id}
-                            onClick={() => handlePrint(template.id)}
-                            className="flex flex-col items-start gap-1 p-3 cursor-pointer focus:bg-slate-100 dark:focus:bg-slate-800"
-                        >
-                            <div className="flex items-center justify-between w-full">
-                                <span className="font-semibold text-sm">{template.name}</span>
-                                {template.is_default && (
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full">
-                                        Default
-                                    </span>
-                                )}
-                            </div>
-                        </DropdownMenuItem>
-                    ))
+                    templates.map((template) => {
+                        const typeMap: Record<string, string> = {
+                            'sale_bill': 'sale_bill',
+                            'op_slip': 'appointment',
+                            'lab_report': 'lab_report',
+                            'payment_voucher': 'payment_voucher'
+                        };
+                        const printType = typeMap[usage] || usage;
+                        
+                        return (
+                            <DropdownMenuItem
+                                key={template.id}
+                                asChild
+                            >
+                                <a 
+                                    href={`/api/print/${printType}/${documentId}?templateId=${template.id}&autoPrint=true`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex flex-col items-start gap-1 p-3 cursor-pointer focus:bg-slate-100 dark:focus:bg-slate-800 w-full"
+                                >
+                                    <div className="flex items-center justify-between w-full">
+                                        <span className="font-semibold text-sm">{template.name}</span>
+                                        {template.is_default && (
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full">
+                                                Default
+                                            </span>
+                                        )}
+                                    </div>
+                                </a>
+                            </DropdownMenuItem>
+                        );
+                    })
                 )}
             </DropdownMenuContent>
         </DropdownMenu>
