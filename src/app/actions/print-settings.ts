@@ -79,12 +79,18 @@ export async function getPrintTemplates() {
             orderBy: [{ usage: 'asc' }, { name: 'asc' }]
         });
 
-        const grouped = {
-            sale_bill: templates.filter(t => t.usage === 'sale_bill'),
-            pos_bill: templates.filter(t => t.usage === 'pos_bill')
-        };
+        const grouped: Record<string, typeof templates> = {};
+        for (const tpl of templates) {
+            if (!grouped[tpl.usage]) grouped[tpl.usage] = [];
+            grouped[tpl.usage].push(tpl);
+        }
+        // Ensure all standard usages exist as empty arrays
+        const allUsages = ['sale_bill', 'pos_bill', 'purchase_receipt', 'op_slip', 'lab_report', 'prescription', 'payment_voucher', 'shift_close', 'sales_return', 'purchase_return'];
+        for (const u of allUsages) {
+            if (!grouped[u]) grouped[u] = [];
+        }
 
-        return { success: true, data: grouped };
+        return { success: true, data: grouped, all: templates };
     } catch (e: any) {
         console.error("Failed to get print templates:", e);
         return { success: false, error: e.message };
@@ -118,7 +124,7 @@ export async function setPrintTemplateActive(id: string, usage: string) {
     }
 }
 
-export async function updatePrintTemplateConfig(id: string, newConfig: any) {
+export async function updatePrintTemplateConfig(id: string, newConfig: any, newMetadata?: any) {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) {
         return { success: false, error: "Unauthorized" };
@@ -127,7 +133,10 @@ export async function updatePrintTemplateConfig(id: string, newConfig: any) {
     try {
         await prisma.hms_print_template.update({
             where: { id, tenant_id: session.user.tenantId, company_id: session.user.companyId },
-            data: { config: newConfig }
+            data: { 
+                config: newConfig,
+                ...(newMetadata !== undefined ? { metadata: newMetadata } : {})
+            }
         });
         revalidatePath('/hms/settings/print');
         return { success: true };
@@ -179,5 +188,65 @@ export async function getActiveGeneralBillingConfig() {
         return { source: "stable", pageSizeSettings: { format: "a4" }, ...DEFAULT_CONFIG };
     } catch (e) {
         return { source: "stable", pageSizeSettings: { format: "a4" }, ...DEFAULT_CONFIG };
+    }
+}
+
+export async function createPrintTemplate({ name, usage, config, metadata }: { name: string; usage: string; config: any; metadata?: any }) {
+    const session = await auth();
+    if (!session?.user?.companyId || !session?.user?.tenantId) {
+        return { success: false, error: 'Unauthorized' };
+    }
+    const { companyId, tenantId } = session.user;
+
+    try {
+        const existing = await prisma.hms_print_template.findFirst({
+            where: { tenant_id: tenantId, company_id: companyId, usage, name }
+        });
+        if (existing) {
+            await prisma.hms_print_template.update({
+                where: { id: existing.id },
+                data: { config, ...(metadata ? { metadata } : {}) }
+            });
+            revalidatePath('/hms/settings/print');
+            return { success: true, id: existing.id };
+        }
+        const hasDefault = await prisma.hms_print_template.findFirst({
+            where: { tenant_id: tenantId, company_id: companyId, usage, is_default: true }
+        });
+        const tpl = await prisma.hms_print_template.create({
+            data: {
+                tenant_id: tenantId,
+                company_id: companyId,
+                name,
+                usage,
+                config,
+                is_default: !hasDefault,
+                is_active: true,
+                ...(metadata ? { metadata } : {})
+            }
+        });
+        revalidatePath('/hms/settings/print');
+        return { success: true, id: tpl.id };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}
+
+export async function deletePrintTemplate(id: string) {
+    const session = await auth();
+    if (!session?.user?.companyId || !session?.user?.tenantId) {
+        return { success: false, error: 'Unauthorized' };
+    }
+    try {
+        const tpl = await prisma.hms_print_template.findFirst({
+            where: { id, tenant_id: session.user.tenantId, company_id: session.user.companyId }
+        });
+        if (!tpl) return { success: false, error: 'Template not found' };
+        if (tpl.is_default) return { success: false, error: 'Cannot delete the active default template. Set another as default first.' };
+        await prisma.hms_print_template.delete({ where: { id } });
+        revalidatePath('/hms/settings/print');
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
     }
 }
