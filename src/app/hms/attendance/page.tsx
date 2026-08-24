@@ -35,6 +35,7 @@ export default async function AttendancePage() {
                     </div>
                     <h1 className="text-4xl font-black text-foreground tracking-tight">Staff Attendance</h1>
                     <p className="text-muted-foreground mt-2 text-sm">Real-time shift management and tactical roster synchronization.</p>
+                </div>
                 <div className="flex items-center gap-4">
 
                     <FaceCheckinModal />

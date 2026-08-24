@@ -100,6 +100,7 @@ export function DoctorDashboardClient({ doctorName, doctorId, appointments, stat
                                 <span className="ml-2 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-widest">Clinical Session v2.0</span>
                             </p>
                         </div>
+                    </div>
 
                     <div className="flex items-center gap-3">
 
