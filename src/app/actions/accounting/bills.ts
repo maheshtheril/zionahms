@@ -24,7 +24,8 @@ export async function upsertPurchaseInvoice(data: any) {
                 invoice_date: data.invoiceDate ? new Date(data.invoiceDate) : new Date(),
                 due_date: data.dueDate ? new Date(data.dueDate) : null,
                 currency: data.currency || "INR",
-                total_amount: data.totalAmount,
+                total_amount: Math.round(Number(data.subtotal) + Number(data.taxTotal)),
+                round_off_amount: Math.round(Number(data.subtotal) + Number(data.taxTotal)) - (Number(data.subtotal) + Number(data.taxTotal)),
                 subtotal: data.subtotal,
                 tax_total: data.taxTotal,
                 status: (data.status || "posted") as any, // Default to posted for auto-journaling

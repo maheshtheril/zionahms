@@ -15,7 +15,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from "sonner"
 import { deleteUserPermanently } from '@/app/actions/users'
 
 interface DeleteUserButtonProps {
@@ -27,33 +27,20 @@ export function DeleteUserButton({ userId, userName }: DeleteUserButtonProps) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const router = useRouter()
-    const { toast } = useToast()
 
     const handleDelete = async () => {
         setLoading(true)
         try {
             const result = await deleteUserPermanently(userId)
             if (result.error) {
-                toast({
-                    variant: "destructive",
-                    title: "Cannot Delete User",
-                    description: result.error,
-                })
+                toast.error("Cannot Delete User", { description: result.error })
                 setOpen(false)
             } else {
-                toast({
-                    className: "bg-green-600 text-white border-green-700",
-                    title: "User Deleted",
-                    description: `${userName} has been permanently deleted.`,
-                })
+                toast.success("User Deleted", { description: `${userName} has been permanently deleted.` })
                 router.push('/settings/users')
             }
         } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: "An unexpected error occurred.",
-            })
+            toast.error("Error", { description: "An unexpected error occurred." })
         } finally {
             setLoading(false)
         }

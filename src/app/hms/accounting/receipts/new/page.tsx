@@ -10,8 +10,7 @@ import {
     Receipt, FileText, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { useToast } from '@/components/ui/use-toast';
-import { Toaster } from '@/components/ui/toaster';
+import { toast } from "sonner";
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -21,7 +20,7 @@ import { useLocalization } from "@/contexts/localization-context";
 export default function NewReceiptPage() {
     const { currencySymbol } = useLocalization();
     const router = useRouter();
-    const { toast } = useToast();
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [classicMode, setClassicMode] = useState(false);
 
@@ -39,15 +38,11 @@ export default function NewReceiptPage() {
         const res = await upsertPayment(payload);
 
         if (res.error) {
-            toast({ title: "Failed to Save", description: res.error, variant: "destructive" });
+            toast.error("Failed to Save", { description: res.error });
             setIsSubmitting(false);
             return false;
         } else {
-            toast({
-                title: "Receipt Saved",
-                description: `Successfully recorded receipt for {currencySymbol}${payload.amount}`,
-                className: "bg-emerald-900 border-emerald-800 text-white"
-            });
+            toast.success("Receipt Saved", { description: `Successfully recorded receipt for {currencySymbol}${payload.amount}` });
 
             if (!classicMode) {
                 // Small delay for user to see success
@@ -60,11 +55,11 @@ export default function NewReceiptPage() {
     const handleSubmit = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         if (!partnerId) {
-            toast({ title: "Missing Payer", description: "Please select who the receipt is from.", variant: "destructive" });
+            toast.error("Missing Payer", { description: "Please select who the receipt is from." });
             return;
         }
         if (!amount || Number(amount) <= 0) {
-            toast({ title: "Invalid Amount", description: "Please enter a positive amount.", variant: "destructive" });
+            toast.error("Invalid Amount", { description: "Please enter a positive amount." });
             return;
         }
 
@@ -100,7 +95,7 @@ export default function NewReceiptPage() {
 
     return (
         <div className="min-h-screen bg-neutral-950 text-neutral-200 font-sans selection:bg-emerald-500/30 relative overflow-hidden">
-            <Toaster />
+
 
             {/* Ambient Background Effects */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />

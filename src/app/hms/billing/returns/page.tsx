@@ -6,7 +6,7 @@ import { getSalesReturns } from '@/app/actions/returns';
 import { getInvoiceByNumber } from '@/app/actions/billing';
 import { ArrowLeft, Loader2, RotateCcw, Calendar, Search, ArrowRight, FileText, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from "sonner";
 import Link from 'next/link';
 import { useLocalization } from "@/contexts/localization-context";
 
@@ -48,7 +48,7 @@ export default function SalesReturnsPage() {
         load();
     }, []);
 
-    const { toast } = useToast();
+
     const handleBillSearch = async () => {
         if (!billSearch) return;
         setIsSearchingBill(true);
@@ -57,10 +57,10 @@ export default function SalesReturnsPage() {
             if (res.success && res.data) {
                 router.push(`/hms/billing/${res.data}?action=return`);
             } else {
-                toast({ title: "Not Found", description: "Could not find a bill with that number.", variant: "destructive" });
+                toast.error("Not Found", { description: "Could not find a bill with that number." });
             }
         } catch (e) {
-            toast({ title: "Error", description: "Search failed", variant: "destructive" });
+            toast.error("Error", { description: "Search failed" });
         } finally {
             setIsSearchingBill(false);
         }

@@ -121,11 +121,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
     const addItem = () => {
         if (!selectedProduct) return;
         if (quantity <= 0) {
-            toast({
-                title: "Invalid Quantity",
-                description: "Quantity must be greater than 0",
-                variant: "destructive"
-            })
+            toast.error("Invalid Quantity", { description: "Quantity must be greater than 0" })
             return
         }
 
@@ -153,9 +149,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
         setAvailableBatches([])
         setNotes("")
         setSearchQuery("")
-        toast({
-            description: "Item added to session list",
-        })
+        toast.success("Item added to session list")
     }
 
     const removeItem = (id: string) => {
@@ -165,11 +159,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (cart.length === 0) {
-            toast({
-                title: "Cart Empty",
-                description: "Please add at least one item",
-                variant: "destructive"
-            })
+            toast.error("Cart Empty", { description: "Please add at least one item" })
             return
         }
 
@@ -189,16 +179,10 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
             })
 
             if (result.error) {
-                toast({
-                    title: "Error",
-                    description: result.error,
-                    variant: "destructive"
-                })
+                toast.error("Error", { description: result.error })
                 setIsSubmitting(false)
             } else {
-                toast({
-                    title: "Charges Posted",
-                    description: "Stock consumed and charges added to billing.",
+                toast.error("Charges Posted", { description: "Stock consumed and charges added to billing.",
                 })
 
                 await loadHistory()
@@ -207,11 +191,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                 if (onSuccess && !isModal) onSuccess()
             }
         } catch (error) {
-            toast({
-                title: "Error",
-                description: "An unexpected error occurred",
-                variant: "destructive"
-            })
+            toast.success("Error", { description: "An unexpected error occurred" })
             setIsSubmitting(false)
         }
     }
@@ -327,7 +307,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                                                                 >
                                                                     <div className="flex-1">
                                                                         <div className="font-black text-[11px] uppercase text-slate-900 group-aria-selected:text-indigo-600 transition-colors">{item.label}</div>
-                                                                        <div className="text-[9px] text-slate-500 font-bold mt-0.5 uppercase tracking-tighter">{item.uom} • Stock: {item.totalStock}</div>
+                                                                        <div className="text-[9px] text-slate-500 font-bold mt-0.5 uppercase tracking-tighter">{item.uom} ΓÇó Stock: {item.totalStock}</div>
                                                                     </div>
                                                                     <ArrowRight className="h-3 w-3 text-slate-200 group-aria-selected:text-indigo-400" />
                                                                 </CommandItem>
@@ -480,7 +460,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                                                                         >
                                                                             <div>
                                                                                 <div className="text-[10px] font-black text-slate-900 group-hover:text-indigo-600">{b.batch_no}</div>
-                                                                                <div className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Stock: {Number(b.qty_on_hand)} • Exp: {b.expiry_date ? format(new Date(b.expiry_date), 'dd/MM/yy') : 'N/A'}</div>
+                                                                                <div className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Stock: {Number(b.qty_on_hand)} ΓÇó Exp: {b.expiry_date ? format(new Date(b.expiry_date), 'dd/MM/yy') : 'N/A'}</div>
                                                                             </div>
                                                                             <ArrowRight className="h-3 w-3 text-slate-200 group-hover:text-indigo-400" />
                                                                         </button>
@@ -627,14 +607,10 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                                                     setIsConfirming(event.id);
                                                     const res = await confirmNursingConsumption(encounterId, event.moveIds);
                                                     if (res.success) {
-                                                        toast({ title: "Clinical Clearance Complete", description: "Charge posted to final billing." });
+                                                        toast.error("Clinical Clearance Complete", { description: "Charge posted to final billing." });
                                                         loadHistory();
                                                     } else {
-                                                        toast({ 
-                                                            title: "Confirmation Failed", 
-                                                            description: res.error || "Could not confirm items.", 
-                                                            variant: "destructive" 
-                                                        });
+                                                        toast.success("Confirmation Failed", { description: res.error || "Could not confirm items." });
                                                     }
                                                     setIsConfirming(null);
                                                 }}

@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Megaphone, AlertTriangle, ShieldAlert, Zap, Timer } from 'lucide-react'
 import { sendBroadcast } from '@/app/actions/broadcast'
-import { toast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 
 export function BroadcastCenter() {
     const [open, setOpen] = useState(false)
@@ -25,7 +25,7 @@ export function BroadcastCenter() {
 
     const handleSubmit = async () => {
         if (!message) {
-            toast({ variant: "destructive", title: "Missing Signal", description: "Please enter the broadcast message." })
+            toast.error("Missing Signal", { description: "Please enter the broadcast message." })
             return
         }
 
@@ -38,15 +38,11 @@ export function BroadcastCenter() {
         })
 
         if (result.success) {
-            toast({
-                title: "Signal Broadcasted",
-                description: "The emergency signal has been transmitted to all active personnel.",
-                className: "bg-indigo-600 text-white border-none shadow-2xl"
-            })
+            toast.success("Signal Broadcasted", { description: "The emergency signal has been transmitted to all active personnel." })
             setOpen(false)
             setMessage('')
         } else {
-            toast({ variant: "destructive", title: "Transmission Failed", description: result.error as string })
+            toast.error("Transmission Failed", { description: result.error as string })
         }
         setLoading(false)
     }

@@ -445,3 +445,52 @@ export async function confirmNursingConsumption(encounterId: string, moveId?: st
         return { error: error.message || "Failed to confirm" }
     }
 }
+
+import { notificationBus } from "@/lib/events/notifications"
+
+export async function triggerEmergencyNurseAlert(bedOrRoom: string, patientName?: string, notes?: string) {
+    const session = await auth();
+    if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
+
+    try {
+        notificationBus.emitNotification({
+            tenantId: session.user.tenantId,
+            companyId: session.user.companyId,
+            targetRole: 'nurse',
+            type: 'NURSE_CALL_ALERT',
+            title: '🚨 Emergency Nurse Call!',
+            message: `Emergency assistance requested at ${bedOrRoom}. ${notes ? `Notes: ${notes}` : ''}`,
+            patientName,
+            severity: 'critical'
+        });
+
+        return { success: true, message: "Emergency alert broadcasted to nursing team" };
+    } catch (e: any) {
+        return { error: e.message || "Failed to trigger emergency alert" };
+    }
+}
+
+export async function triggerPatientVitalsCompletedAlert(patientId: string, patientName: string, doctorId?: string) {
+    const session = await auth();
+    if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
+
+    try {
+        notificationBus.emitNotification({
+            tenantId: session.user.tenantId,
+            companyId: session.user.companyId,
+            targetRole: 'doctor',
+            targetUserId: doctorId,
+            type: 'NEW_PATIENT_WAITING',
+            title: '🟢 Patient Ready for Consultation',
+            message: `Vitals recorded for ${patientName}. Patient is ready in OPD queue.`,
+            patientName,
+            patientId,
+            severity: 'info'
+        });
+
+        return { success: true };
+    } catch (e: any) {
+        return { error: e.message };
+    }
+}
+

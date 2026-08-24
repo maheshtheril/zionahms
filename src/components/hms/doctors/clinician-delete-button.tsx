@@ -3,12 +3,11 @@
 import { useState } from 'react'
 import { Trash2, Loader2 } from 'lucide-react'
 import { deleteClinician } from '@/app/actions/doctor'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
 export function ClinicianDeleteButton({ clinicianId }: { clinicianId: string }) {
     const [isPending, setIsPending] = useState(false)
-    const { toast } = useToast()
     const router = useRouter()
 
     const handleDelete = async (e: React.MouseEvent) => {
@@ -21,26 +20,14 @@ export function ClinicianDeleteButton({ clinicianId }: { clinicianId: string }) 
         try {
             const result = await deleteClinician(clinicianId)
             if (result.success) {
-                toast({
-                    title: "Record Deleted",
-                    description: "Staff record has been permanently removed from the directory.",
-                    className: "bg-emerald-600 text-white"
-                })
+                toast.success("Record Deleted", { description: "Staff record has been permanently removed from the directory." })
                 router.push('/hms/doctors')
                 router.refresh()
             } else {
-                toast({
-                    title: "Action Blocked",
-                    description: result.error || "Could not delete record. They may have clinical history.",
-                    variant: "destructive"
-                })
+                toast.error("Action Blocked", { description: result.error || "Could not delete record. They may have clinical history." })
             }
         } catch (error: any) {
-            toast({
-                title: "System Error",
-                description: error.message,
-                variant: "destructive"
-            })
+            toast.error("System Error", { description: error.message })
         } finally {
             setIsPending(false)
         }

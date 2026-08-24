@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { createCompany } from '@/app/actions/company'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 
 const formSchema = z.object({
     name: z.string().min(2, {
@@ -37,7 +37,6 @@ const formSchema = z.object({
 
 export function CreateCompanyForm() {
     const router = useRouter()
-    const { toast } = useToast()
     const [isLoading, setIsLoading] = useState(false)
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -57,25 +56,14 @@ export function CreateCompanyForm() {
             })
 
             if (result.error) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Error',
-                    description: result.error,
-                })
+                toast.error('Error', { description: result.error })
             } else {
-                toast({
-                    title: 'Success',
-                    description: 'Company created successfully',
-                })
+                toast.success('Success', { description: 'Company created successfully' })
                 router.push('/tenant/companies')
                 router.refresh()
             }
         } catch (error) {
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Something went wrong. Please try again.',
-            })
+            toast.error('Error', { description: 'Something went wrong. Please try again.' })
         } finally {
             setIsLoading(false)
         }

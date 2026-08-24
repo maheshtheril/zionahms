@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { useLocalization } from "@/contexts/localization-context";
 
 type SupplierPricingDefaultsProps = {
@@ -30,7 +30,6 @@ export function SupplierPricingDefaults({
     onSave
 }: SupplierPricingDefaultsProps) {
     const { currencySymbol } = useLocalization();
-    const { toast } = useToast();
     const [strategy, setStrategy] = useState(currentDefaults?.defaultPricingStrategy || 'mrp_discount');
     const [mrpDiscountPct, setMrpDiscountPct] = useState(currentDefaults?.defaultMrpDiscountPct || 10);
     const [markupPct, setMarkupPct] = useState(currentDefaults?.defaultMarkupPct || 25);
@@ -45,16 +44,9 @@ export function SupplierPricingDefaults({
         const result = await onSave(defaults);
 
         if (result?.error) {
-            toast({
-                title: "Error",
-                description: result.error,
-                variant: "destructive"
-            });
+            toast.error("Error", { description: result.error });
         } else {
-            toast({
-                title: "Pricing Defaults Saved",
-                description: `Default pricing for ${supplierName} has been updated.`
-            });
+            toast.success("Pricing Defaults Saved", { description: `Default pricing for ${supplierName} has been updated.` });
             onClose();
         }
     };

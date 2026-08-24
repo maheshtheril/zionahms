@@ -550,7 +550,9 @@ export async function createInvoice(data: {
             const { line_items = [], payments = [], status = 'draft', total_discount = 0 } = data;
             const subtotalCalc = processedLineItems.reduce((sum, l) => sum + (safeNum(l.quantity) * safeNum(l.unit_price) - safeNum(l.discount_amount)), 0);
             const taxTotalCalc = processedLineItems.reduce((sum, l) => sum + safeNum(l.tax_amount), 0);
-            const grandTotalCalc = Math.max(0, subtotalCalc + taxTotalCalc - safeNum(total_discount));
+            const exactTotal = subtotalCalc + taxTotalCalc - safeNum(total_discount);
+            const grandTotalCalc = Math.max(0, Math.round(exactTotal));
+            const roundOffAmount = grandTotalCalc - exactTotal;
             const totalPaidCalc = payments.reduce((sum, p) => sum + safeNum(p.amount), 0);
             const outstandingCalc = (status === 'paid') ? 0 : Math.max(0, grandTotalCalc - totalPaidCalc);
 
@@ -603,9 +605,10 @@ export async function createInvoice(data: {
                     total_tax: taxTotalCalc,
                     total_discount: safeNum(total_discount),
                     total: grandTotalCalc,
+                    round_off_amount: roundOffAmount,
+                    outstanding_amount: outstandingCalc,
                     total_paid: totalPaidCalc,
                     status: status as any,
-                    outstanding_amount: outstandingCalc,
                     patient_id: resolvedPatientId,
                     appointment_id: isUUID(data.appointment_id) ? data.appointment_id : null,
                     branch_id: isUUID(branchId) ? branchId : null,
@@ -799,34 +802,85 @@ export async function createInvoice(data: {
                     }
                 }
 
-                // 4. [FIX] Update Global Stock Level (Manual Upsert to handle NULL batch_id)
-                const stockWhere = {
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    product_id: item.product_id,
-                    batch_id: null,
-                    location_id: location.id
-                };
+                // 4. [FIXED] Update hms_stock_levels — batch-specific rows, mirroring FEFO above.
+                //    Previously this used batch_id: null which was WRONG — GRN stores levels with batch_id set.
+                //    Now we deduct from the correct batch-linked hms_stock_levels rows.
+                {
+                    let stockRemaining = qtyToDeduct;
 
-                const existingLevel = await tx.hms_stock_levels.findFirst({
-                    where: stockWhere
-                });
-
-                if (existingLevel) {
-                    await tx.hms_stock_levels.update({
-                        where: { id: existingLevel.id },
-                        data: { quantity: { decrement: qtyToDeduct }, updated_at: new Date() }
-                    });
-                } else {
-                    await tx.hms_stock_levels.create({
-                        data: {
-                            id: crypto.randomUUID(),
-                            ...stockWhere,
-                            quantity: -qtyToDeduct,
-                            reserved: 0
+                    // Helper: deduct from a specific batch's stock level row
+                    const deductBatchLevel = async (batchId: string, qty: number) => {
+                        const batchLevel = await tx.hms_stock_levels.findFirst({
+                            where: { company_id: companyId, product_id: item.product_id, batch_id: batchId, location_id: location.id }
+                        });
+                        if (batchLevel) {
+                            await tx.hms_stock_levels.update({
+                                where: { id: batchLevel.id },
+                                data: { quantity: { decrement: qty }, updated_at: new Date() }
+                            });
+                            return true;
                         }
-                    });
+                        return false;
+                    };
+
+                    // Priority A: explicit batch
+                    if (isUUID(explicitBatchId) && stockRemaining > 0) {
+                        await deductBatchLevel(explicitBatchId, Math.min(stockRemaining, qtyToDeduct));
+                        stockRemaining = 0; // explicit batch handled all qty
+                    }
+
+                    // Priority B: FEFO batches
+                    if (stockRemaining > 0) {
+                        const fefoBatches = await tx.hms_product_batch.findMany({
+                            where: { product_id: item.product_id, qty_on_hand: { gte: 0 } },
+                            orderBy: { expiry_date: 'asc' }
+                        });
+                        for (const b of fefoBatches) {
+                            if (stockRemaining <= 0) break;
+                            const batchStock = await tx.hms_stock_levels.findFirst({
+                                where: { company_id: companyId, product_id: item.product_id, batch_id: b.id, location_id: location.id }
+                            });
+                            if (batchStock) {
+                                const take = Math.min(Number(batchStock.quantity), stockRemaining);
+                                if (take > 0) {
+                                    await tx.hms_stock_levels.update({
+                                        where: { id: batchStock.id },
+                                        data: { quantity: { decrement: take }, updated_at: new Date() }
+                                    });
+                                    stockRemaining -= take;
+                                }
+                            }
+                        }
+                    }
+
+                    // Priority C / Fallback: null-batch row (legacy products with no batch tracking)
+                    if (stockRemaining > 0) {
+                        const nullBatchLevel = await tx.hms_stock_levels.findFirst({
+                            where: { company_id: companyId, product_id: item.product_id, batch_id: null, location_id: location.id }
+                        });
+                        if (nullBatchLevel) {
+                            await tx.hms_stock_levels.update({
+                                where: { id: nullBatchLevel.id },
+                                data: { quantity: { decrement: stockRemaining }, updated_at: new Date() }
+                            });
+                        } else {
+                            // Last resort: create a negative row so the deficit is visible in reports
+                            await tx.hms_stock_levels.create({
+                                data: {
+                                    id: crypto.randomUUID(),
+                                    tenant_id: tenantId,
+                                    company_id: companyId,
+                                    product_id: item.product_id,
+                                    batch_id: null,
+                                    location_id: location.id,
+                                    quantity: -stockRemaining,
+                                    reserved: 0
+                                }
+                            });
+                        }
+                    }
                 }
+
             }
 
             // Post-Hooks

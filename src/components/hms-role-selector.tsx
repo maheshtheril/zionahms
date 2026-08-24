@@ -3,7 +3,7 @@
 import { updateUserHMSRoles } from "@/app/actions/user"
 import { useState } from "react"
 import { Save } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
 type Role = {
@@ -19,7 +19,7 @@ export default function HMSRoleSelector({ userId, allRoles, currentRoleIds }: {
 }) {
     const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set(currentRoleIds))
     const [isSaving, setIsSaving] = useState(false)
-    const { toast } = useToast()
+
     const router = useRouter()
 
     const toggleRole = (roleId: string) => {
@@ -36,18 +36,10 @@ export default function HMSRoleSelector({ userId, allRoles, currentRoleIds }: {
         setIsSaving(true)
         try {
             await updateUserHMSRoles(userId, Array.from(selectedRoles))
-            toast({
-                title: "Roles Updated",
-                description: "User platform roles have been saved successfully.",
-                className: "bg-indigo-600 text-white border-none shadow-2xl"
-            })
+            toast.success("Roles Updated", { description: "User platform roles have been saved successfully." })
             router.refresh()
         } catch (e: any) {
-            toast({
-                title: "Update Failed",
-                description: e?.message || "Could not save role changes.",
-                variant: "destructive"
-            })
+            toast.error("Update Failed", { description: e?.message || "Could not save role changes." })
         } finally {
             setIsSaving(false)
         }

@@ -358,6 +358,10 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                                 className="font-bold border-2 rounded-xl lowercase" 
                             />
                         </div>
+                        <div className="space-y-2 md:col-span-2">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">GSTIN / Tax Identification Number</Label>
+                            <Input value={gstin} onChange={e => setGstin(e.target.value)} placeholder="e.g. 29ABCDE1234F1Z5" className="font-bold border-2 rounded-xl uppercase" />
+                        </div>
                     </div>
                 </CardContent>
             </Card>

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect, type Option } from "@/components/ui/searchable-select";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Loader2, Undo2, Package, Plus, Trash2, ArrowLeftRight, AlertCircle, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,7 +43,7 @@ function NewDirectReturnContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const receiptIdParam = searchParams.get('receiptId');
-    const { toast } = useToast();
+
 
     const [suppliers, setSuppliers] = useState<Option[]>([]);
     const [supplierId, setSupplierId] = useState<string>('');
@@ -152,13 +152,13 @@ function NewDirectReturnContent() {
 
     const handleSubmit = async () => {
         if (!supplierId) {
-            toast({ title: "Validation Error", description: "Please select a vendor / supplier.", variant: "destructive" });
+            toast.error("Validation Error", { description: "Please select a vendor / supplier." });
             return;
         }
 
         const validItems = items.filter(i => i.productId && i.qty > 0 && i.unitPrice > 0);
         if (validItems.length === 0) {
-            toast({ title: "Validation Error", description: "Please add at least one valid product with quantity and unit price.", variant: "destructive" });
+            toast.error("Validation Error", { description: "Please add at least one valid product with quantity and unit price." });
             return;
         }
 
@@ -182,13 +182,13 @@ function NewDirectReturnContent() {
 
             const res = await createPurchaseReturn(payload) as any;
             if (res.error) {
-                toast({ title: "Error", description: res.error, variant: "destructive" });
+                toast.error("Error", { description: res.error });
             } else {
-                toast({ title: "Success", description: "Direct Purchase Return / Debit Note posted successfully." });
+                toast.success("Success", { description: "Direct Purchase Return / Debit Note posted successfully." });
                 router.push('/hms/purchasing/returns');
             }
         } catch (err: any) {
-            toast({ title: "Error", description: err.message || "Failed to post return.", variant: "destructive" });
+            toast.error("Error", { description: err.message || "Failed to post return." });
         } finally {
             setIsSubmitting(false);
         }

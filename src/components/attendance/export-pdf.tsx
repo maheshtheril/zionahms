@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Download, Loader2 } from 'lucide-react'
 import { generateAttendancePDF } from '@/app/actions/attendance-pdf'
-import { toast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 
 export function ExportAttendancePDF() {
     const [loading, setLoading] = useState(false)
@@ -23,17 +23,10 @@ export function ExportAttendancePDF() {
             window.URL.revokeObjectURL(url)
             document.body.removeChild(a)
 
-            toast({
-                title: "Report Generated",
-                description: "The Workforce Performance Audit has been downloaded."
-            })
+            toast.success("Report Generated", { description: "The Workforce Performance Audit has been downloaded." })
         } catch (error) {
             console.error("PDF Export failed:", error)
-            toast({
-                variant: "destructive",
-                title: "Export Failed",
-                description: "The system could not synchronize the PDF stream."
-            })
+            toast.error("Export Failed", { description: "The system could not synchronize the PDF stream." })
         } finally {
             setLoading(false)
         }

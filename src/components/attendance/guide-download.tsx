@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { FileText, Loader2 } from 'lucide-react'
 import { generateGuidePDF } from '@/app/actions/guide-pdf'
-import { toast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 
 export function DownloadGuidePDF() {
     const [loading, setLoading] = useState(false)
@@ -23,17 +23,10 @@ export function DownloadGuidePDF() {
             window.URL.revokeObjectURL(url)
             document.body.removeChild(a)
 
-            toast({
-                title: "Guide Generated",
-                description: "The Tactical Systems Guide has been downloaded."
-            })
+            toast.success("Guide Generated", { description: "The Tactical Systems Guide has been downloaded." })
         } catch (error) {
             console.error("Guide generation failed:", error)
-            toast({
-                variant: "destructive",
-                title: "Download Failed",
-                description: "The system could not synchronize the documentation stream."
-            })
+            toast.error("Download Failed", { description: "The system could not synchronize the documentation stream." })
         } finally {
             setLoading(false)
         }

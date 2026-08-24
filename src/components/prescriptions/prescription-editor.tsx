@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Printer, Plus, Trash2, Copy, Eraser, Clock, Zap, X, Save, Thermometer, Brain, Heart, Activity as ActivityIcon, MessageCircle, FileText, Share2, Loader2, User, Pill, CheckCircle2, Search, AlertCircle, PenTool, Edit3, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 import { sharePrescriptionWhatsapp } from '@/app/actions/prescription'
 import { getLabReportForAppointment } from '@/app/actions/lab'
 import { getProductAvailableUOMs } from '@/app/actions/product-uom'
@@ -20,7 +20,6 @@ interface PrescriptionEditorProps {
 export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEditorProps) {
     const { currencySymbol } = useLocalization();
     const router = useRouter()
-    const { toast } = useToast()
     const searchParams = useSearchParams()
     const patientId = searchParams.get('patientId')
     const appointmentId = searchParams.get('appointmentId')
@@ -604,7 +603,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
             const keysToProcess = Object.keys(drawings).filter(key => drawings[key]);
 
             if (keysToProcess.length > 0) {
-                toast({ title: "Processing Handwriting...", description: `Converting ${keysToProcess.length} handwritten notes to text.` });
+                toast.success("Processing Handwriting...", { description: `Converting ${keysToProcess.length} handwritten notes to text.` });
 
                 for (const key of keysToProcess) {
                     try {
@@ -661,14 +660,11 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                 }
 
                 if (!isPrint) {
-                    toast({
-                        title: "Prescription Saved",
-                        description: "Your changes have been saved successfully.",
-                    })
+                    toast.success("Prescription Saved", { description: "Your changes have been saved successfully." })
                     router.refresh()
                 } else {
                     // Trigger World Standard PDF Print
-                    toast({ title: "Generating Prescription", description: "Preparing High-Fidelity PDF..." });
+                    toast.success("Generating Prescription", { description: "Preparing High-Fidelity PDF..." });
                     
                     try {
                         const companyRes = await fetch('/api/company');
@@ -754,24 +750,13 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
         try {
             const res = await sharePrescriptionWhatsapp(pId!);
             if (res.success) {
-                toast({
-                    title: "WhatsApp",
-                    description: (res as any).message || "Sent successfully.",
-                });
+                toast.success("WhatsApp", { description: (res as any).message || "Sent successfully." });
             } else {
-                toast({
-                    title: "Share Failed",
-                    description: (res as any).error || "Could not share prescription",
-                    variant: "destructive"
-                });
+                toast.error("Share Failed", { description: (res as any).error || "Could not share prescription" });
             }
         } catch (error) {
             console.error(error);
-            toast({
-                title: "Error",
-                description: "An unexpected error occurred",
-                variant: "destructive"
-            });
+            toast.error("Error", { description: "An unexpected error occurred" });
         } finally {
             setIsSharing(false);
         }

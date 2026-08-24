@@ -1,6 +1,7 @@
 import { auth } from "@/auth"
 import { DetailedLedgerReport } from "@/components/accounting/detailed-ledger-report"
 import { Metadata } from "next"
+import { SYSTEM_DEFAULT_CURRENCY_CODE, SYSTEM_DEFAULT_CURRENCY_SYMBOL } from "@/lib/currency"
 
 export const metadata: Metadata = {
     title: "Cashbook | Accounting Oversight",
@@ -12,8 +13,8 @@ export default async function CashbookPage() {
     return (
         <DetailedLedgerReport
             type="cashbook"
-            currencyCode={session?.user?.currencyCode || 'INR'}
-            currencySymbol={session?.user?.currencySymbol || '\u20B9'}
+            currencyCode={session?.user?.currencyCode || SYSTEM_DEFAULT_CURRENCY_CODE}
+            currencySymbol={session?.user?.currencySymbol || SYSTEM_DEFAULT_CURRENCY_SYMBOL}
         />
     )
 }

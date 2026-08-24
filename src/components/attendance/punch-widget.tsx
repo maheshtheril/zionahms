@@ -15,7 +15,7 @@ import {
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { toast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 import { punchIn, punchOut, getStaffAttendanceStatus } from '@/app/actions/attendance'
 import { format } from 'date-fns'
 
@@ -66,13 +66,9 @@ export default function PunchWidget() {
                 })
                 if (result.success) {
                     setAttendance(result.data)
-                    toast({
-                        title: "Mission Started",
-                        description: "Shift initialized successfully.",
-                        className: "glass-card bg-emerald-500/20 border-emerald-500/50 text-emerald-800 dark:text-emerald-200"
-                    })
+                    toast.success("Mission Started", { description: "Shift initialized successfully." })
                 } else {
-                    toast({ variant: "destructive", title: "Failure", description: result.error as string })
+                    toast.error("Failure", { description: result.error as string })
                 }
             } else {
                 const result = await punchOut(attendance.id, {
@@ -81,17 +77,13 @@ export default function PunchWidget() {
                 })
                 if (result.success) {
                     setAttendance(result.data)
-                    toast({
-                        title: "Shift Concluded",
-                        description: "Data synchronized to global roster.",
-                        className: "glass-card bg-blue-500/20 border-blue-500/50 text-blue-800 dark:text-blue-200"
-                    })
+                    toast.success("Shift Concluded", { description: "Data synchronized to global roster." })
                 } else {
-                    toast({ variant: "destructive", title: "Failure", description: result.error as string })
+                    toast.error("Failure", { description: result.error as string })
                 }
             }
         } catch (e) {
-            toast({ variant: "destructive", title: "Neutralized", description: "Operation failed." })
+            toast.error("Neutralized", { description: "Operation failed." })
         } finally {
             setActionLoading(false)
         }

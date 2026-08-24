@@ -5,7 +5,7 @@ import Link from "next/link"
 import { MoreHorizontal, Pencil, Eye, Printer, Trash2, MessageCircle, Loader2, RotateCcw } from "lucide-react"
 import { useState } from "react"
 import { shareInvoiceWhatsapp } from "@/app/actions/billing"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -29,31 +29,20 @@ export function BillingActions({ invoiceId, invoiceNumber }: BillingActionsProps
     }, [])
 
     const [isLoading, setIsLoading] = React.useState(false)
-    const { toast } = useToast()
+
 
     async function handleWhatsappShare() {
         setIsLoading(true);
         try {
             const res = await shareInvoiceWhatsapp(invoiceId) as any;
             if (res && res.success) {
-                toast({
-                    title: "WhatsApp Shared",
-                    description: res.message || "Invoice PDF shared via WhatsApp",
-                });
+                toast.success("WhatsApp Shared", { description: res.message || "Invoice PDF shared via WhatsApp" });
             } else {
-                toast({
-                    title: "Share Failed",
-                    description: (res && res.error) || "Could not send WhatsApp",
-                    variant: "destructive"
-                });
+                toast.error("Share Failed", { description: (res && res.error) || "Could not send WhatsApp" });
             }
         } catch (error) {
             console.error(error);
-            toast({
-                title: "Error",
-                description: "Failed to connect to WhatsApp service.",
-                variant: "destructive"
-            });
+            toast.error("Error", { description: "Failed to connect to WhatsApp service." });
         } finally {
             setIsLoading(false);
         }

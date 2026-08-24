@@ -108,6 +108,14 @@ export default async function DashboardPage() {
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
+    // Yesterday boundaries for trend calculation
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    // 7-day window for revenue chart
+    const sevenDaysAgo = new Date(today)
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
+
     // Fetch essential data in parallel
     const [
         patients,
@@ -117,7 +125,16 @@ export default async function DashboardPage() {
         pendingBillsCount,
         revenueAggregate,
         tenant,
-        currentCompany
+        currentCompany,
+        // New: yesterday stats for trends
+        yesterdayPatientsCount,
+        yesterdayAppointmentsCount,
+        yesterdayPendingBillsCount,
+        yesterdayRevenue,
+        // New: 7-day revenue for chart
+        sevenDayRevenue,
+        // New: Recent bills for activity feed
+        recentBills,
     ] = await Promise.all([
         // 1. Patients for modal (limit to recent/active)
         prisma.hms_patient.findMany({
@@ -196,7 +213,89 @@ export default async function DashboardPage() {
         getTenant(),
 
         // 8. Company Branding
-        getCurrentCompany()
+        getCurrentCompany(),
+
+        // 9. Yesterday: Total Patients (cumulative as of yesterday — use total - today's new patients)
+        prisma.hms_patient.count({
+            where: {
+                tenant_id: tenantId,
+                created_at: { lt: today }
+            }
+        }),
+
+        // 10. Yesterday: Appointments count
+        prisma.hms_appointments.count({
+            where: {
+                tenant_id: tenantId,
+                company_id: companyId,
+                starts_at: {
+                    gte: yesterday,
+                    lt: today
+                }
+            }
+        }),
+
+        // 11. Yesterday: Pending bills
+        prisma.hms_invoice.count({
+            where: {
+                tenant_id: tenantId,
+                status: 'draft' as any,
+                created_at: {
+                    gte: yesterday,
+                    lt: today
+                }
+            }
+        }),
+
+        // 12. Yesterday: Revenue
+        prisma.hms_invoice.aggregate({
+            where: {
+                tenant_id: tenantId,
+                status: 'paid' as any,
+                created_at: {
+                    gte: yesterday,
+                    lt: today
+                }
+            },
+            _sum: { total: true }
+        }).then(r => Number(r._sum.total || 0)),
+
+        // 13. 7-day revenue breakdown
+        prisma.hms_invoice.findMany({
+            where: {
+                tenant_id: tenantId,
+                status: 'paid' as any,
+                created_at: {
+                    gte: sevenDaysAgo,
+                    lt: tomorrow
+                }
+            },
+            select: {
+                created_at: true,
+                total: true
+            }
+        }),
+
+        // 14. Recent 5 bills with patient info
+        prisma.hms_invoice.findMany({
+            where: { tenant_id: tenantId },
+            take: 5,
+            orderBy: { created_at: 'desc' },
+            select: {
+                id: true,
+                invoice_number: true,
+                total: true,
+                status: true,
+                created_at: true,
+                hms_patient: {
+                    select: {
+                        first_name: true,
+                        last_name: true,
+                        patient_number: true
+                    }
+                }
+            }
+        }),
     ])
 
     // Manual enrichment of appointments
@@ -223,11 +322,43 @@ export default async function DashboardPage() {
         clinician: clinicianMap.get(apt.clinician_id as string) || { first_name: 'Unknown', last_name: '' }
     }))
 
+    // Build 7-day revenue chart data
+    const revenueByDay: Record<string, number> = {}
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(sevenDaysAgo)
+        d.setDate(d.getDate() + i)
+        const key = d.toISOString().split('T')[0]
+        revenueByDay[key] = 0
+    }
+    for (const inv of sevenDayRevenue) {
+        const key = new Date(inv.created_at).toISOString().split('T')[0]
+        if (key in revenueByDay) {
+            revenueByDay[key] = (revenueByDay[key] || 0) + Number(inv.total || 0)
+        }
+    }
+    const revenueChart = Object.entries(revenueByDay).map(([date, value]) => ({
+        date,
+        label: new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
+        value
+    }))
+
+    // Compute % trends vs yesterday
+    const calcTrend = (current: number, previous: number): number => {
+        if (previous === 0) return current > 0 ? 100 : 0
+        return Math.round(((current - previous) / previous) * 100)
+    }
+
     const stats = {
         totalPatients: totalPatientsCount,
         todayAppointments: appointments.length,
         pendingBills: pendingBillsCount as number,
-        revenue: Number(revenueAggregate || 0)
+        revenue: Number(revenueAggregate || 0),
+        trends: {
+            patients: calcTrend(totalPatientsCount, yesterdayPatientsCount),
+            appointments: calcTrend(appointments.length, yesterdayAppointmentsCount),
+            pendingBills: calcTrend(pendingBillsCount as number, yesterdayPendingBillsCount),
+            revenue: calcTrend(Number(revenueAggregate || 0), yesterdayRevenue),
+        }
     }
 
     return (
@@ -239,6 +370,8 @@ export default async function DashboardPage() {
             doctors={JSON.parse(JSON.stringify(doctors))}
             tenant={tenant}
             company={currentCompany}
+            revenueChart={revenueChart}
+            recentBills={JSON.parse(JSON.stringify(recentBills))}
         />
     )
 }

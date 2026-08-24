@@ -118,7 +118,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         image: safeImage,
                         dbUrl: (tenantInfo as any)?.db_url,
                         currencyCode: (company as any)?.company_settings?.currencies?.code || 'INR',
-                        currencySymbol: (company as any)?.company_settings?.currencies?.symbol || 'Rs.',
+                        currencySymbol: (company as any)?.company_settings?.currencies?.symbol || '₹',
                         dateFormat: (tenantInfo?.metadata as any)?.date_format || 'dd/MM/yyyy',
                         precision: (company as any)?.company_settings?.rounding_precision ?? 2,
                         industry: (company as any)?.industry || 'General',
@@ -138,7 +138,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             companyId: user.company_id,
                             modules: [],
                             currencyCode: 'INR',
-                            currencySymbol: 'Rs.'
+                            currencySymbol: '₹'
                         } as any;
                     }
                 } catch (error) {

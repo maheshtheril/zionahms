@@ -8,10 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Save, Copy, Trash, Plus, Move, GripHorizontal, MousePointerSquareDashed, MousePointerClick, CheckSquare, Sparkles, Eye, Code, Layout, Settings2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { generateUniversalPDF } from '@/lib/pdf/universal-engine';
 import { SAMPLE_DATA, WORLD_STANDARD_DEFAULTS } from '@/lib/utils/pdf-defaults';
+import { Rnd } from 'react-rnd';
 
 interface DynamicPrintDesignerProps {
     pdfSettings: any;
@@ -33,6 +34,7 @@ const DB_VARIABLES = [
         { label: "Company Address", value: "{{company.address}}" },
         { label: "Company Phone", value: "{{company.phone}}" },
         { label: "Company Email", value: "{{company.email}}" },
+        { label: "GSTIN / Tax ID", value: "{{company.gstin}}" },
     ]},
     { group: "Patient", variables: [
         { label: "Full Name", value: "{{patient.first_name}} {{patient.last_name}}" },
@@ -71,9 +73,7 @@ export function DynamicPrintDesigner({ pdfSettings, onSave, initialUsage, compan
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const canvasRef = useRef<HTMLDivElement>(null);
     
-    // Drag State
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
 
     useEffect(() => {
         const usageTemplates = pdfSettings?.templates?.filter((t: any) => t.usage === usage) || [];
@@ -119,54 +119,7 @@ export function DynamicPrintDesigner({ pdfSettings, onSave, initialUsage, compan
         return () => clearTimeout(timer);
     }, [elements, activeTab, usage, paperSize, company]);
 
-    const handleCanvasMouseDown = (e: React.MouseEvent) => {
-        if (e.target === canvasRef.current) {
-            setSelectedId(null);
-        }
-    };
-
-    const handleElementMouseDown = (e: React.MouseEvent, id: string) => {
-        e.stopPropagation();
-        setSelectedId(id);
-        setIsDragging(true);
-
-        const canvasRect = canvasRef.current?.getBoundingClientRect();
-        if (!canvasRect) return;
-
-        const scaleElement = canvasRef.current;
-        const scaleX = scaleElement.offsetWidth / PAPER_SIZES[paperSize as keyof typeof PAPER_SIZES].width;
-        
-        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-        const offsetX = (e.clientX - rect.left) / scaleX;
-        const offsetY = (e.clientY - rect.top) / scaleX;
-        
-        setDragOffset({ x: offsetX, y: offsetY });
-    };
-
-    const handleMouseMove = (e: React.MouseEvent) => {
-        if (!isDragging || !selectedId) return;
-        const canvasRect = canvasRef.current?.getBoundingClientRect();
-        if (!canvasRect) return;
-
-        const scaleX = canvasRect.width / PAPER_SIZES[paperSize as keyof typeof PAPER_SIZES].width;
-
-        let newX = (e.clientX - canvasRect.left) / scaleX - dragOffset.x;
-        let newY = (e.clientY - canvasRect.top) / scaleX - dragOffset.y;
-
-        if (e.shiftKey) {
-            newX = Math.round(newX / 5) * 5;
-            newY = Math.round(newY / 5) * 5;
-        }
-
-        setElements(prev => ({
-            ...prev,
-            [selectedId]: { ...prev[selectedId], x: Math.max(0, newX), y: Math.max(0, newY) }
-        }));
-    };
-
-    const handleMouseUp = () => {
-        setIsDragging(false);
-    };
+    const scaleFactor = paperSize === 'Roll80' ? 1.5 : 0.85;
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -183,7 +136,7 @@ export function DynamicPrintDesigner({ pdfSettings, onSave, initialUsage, compan
 
         await onSave(config, usage);
         setIsSaving(false);
-        toast({ title: "Template Saved", description: "Universal template sync complete." });
+        toast.success("Template Saved", { description: "Universal template sync complete." });
     };
 
     const addNewElement = () => {
@@ -216,11 +169,7 @@ export function DynamicPrintDesigner({ pdfSettings, onSave, initialUsage, compan
     const pSize = PAPER_SIZES[paperSize as keyof typeof PAPER_SIZES];
 
     return (
-        <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden"
-             onMouseMove={handleMouseMove}
-             onMouseUp={handleMouseUp}
-             onMouseLeave={handleMouseUp}
-        >
+        <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             {/* Top Toolbar */}
             <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 z-10">
                 <div className="flex items-center gap-4">
@@ -241,7 +190,7 @@ export function DynamicPrintDesigner({ pdfSettings, onSave, initialUsage, compan
                         <SelectTrigger className="w-[180px] h-9 text-xs font-bold border-indigo-200 bg-indigo-50/50">
                             <SelectValue placeholder="Usage" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[9999]">
                             <SelectItem value="op_slip">OP SLIP</SelectItem>
                             <SelectItem value="sale_bill">INVOICE</SelectItem>
                             <SelectItem value="prescription">PRESCRIPTION</SelectItem>
@@ -255,7 +204,7 @@ export function DynamicPrintDesigner({ pdfSettings, onSave, initialUsage, compan
                             const defaults = WORLD_STANDARD_DEFAULTS[usage];
                             if (defaults) {
                                 setElements(defaults);
-                                toast({ title: "Enterprise Preset Applied", description: "Standard hospital layout synchronized." });
+                                toast.success("Enterprise Preset Applied", { description: "Standard hospital layout synchronized." });
                             }
                         }}
                         variant="ghost" 
@@ -268,7 +217,7 @@ export function DynamicPrintDesigner({ pdfSettings, onSave, initialUsage, compan
                         <SelectTrigger className="w-[120px] h-9 text-xs font-bold border-slate-300">
                             <SelectValue placeholder="Size" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[9999]">
                             <SelectItem value="A4">A4 (Standard)</SelectItem>
                             <SelectItem value="A5">A5 (Half)</SelectItem>
                             <SelectItem value="Roll80">80mm Thermal</SelectItem>
@@ -295,7 +244,7 @@ export function DynamicPrintDesigner({ pdfSettings, onSave, initialUsage, compan
                         <SelectTrigger className="h-9 w-[180px] gap-1 text-xs font-bold border-slate-300">
                             <Plus className="w-3.5 h-3.5 mr-1" /> Enterprise Block
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[9999]">
                             {ENTERPRISE_COMPONENTS.map(c => (
                                 <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
                             ))}
@@ -319,12 +268,14 @@ export function DynamicPrintDesigner({ pdfSettings, onSave, initialUsage, compan
                     {activeTab === 'design' ? (
                         <div className="relative shadow-2xl transition-all duration-300 bg-white ring-1 ring-slate-200"
                              ref={canvasRef}
-                             onMouseDown={handleCanvasMouseDown}
+                             onClick={(e) => {
+                                 if (e.target === canvasRef.current) setSelectedId(null);
+                             }}
                              style={{
                                  width: pSize.width,
                                  height: pSize.height,
                                  transformOrigin: 'top center',
-                                 transform: `scale(${paperSize === 'Roll80' ? 1.5 : 0.85})`,
+                                 transform: `scale(${scaleFactor})`,
                                  backgroundImage: 'linear-gradient(to right, #f1f5f9 1px, transparent 1px), linear-gradient(to bottom, #f1f5f9 1px, transparent 1px)',
                                  backgroundSize: '20px 20px'
                              }}
@@ -332,15 +283,29 @@ export function DynamicPrintDesigner({ pdfSettings, onSave, initialUsage, compan
                             {Object.entries(elements).map(([id, el]) => {
                                 const isSelected = selectedId === id;
                                 return (
-                                    <div
+                                    <Rnd
                                         key={id}
-                                        onMouseDown={(e) => handleElementMouseDown(e, id)}
-                                        className={`absolute cursor-move select-none p-1 -m-1 border-2 transition-colors ${
+                                        bounds="parent"
+                                        scale={scaleFactor}
+                                        position={{ x: el.x, y: el.y }}
+                                        enableResizing={false}
+                                        onDragStart={() => setSelectedId(id)}
+                                        onDragStop={(e, d) => {
+                                            let finalX = d.x;
+                                            let finalY = d.y;
+                                            if (e.shiftKey) {
+                                                finalX = Math.round(finalX / 5) * 5;
+                                                finalY = Math.round(finalY / 5) * 5;
+                                            }
+                                            setElements(prev => ({
+                                                ...prev,
+                                                [id]: { ...prev[id], x: finalX, y: finalY }
+                                            }));
+                                        }}
+                                        className={`cursor-move select-none p-1 -m-1 border-2 transition-colors ${
                                             isSelected ? 'border-indigo-500 bg-indigo-50/30 outline outline-4 outline-indigo-500/10' : 'border-transparent hover:border-slate-300 hover:bg-slate-50/50'
                                         }`}
                                         style={{
-                                            left: el.x,
-                                            top: el.y,
                                             fontSize: el.fontSize ? el.fontSize + 'pt' : '10pt',
                                             fontWeight: el.fontWeight === 'bold' ? 'bold' : 'normal',
                                             fontFamily: el.fontType === 'times' ? 'Times New Roman' : el.fontType === 'courier' ? 'Courier' : 'Helvetica, Arial, sans-serif',
@@ -354,7 +319,7 @@ export function DynamicPrintDesigner({ pdfSettings, onSave, initialUsage, compan
                                         <div className="max-w-full overflow-hidden">
                                             {el.label || '[Empty Field]'}
                                         </div>
-                                    </div>
+                                    </Rnd>
                                 );
                             })}
                         </div>
@@ -423,7 +388,7 @@ export function DynamicPrintDesigner({ pdfSettings, onSave, initialUsage, compan
                                     <SelectTrigger className="h-8 text-xs bg-indigo-50/50 border-indigo-200 text-indigo-700 font-bold mt-1">
                                         <SelectValue placeholder="+ Insert Column" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="z-[9999]">
                                         {DB_VARIABLES.map(group => (
                                             <React.Fragment key={group.group}>
                                                 <div className="px-2 py-1 text-[10px] font-black text-slate-400 uppercase tracking-tighter bg-slate-50">{group.group}</div>

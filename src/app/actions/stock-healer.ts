@@ -108,3 +108,103 @@ export async function repairMissingPrices() {
         return { success: false, error: err.message };
     }
 }
+
+/**
+ * Sweeps and heals hms_stock_levels table:
+ * 1. Synchronizes batch-specific hms_stock_levels rows with hms_product_batch.qty_on_hand.
+ * 2. Cleans up ghost negative batch_id=null rows caused by the previous billing bug.
+ */
+export async function syncStockLevelsFromBatches() {
+    const session = await auth();
+    if (!session?.user?.id || !session.user.companyId) return { success: false, error: "Unauthorized" };
+
+    const companyId = session.user.companyId;
+
+    try {
+        let updatedCount = 0;
+        let cleanedGhostRows = 0;
+
+        // 1. Sync batch-specific stock levels from hms_product_batch
+        const batches = await prisma.hms_product_batch.findMany({
+            where: { company_id: companyId },
+            select: { id: true, product_id: true, qty_on_hand: true, tenant_id: true }
+        });
+
+        const mainLocation = await prisma.hms_stock_location.findFirst({
+            where: { company_id: companyId, OR: [{ name: 'Main Warehouse' }, { code: 'WH-MAIN' }] }
+        }) || await prisma.hms_stock_location.findFirst({ where: { company_id: companyId } });
+
+        if (!mainLocation) return { success: false, error: "Main Warehouse location not found." };
+
+        for (const batch of batches) {
+            const qty = Number(batch.qty_on_hand) || 0;
+            const existingLevel = await prisma.hms_stock_levels.findFirst({
+                where: {
+                    company_id: companyId,
+                    product_id: batch.product_id,
+                    batch_id: batch.id
+                }
+            });
+
+            if (existingLevel) {
+                if (Number(existingLevel.quantity) !== qty) {
+                    await prisma.hms_stock_levels.update({
+                        where: { id: existingLevel.id },
+                        data: { quantity: qty, updated_at: new Date() }
+                    });
+                    updatedCount++;
+                }
+            } else if (qty !== 0) {
+                await prisma.hms_stock_levels.create({
+                    data: {
+                        id: crypto.randomUUID(),
+                        tenant_id: batch.tenant_id,
+                        company_id: companyId,
+                        product_id: batch.product_id,
+                        batch_id: batch.id,
+                        location_id: mainLocation.id,
+                        quantity: qty,
+                        reserved: 0
+                    }
+                });
+                updatedCount++;
+            }
+        }
+
+        // 2. Clean ghost negative batch_id=null rows for products that have active batch records
+        const ghostRows = await prisma.hms_stock_levels.findMany({
+            where: {
+                company_id: companyId,
+                batch_id: null,
+                quantity: { lt: 0 }
+            }
+        });
+
+        for (const ghost of ghostRows) {
+            const hasBatches = await prisma.hms_product_batch.count({
+                where: { company_id: companyId, product_id: ghost.product_id }
+            });
+
+            // If the product has batch records, the negative batch_id=null entry was created by the billing bug.
+            // Reset its quantity to 0 so total stock calculations are accurate.
+            if (hasBatches > 0) {
+                await prisma.hms_stock_levels.update({
+                    where: { id: ghost.id },
+                    data: { quantity: 0, updated_at: new Date() }
+                });
+                cleanedGhostRows++;
+            }
+        }
+
+        revalidatePath('/hms/inventory/reports/stock');
+        return {
+            success: true,
+            message: `Stock level synchronization complete! Updated ${updatedCount} batch stock levels, cleaned ${cleanedGhostRows} ghost negative rows.`
+        };
+
+    } catch (err: any) {
+        console.error("Stock Sync Error:", err);
+        return { success: false, error: err.message };
+    }
+}
+

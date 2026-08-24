@@ -4,12 +4,11 @@ import { useState } from 'react'
 import { Trash2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { deleteEmployee } from '@/app/actions/crm/employees'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
 export function EmployeeDeleteButton({ employeeId, variant = 'ghost' }: { employeeId: string, variant?: 'ghost' | 'destructive' | 'outline' }) {
     const [isPending, setIsPending] = useState(false)
-    const { toast } = useToast()
     const router = useRouter()
 
     const handleDelete = async () => {
@@ -19,26 +18,14 @@ export function EmployeeDeleteButton({ employeeId, variant = 'ghost' }: { employ
         try {
             const result = await deleteEmployee(employeeId)
             if (result.success) {
-                toast({
-                    title: "Staff Removed",
-                    description: "Employee record has been deleted from the CRM directory.",
-                    className: "bg-emerald-600 text-white"
-                })
+                toast.success("Staff Removed", { description: "Employee record has been deleted from the CRM directory." })
                 router.push('/crm/employees')
                 router.refresh()
             } else {
-                toast({
-                    title: "Delete Failed",
-                    description: result.error || "Could not remove record. They might have active deals or targets.",
-                    variant: "destructive"
-                })
+                toast.error("Delete Failed", { description: result.error || "Could not remove record. They might have active deals or targets." })
             }
         } catch (error: any) {
-            toast({
-                title: "Error",
-                description: error.message,
-                variant: "destructive"
-            })
+            toast.error("Error", { description: error.message })
         } finally {
             setIsPending(false)
         }

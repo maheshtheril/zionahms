@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { generateUniversalPDF } from "@/lib/pdf/universal-engine";
 import { getCurrentCompany } from "@/app/actions/company";
+import { generateV2HTML } from "@/lib/pdf/v2-html-renderer";
 
 export async function GET(
     request: NextRequest,
@@ -17,46 +18,61 @@ export async function GET(
         }
 
         // 1. Fetch Comprehensive Invoice Data
-        console.log(`[PRINTER] Fetching Invoice ID: ${id}`);
         const invoice = await prisma.hms_invoice.findUnique({
-            where: { id: id },
+            where: { id },
             include: {
                 hms_patient: true,
-                hms_invoice_lines: { include: { hms_product: true } }
+                hms_invoice_lines: { include: { hms_product: true } },
+                hms_appointment: { include: { hms_clinician: true } }
             }
         });
 
         if (!invoice) {
-            console.error(`[PRINTER] Error 404 - Invoice not found for ID: ${id}`);
             return new NextResponse(`Invoice not found for ID: ${id}`, { status: 404 });
         }
 
-        console.log(`[PRINTER] Invoice found! Company ID is: ${invoice.company_id}`);
         let companyData = await getCurrentCompany();
         if (!companyData) {
-            companyData = await prisma.company.findUnique({
-                where: { id: invoice.company_id }
-            });
-            // Final failsafe: If the database is corrupted and the company doesn't exist, just grab the primary hospital company!
+            companyData = await prisma.company.findUnique({ where: { id: invoice.company_id } });
             if (!companyData) {
-                console.log(`[PRINTER] Failsafe triggered. Invoice company missing, assigning default primary hospital.`);
-                companyData = await prisma.company.findFirst({
-                    orderBy: { created_at: 'asc' }
-                });
-                
+                companyData = await prisma.company.findFirst({ orderBy: { created_at: 'asc' } });
                 if (!companyData) {
-                     return new NextResponse(`CRITICAL: Entire company table is empty. The hospital doesn't exist!`, { status: 404 });
+                    return new NextResponse(`CRITICAL: Company not found`, { status: 404 });
                 }
             }
         }
-        console.log(`[PRINTER] All data resolved. Handing over to UniversalEngine...`);
 
         const autoPrint = request.nextUrl.searchParams.get('autoPrint') === 'true';
-
-        // Total mapping for engine placeholders
         if (invoice) (invoice as any).total_amount = Number(invoice.total || 0).toFixed(2);
 
-        // 2. GENERATE WORLD-CLASS PDF (Universal Engine)
+        // 2. CHECK FOR PRINT STUDIO V2 TEMPLATE
+        try {
+            if (session.user.companyId && session.user.tenantId) {
+                const activeV2 = await prisma.hms_print_template.findFirst({
+                    where: {
+                        company_id: session.user.companyId,
+                        tenant_id: session.user.tenantId,
+                        usage: 'sale_bill',
+                        is_active: true,
+                        is_default: true,
+                    }
+                });
+                const cfg = activeV2?.config as any;
+                if (cfg?.source === 'print_studio_v2' && cfg?.blocks && cfg?.theme) {
+                    const html = generateV2HTML(cfg.blocks, cfg.theme, invoice, companyData, autoPrint);
+                    return new NextResponse(html, {
+                        headers: {
+                            'Content-Type': 'text/html; charset=utf-8',
+                            'Cache-Control': 'no-store',
+                        }
+                    });
+                }
+            }
+        } catch (v2err) {
+            console.warn('[INVOICE-PRINTER] V2 check failed, falling back to PDF:', v2err);
+        }
+
+        // 3. FALLBACK: Legacy PDF engine
         const pdfBase64 = await generateUniversalPDF(
             'sale_bill',
             invoice,

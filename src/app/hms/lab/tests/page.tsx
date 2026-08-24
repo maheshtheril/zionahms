@@ -10,7 +10,7 @@ import {
     Edit, Database, Loader2, Info, ArrowLeft, Printer
 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import Link from "next/link"
@@ -20,7 +20,7 @@ import { useLocalization } from "@/contexts/localization-context";
 
 export default function LabTestManagementPage() {
     const { currencySymbol } = useLocalization();
-    const { toast } = useToast()
+
     const [isMounted, setIsMounted] = useState(false)
     const [tests, setTests] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
@@ -50,11 +50,11 @@ export default function LabTestManagementPage() {
     async function handleSave(formData: any) {
         const res = await saveLabTest(formData)
         if (res.success) {
-            toast({ title: "Success", description: "Lab test updated successfully." })
+            toast.success("Success", { description: "Lab test updated successfully." })
             setIsOpen(false)
             loadTests()
         } else {
-            toast({ title: "Error", description: res.error, variant: "destructive" })
+            toast.error("Error", { description: res.error })
         }
     }
 
@@ -62,7 +62,7 @@ export default function LabTestManagementPage() {
         if (!confirm("Are you sure? This will delete the test definition.")) return
         const res = await deleteLabTest(id)
         if (res.success) {
-            toast({ title: "Deleted", description: "Test removed from catalog." })
+            toast.success("Deleted", { description: "Test removed from catalog." })
             loadTests()
         }
     }
@@ -71,7 +71,7 @@ export default function LabTestManagementPage() {
         setSeeding(true)
         const res = await seedStandardLabTests()
         if (res.success) {
-            toast({ title: "Success", description: "Loaded standard lab tests." })
+            toast.success("Success", { description: "Loaded standard lab tests." })
             loadTests()
         }
         setSeeding(false)

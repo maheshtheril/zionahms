@@ -18,15 +18,18 @@ interface DashboardClientProps {
         todayAppointments: number
         pendingBills: number
         revenue: number
+        trends?: { patients: number; appointments: number; pendingBills: number; revenue: number }
     }
     appointments: any[]
     patients: any[]
     doctors: any[]
     tenant?: any
     company?: any
+    revenueChart?: { date: string; label: string; value: number }[]
+    recentBills?: any[]
 }
 
-export function DashboardClient({ user, stats, appointments, patients, doctors, tenant, company }: DashboardClientProps) {
+export function DashboardClient({ user, stats, appointments, patients, doctors, tenant, company, revenueChart = [], recentBills = [] }: DashboardClientProps) {
     const { currencySymbol } = useLocalization();
     const [showAppointmentModal, setShowAppointmentModal] = useState(false)
     const [mounted, setMounted] = useState(false)
@@ -138,6 +141,68 @@ export function DashboardClient({ user, stats, appointments, patients, doctors, 
                         </Link>
                     </div>
                 )}
+
+                {/* 7-Day Revenue Chart */}
+                {revenueChart && revenueChart.length > 0 && (() => {
+                    const maxVal = Math.max(...revenueChart.map(d => d.value), 1)
+                    const chartH = 100
+                    const barW = 32
+                    const gap = 12
+                    const total = revenueChart.reduce((s, d) => s + d.value, 0)
+                    return (
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl shadow-indigo-100/20 dark:shadow-none border border-gray-100 dark:border-slate-800 p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                        <Banknote className="h-5 w-5 text-green-500" />
+                                        7-Day Revenue
+                                    </h2>
+                                    <p className="text-sm text-gray-500 mt-0.5">
+                                        {mounted ? `Total: ${currencySymbol}${total.toLocaleString()}` : ''}
+                                    </p>
+                                </div>
+                                <Link href="/hms/accounting" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg">View Accounts →</Link>
+                            </div>
+                            <div className="flex items-end gap-3 overflow-x-auto pb-2">
+                                {revenueChart.map((d, i) => {
+                                    const pct = maxVal > 0 ? (d.value / maxVal) : 0
+                                    const h = Math.max(pct * chartH, d.value > 0 ? 6 : 2)
+                                    const isToday = i === revenueChart.length - 1
+                                    return (
+                                        <div key={d.date} className="flex flex-col items-center gap-1.5 flex-1 min-w-[44px]">
+                                            <span className="text-[10px] font-semibold text-gray-500">
+                                                {d.value > 0 ? `${Math.round(d.value / 1000)}k` : ''}
+                                            </span>
+                                            <div
+                                                className={`w-full rounded-t-md transition-all duration-500 ${isToday ? 'bg-gradient-to-t from-indigo-600 to-indigo-400' : 'bg-gradient-to-t from-slate-300 to-slate-200 dark:from-slate-700 dark:to-slate-600'}`}
+                                                style={{ height: `${h}px`, minHeight: 3 }}
+                                                title={`${d.label}: ₹${d.value.toLocaleString()}`}
+                                            />
+                                            <span className={`text-[11px] font-medium ${isToday ? 'text-indigo-600 font-bold' : 'text-gray-400'}`}>{d.label}</span>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )
+                })()}
+
+                {/* Quick Actions */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                        { label: 'New Appointment', href: '/hms/appointments/new', icon: Calendar, color: 'bg-indigo-500' },
+                        { label: 'New Bill', href: '/hms/billing/new', icon: Receipt, color: 'bg-green-500' },
+                        { label: 'New Patient', href: '/hms/patients/new', icon: Users, color: 'bg-blue-500' },
+                        { label: 'Lab Orders', href: '/hms/lab/orders', icon: Activity, color: 'bg-purple-500' },
+                    ].map(a => (
+                        <Link key={a.label} href={a.href} className="flex items-center gap-3 p-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl hover:shadow-md hover:border-indigo-100 transition-all group">
+                            <div className={`${a.color} h-9 w-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform`}>
+                                <a.icon className="h-4 w-4 text-white" />
+                            </div>
+                            <span className="text-sm font-semibold text-gray-700 dark:text-slate-300">{a.label}</span>
+                        </Link>
+                    ))}
+                </div>
 
                 {/* Highlighted Appointment Table Section */}
                 <div className="space-y-4">

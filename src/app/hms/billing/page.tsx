@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { Plus, TrendingUp, AlertCircle, CheckCircle2, Search, FileText, Clock, Receipt } from "lucide-react"
 import { auth } from "@/auth"
+import { SYSTEM_DEFAULT_CURRENCY_SYMBOL } from "@/lib/currency"
 // hms_invoice_status refactored to string 
 
 import SearchInput from "@/components/search-input"
@@ -27,7 +28,7 @@ export default async function BillingPage({
     const query = q || ''
     const currentStatus = status || 'all'
     const methodQuery = method || null;
-    const currencySymbol = (session.user as any)?.currencySymbol || 'Rs.';
+    const currencySymbol = (session.user as any)?.currencySymbol || SYSTEM_DEFAULT_CURRENCY_SYMBOL;
 
     // World-Standard Date Range Filter Logic: Default to Today unless 'all' is explicitly requested
     const todayStr = new Date().toISOString().split('T')[0];

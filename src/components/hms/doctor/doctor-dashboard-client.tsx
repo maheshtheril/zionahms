@@ -14,7 +14,14 @@ import { differenceInYears } from "date-fns"
 import { VisitTypeBadge } from "../visit-type-badge"
 import { DashboardDateFilter } from "../dashboard-date-filter"
 
+import { VoiceDictationModal } from "./voice-dictation-modal"
+import { DrugInteractionCheckerModal } from "./drug-interaction-checker-modal"
+import { TelemedicineRoomModal } from "@/components/hms/telemedicine/telemedicine-room-modal"
+
 interface DoctorDashboardProps {
+
+
+
     doctorName: string
     doctorId: string
     appointments: any[]
@@ -93,9 +100,23 @@ export function DoctorDashboardClient({ doctorName, doctorId, appointments, stat
                                 <span className="ml-2 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-widest">Clinical Session v2.0</span>
                             </p>
                         </div>
-                    </div>
 
                     <div className="flex items-center gap-3">
+
+                        <VoiceDictationModal
+                            onApplyClinicalNote={(note) => {
+                                console.log("[VoiceDictation] Note applied:", note);
+                                alert(`AI Dictation Applied!\nDiagnosis: ${note.diagnosis || 'N/A'}\nMedicines: ${note.medicines?.map(m => m.name).join(', ') || 'None'}`);
+                            }}
+                        />
+                        <DrugInteractionCheckerModal />
+                        <TelemedicineRoomModal
+                            appointmentId="demo-telehealth-001"
+                            patientName="Sarah Jenkins"
+                            triggerLabel="Telehealth Call Room"
+                        />
+
+
                         <div className="relative">
                             <Bell className="h-6 w-6 text-slate-400 hover:text-slate-600 cursor-pointer transition-colors" />
                             <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-slate-50" />
@@ -105,6 +126,7 @@ export function DoctorDashboardClient({ doctorName, doctorId, appointments, stat
                         </div>
                     </div>
                 </header>
+
 
                 {/* STATS GRID */}
                 {/* STATS GRID COMPACT */}

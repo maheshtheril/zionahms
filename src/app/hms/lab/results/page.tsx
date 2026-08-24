@@ -10,13 +10,13 @@ import {
 } from "lucide-react"
 import { format } from "date-fns"
 import Link from "next/link"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 
 export default function LabResultsProcessingPage() {
     const [orders, setOrders] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState("")
-    const { toast } = useToast()
+
 
     useEffect(() => {
         loadOrders()
@@ -40,7 +40,7 @@ export default function LabResultsProcessingPage() {
     const handleStatusUpdate = async (id: string, status: string) => {
         const res = await updateLabOrderStatus({ orderId: id, status: status as any })
         if (res.success) {
-            toast({ title: "Updated", description: `Order is now ${status.replace('_', ' ')}` })
+            toast.success("Updated", { description: `Order is now ${status.replace('_', ' ')}` })
             loadOrders()
         }
     }

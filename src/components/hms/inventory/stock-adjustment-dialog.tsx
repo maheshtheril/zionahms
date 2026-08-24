@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Trash2, Box, RefreshCw, AlertCircle, Search, Loader2 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { SearchableSelect, type Option } from "@/components/ui/searchable-select";
 import { getProductsPremium, getProduct } from '@/app/actions/inventory';
 import { createStockAdjustment } from '@/app/actions/returns';
@@ -26,7 +26,7 @@ type AdjustmentItem = {
 };
 
 export function StockAdjustmentDialog({ isOpen, onClose, onSuccess }: { isOpen: boolean, onClose: () => void, onSuccess?: () => void }) {
-    const { toast } = useToast();
+
     const [items, setItems] = useState<AdjustmentItem[]>([]);
     const [reason, setReason] = useState('');
     const [reasonCode, setReasonCode] = useState('audit'); // audit, breakage, expiry, wastage
@@ -66,11 +66,11 @@ export function StockAdjustmentDialog({ isOpen, onClose, onSuccess }: { isOpen: 
 
     const handleSubmit = async () => {
         if (!reason) {
-            toast({ title: "Reason Required", description: "Please explain why you are adjusting stock.", variant: "destructive" });
+            toast.error("Reason Required", { description: "Please explain why you are adjusting stock." });
             return;
         }
         if (items.length === 0) {
-            toast({ title: "No items", description: "Add at least one product to adjust.", variant: "destructive" });
+            toast.error("No items", { description: "Add at least one product to adjust." });
             return;
         }
 
@@ -90,14 +90,14 @@ export function StockAdjustmentDialog({ isOpen, onClose, onSuccess }: { isOpen: 
             });
 
             if (res.error) {
-                toast({ title: "Error", description: res.error, variant: "destructive" });
+                toast.error("Error", { description: res.error });
             } else {
-                toast({ title: "Stock Adjusted", description: "Inventory and Ledger updated." });
+                toast.success("Stock Adjusted", { description: "Inventory and Ledger updated." });
                 onSuccess?.();
                 onClose();
             }
         } catch (err) {
-            toast({ title: "Error", description: "Failed to process adjustment.", variant: "destructive" });
+            toast.error("Error", { description: "Failed to process adjustment." });
         } finally {
             setIsSubmitting(false);
         }

@@ -82,6 +82,7 @@ model accounts {
   settings_sales                                        company_accounting_settings[] @relation("settings_sales")
   settings_sales_discount                               company_accounting_settings[] @relation("settings_sales_discount")
   settings_stock_adjustment                             company_accounting_settings[] @relation("settings_stock_adjustment")
+  settings_round_off                                    company_accounting_settings[] @relation("settings_round_off")
   product_category_expense                              hms_product_category[]        @relation("category_expense_account")
   product_category_income                               hms_product_category[]        @relation("category_income_account")
   journal_entry_lines                                   journal_entry_lines[]
@@ -416,6 +417,7 @@ model company_accounting_settings {
   exchange_gain_loss_account_id                                            String?     @db.Uuid
   purchase_discount_account_id                                             String?     @db.Uuid
   sales_discount_account_id                                                String?     @db.Uuid
+  round_off_account_id                                                     String?     @db.Uuid
   accounts_ap                                                              accounts?   @relation("settings_ap", fields: [ap_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   accounts_ar                                                              accounts?   @relation("settings_ar", fields: [ar_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   journals_company_accounting_settings_bank_journal_idTojournals           journals?   @relation("company_accounting_settings_bank_journal_idTojournals", fields: [bank_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -437,6 +439,7 @@ model company_accounting_settings {
   accounts_sales_discount                                                  accounts?   @relation("settings_sales_discount", fields: [sales_discount_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   journals_company_accounting_settings_sales_journal_idTojournals          journals?   @relation("company_accounting_settings_sales_journal_idTojournals", fields: [sales_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   accounts_stock_adjustment                                                accounts?   @relation("settings_stock_adjustment", fields: [stock_adjustment_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_round_off                                                       accounts?   @relation("settings_round_off", fields: [round_off_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model company_menu_overrides {
@@ -1309,6 +1312,7 @@ model hms_invoice {
   total_tax               Decimal                   @default(0) @db.Decimal(18, 2)
   total_discount          Decimal                   @default(0) @db.Decimal(18, 2)
   total                   Decimal                   @default(0) @db.Decimal(18, 2)
+  round_off_amount        Decimal                   @default(0) @db.Decimal(18, 6)
   total_paid              Decimal                   @default(0) @db.Decimal(18, 2)
   status                  String                    @default("draft")
   line_items              Json                      @default("[]")
@@ -2041,6 +2045,7 @@ model hms_purchase_invoice {
   subtotal                  Decimal?                    @default(0) @db.Decimal(18, 6)
   tax_total                 Decimal?                    @default(0) @db.Decimal(18, 6)
   total_amount              Decimal?                    @default(0) @db.Decimal(22, 6)
+  round_off_amount          Decimal?                    @default(0) @db.Decimal(22, 6)
   paid_amount               Decimal?                    @default(0) @db.Decimal(22, 6)
   currency                  String?                     @default("USD")
   status                    String?                     @default("draft")

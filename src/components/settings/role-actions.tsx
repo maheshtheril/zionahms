@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from "react"
 import { updateRole, deleteRole, getAllPermissions } from "@/app/actions/rbac"
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { Loader2, Pencil, Trash2, Search } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -56,7 +56,6 @@ export function RoleActions({ role }: RoleActionsProps) {
     const [selectedPermissions, setSelectedPermissions] = useState<string[]>(role.permissions || [])
     const [name, setName] = useState(role.name || '')
     const [searchQuery, setSearchQuery] = useState("")
-    const { toast } = useToast()
     const router = useRouter()
 
     const loadPermissions = async () => {
@@ -78,20 +77,12 @@ export function RoleActions({ role }: RoleActionsProps) {
         e.preventDefault()
 
         if (!name) {
-            toast({
-                title: "Validation Error",
-                description: "Please enter a role name",
-                variant: "destructive"
-            })
+            toast.error("Validation Error", { description: "Please enter a role name" })
             return
         }
 
         if (selectedPermissions.length === 0) {
-            toast({
-                title: "Validation Error",
-                description: "Please select at least one permission",
-                variant: "destructive"
-            })
+            toast.error("Validation Error", { description: "Please select at least one permission" })
             return
         }
 
@@ -103,25 +94,14 @@ export function RoleActions({ role }: RoleActionsProps) {
             })
 
             if ('error' in result) {
-                toast({
-                    title: "Error",
-                    description: result.error,
-                    variant: "destructive"
-                })
+                toast.error("Error", { description: result.error })
             } else {
-                toast({
-                    title: "Success",
-                    description: "Role updated successfully"
-                })
+                toast.success("Success", { description: "Role updated successfully" })
                 setEditOpen(false)
                 router.refresh()
             }
         } catch (error) {
-            toast({
-                title: "Error",
-                description: "Failed to update role",
-                variant: "destructive"
-            })
+            toast.error("Error", { description: "Failed to update role" })
         } finally {
             setLoading(false)
         }
@@ -133,25 +113,14 @@ export function RoleActions({ role }: RoleActionsProps) {
             const result = await deleteRole(role.id)
 
             if ('error' in result) {
-                toast({
-                    title: "Error",
-                    description: result.error,
-                    variant: "destructive"
-                })
+                toast.error("Error", { description: result.error })
             } else {
-                toast({
-                    title: "Success",
-                    description: "Role deleted successfully"
-                })
+                toast.success("Success", { description: "Role deleted successfully" })
                 setDeleteOpen(false)
                 router.refresh()
             }
         } catch (error) {
-            toast({
-                title: "Error",
-                description: "Failed to delete role",
-                variant: "destructive"
-            })
+            toast.error("Error", { description: "Failed to delete role" })
         } finally {
             setLoading(false)
         }

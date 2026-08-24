@@ -1086,6 +1086,7 @@ export async function getWhatsAppConfig(companyId: string, tenantId: string) {
 export async function getPDFSettings(providedCompanyId?: string, providedTenantId?: string, providedBranchId?: string) {
     noStore();
     const session = await auth();
+    const userRole = session?.user?.role;
     const companyId = providedCompanyId || session?.user?.companyId;
     const tenantId = providedTenantId || session?.user?.tenantId;
     const branchId = providedBranchId || session?.user?.current_branch_id;
@@ -1095,7 +1096,7 @@ export async function getPDFSettings(providedCompanyId?: string, providedTenantI
         return { success: false, error: 'Unauthorized' };
     }
 
-    console.log(`[getPDFSettings] FETCHING for Company: ${companyId}, Tenant: ${tenantId}, Branch: ${branchId}`);
+    console.log(`[getPDFSettings] FETCHING for Company: ${companyId}, Tenant: ${tenantId}, Branch: ${branchId}, Role: ${userRole}`);
 
     try {
         // 1. Resolve Company Hierarchy for Inheritance
@@ -1113,6 +1114,15 @@ export async function getPDFSettings(providedCompanyId?: string, providedTenantI
         });
 
         const modernTemplates = [...rawModernTemplates].sort((a, b) => {
+            // Priority 0: Role-based Default Match (Absolute highest priority for the user's role)
+            const aMeta = a.metadata as any || {};
+            const bMeta = b.metadata as any || {};
+            const aRoleMatch = userRole && Array.isArray(aMeta.defaultForRoles) && aMeta.defaultForRoles.includes(userRole);
+            const bRoleMatch = userRole && Array.isArray(bMeta.defaultForRoles) && bMeta.defaultForRoles.includes(userRole);
+            
+            if (aRoleMatch && !bRoleMatch) return -1;
+            if (!aRoleMatch && bRoleMatch) return 1;
+
             // Priority 1: Requested Branch Match (Absolute winner if it exists)
             const aBranch = (branchId && a.company_id === branchId);
             const bBranch = (branchId && b.company_id === branchId);
@@ -1243,15 +1253,21 @@ export async function getPDFSettings(providedCompanyId?: string, providedTenantI
         
         categories.forEach(cat => {
             const catId = cat.toLowerCase().trim().split(' ').join('_');
-            const currentDefault = usageDefaults[catId];
-            const exists = allTemplates.some(t => t.id === currentDefault);
+            const roleMatch = allTemplates.find(t => t.usage === catId && userRole && Array.isArray((t.metadata as any)?.defaultForRoles) && (t.metadata as any).defaultForRoles.includes(userRole));
             
-            if (!currentDefault || !exists) {
-                const bestMatch = allTemplates
-                    .filter(t => t.usage === catId)
-                    .sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0))[0];
-                if (bestMatch) {
-                    usageDefaults[catId] = bestMatch.id;
+            if (roleMatch) {
+                usageDefaults[catId] = roleMatch.id;
+            } else {
+                const currentDefault = usageDefaults[catId];
+                const exists = allTemplates.some(t => t.id === currentDefault);
+                
+                if (!currentDefault || !exists) {
+                    const bestMatch = allTemplates
+                        .filter(t => t.usage === catId)
+                        .sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0))[0];
+                    if (bestMatch) {
+                        usageDefaults[catId] = bestMatch.id;
+                    }
                 }
             }
         });
@@ -1375,6 +1391,7 @@ export async function updatePDFSettings(templateData: {
     name: string;
     usage: string;
     config: any;
+    metadata?: any;
     isDefault?: boolean;
     companyId?: string;
 }) {
@@ -1462,6 +1479,7 @@ export async function updatePDFSettings(templateData: {
                     name, 
                     usage,
                     config: templateData.config,
+                    ...(templateData.metadata !== undefined ? { metadata: templateData.metadata } : {}),
                     is_active: true,
                     updated_by: userId,
                     updated_at: new Date(),
@@ -1491,6 +1509,7 @@ export async function updatePDFSettings(templateData: {
                     where: { id: existing.id },
                     data: {
                         config: templateData.config,
+                        ...(templateData.metadata !== undefined ? { metadata: templateData.metadata } : {}),
                         is_active: true,
                         updated_by: userId,
                         updated_at: new Date(),
@@ -1506,6 +1525,7 @@ export async function updatePDFSettings(templateData: {
                         name,
                         usage,
                         config: templateData.config,
+                        ...(templateData.metadata !== undefined ? { metadata: templateData.metadata } : {}),
                         is_active: true,
                         created_by: userId,
                         updated_by: userId,

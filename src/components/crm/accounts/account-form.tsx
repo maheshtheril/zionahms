@@ -1,4 +1,4 @@
-
+﻿
 'use client'
 
 import { useState } from 'react'
@@ -8,13 +8,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from "sonner"
 import { Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
 export function AccountForm() {
     const [loading, setLoading] = useState(false)
-    const { toast } = useToast()
     const router = useRouter()
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -27,16 +26,9 @@ export function AccountForm() {
         setLoading(false)
 
         if (res.error) {
-            toast({
-                title: "Error",
-                description: res.error,
-                variant: "destructive"
-            })
+            toast.error("Error", { description: res.error })
         } else {
-            toast({
-                title: "Success",
-                description: "Account created successfully."
-            })
+            toast.success("Success", { description: "Account created successfully." })
             router.push('/crm/accounts')
         }
     }

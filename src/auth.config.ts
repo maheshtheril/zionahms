@@ -17,7 +17,7 @@ export const authConfig = {
             // const isOnHMS = nextUrl.pathname.startsWith("/hms");
             // const isOnCRM = nextUrl.pathname.startsWith("/crm");
             const isOnRoot = nextUrl.pathname === "/";
-            const isProtected = nextUrl.pathname.startsWith("/hms") || nextUrl.pathname.startsWith("/crm") || nextUrl.pathname.startsWith("/settings");
+            const isProtected = nextUrl.pathname.startsWith("/hms") || nextUrl.pathname.startsWith("/crm") || nextUrl.pathname.startsWith("/settings") || nextUrl.pathname.startsWith("/print-studio");
             const isAuthPage = nextUrl.pathname.startsWith("/login");
 
             // 1. If on protected route (HMS, CRM, Settings, Root)

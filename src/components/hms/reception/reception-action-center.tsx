@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { cn } from "@/lib/utils"
 // TurboSync: Refreshing module factory
@@ -27,7 +27,7 @@ import { searchPatients } from "@/app/actions/patient-search"
 import { voidPayment, getTaxConfiguration, getBillableItems } from "@/app/actions/billing"
 import { getInitialInvoiceData } from "@/app/actions/clinical"
 import { useRouter } from "next/navigation"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import { VisitTypeBadge } from "../visit-type-badge"
@@ -89,7 +89,6 @@ export function ReceptionActionCenter({
 }: ReceptionActionCenterProps) {
     const { currencySymbol } = useLocalization();
     const router = useRouter()
-    const { toast } = useToast()
     const [viewMode, setViewMode] = useState<'board' | 'list'>('list')
     const [isPrivacyMode, setIsPrivacyMode] = useState(false)
     const [currentTime, setCurrentTime] = useState(new Date())
@@ -148,10 +147,7 @@ export function ReceptionActionCenter({
                     // Handled inside form
                 } else {
                     router.push('/hms/patients/new')
-                    toast({
-                        title: "Opening New Patient Form",
-                        description: "Shortcut: Alt+N",
-                    })
+                    toast.success("Opening New Patient Form", { description: "Shortcut: Alt+N", })
                 }
             }
 
@@ -160,37 +156,28 @@ export function ReceptionActionCenter({
                 e.preventDefault()
                 setEditingAppointment(null)
                 setActiveModal('appointment')
-                toast({
-                    title: "Opening New Appointment",
-                    description: "Shortcut: Ctrl+A",
-                })
+                toast.success("Opening New Appointment", { description: "Shortcut: Ctrl+A", })
             }
 
             // Ctrl+B or Cmd+B - Billing
             if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
                 e.preventDefault()
                 router.push('/hms/billing')
-                toast({
-                    title: "Opening Billing",
-                    description: "Shortcut: Ctrl+B",
-                })
+                toast.success("Opening Billing", { description: "Shortcut: Ctrl+B", })
             }
 
             // Ctrl+Shift+B - Bed Management
             if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'B') {
                 e.preventDefault()
                 setActiveModal('beds')
-                toast({
-                    title: "Opening Bed Management",
-                    description: "Shortcut: Ctrl+Shift+B",
-                })
+                toast.success("Opening Bed Management", { description: "Shortcut: Ctrl+Shift+B", })
             }
 
             // F5 - Expense Entry Modal
             if (e.key === 'F5' && !activeModal) {
                 e.preventDefault()
                 if (!activeShift) {
-                    toast({ title: "⚠️ Counter Session Closed", description: "You must start a cash shift session and verify your starting float before logging petty cash expenses.", variant: "destructive" })
+                    toast.error("âš ï¸ Counter Session Closed", { description: "You must start a cash shift session and verify your starting float before logging petty cash expenses." })
                     setActiveModal('shift')
                     return
                 }
@@ -201,7 +188,7 @@ export function ReceptionActionCenter({
             if (e.key === 'F7' && !activeModal) {
                 e.preventDefault()
                 if (!activeShift) {
-                    toast({ title: "⚠️ Counter Session Closed", description: "You must start a cash shift session and verify your starting float before entering accounting vouchers.", variant: "destructive" })
+                    toast.error("âš ï¸ Counter Session Closed", { description: "You must start a cash shift session and verify your starting float before entering accounting vouchers." })
                     setActiveModal('shift')
                     return
                 }
@@ -234,7 +221,7 @@ export function ReceptionActionCenter({
     const handleAction = (actionId: string) => {
         if (['voucher', 'billing', 'expense', 'journal', 'appointment', 'create-patient'].includes(actionId)) {
             if (!activeShift) {
-                toast({ title: "⚠️ Counter Session Closed", description: "You must start a cash counter session and verify your starting float before processing registrations, billing, or vouchers.", variant: "destructive" })
+                toast.error("âš ï¸ Counter Session Closed", { description: "You must start a cash counter session and verify your starting float before processing registrations, billing, or vouchers." })
                 setActiveModal('shift')
                 return
             }
@@ -317,10 +304,10 @@ export function ReceptionActionCenter({
         setStatusLoading(null)
 
         if (result.success) {
-            toast({ title: "Status Updated", description: `Appointment marked as ${newStatus}` })
+            toast.success("Status Updated", { description: `Appointment marked as ${newStatus}` })
             router.refresh()
         } else {
-            toast({ title: "Error", description: "Failed to update status", variant: "destructive" })
+            toast.error("Error", { description: "Failed to update status" })
         }
     }
 
@@ -331,13 +318,13 @@ export function ReceptionActionCenter({
         try {
             const res: any = await voidPayment(paymentId, "Voided from Reception Dashboard");
             if (res.success) {
-                toast({ title: "Payment Voided", description: "Invoice reopened and patient status updated." });
+                toast.success("Payment Voided", { description: "Invoice reopened and patient status updated." });
                 router.refresh();
             } else {
-                toast({ title: "Void Failed", description: res.error || "Unknown error", variant: "destructive" });
+                toast.error("Void Failed", { description: res.error || "Unknown error" });
             }
         } catch (err: any) {
-            toast({ title: "Error", description: err.message, variant: "destructive" });
+            toast.error("Error", { description: err.message });
         } finally {
             setVoidingId(null);
         }
@@ -394,12 +381,12 @@ export function ReceptionActionCenter({
     )
 
     return (
-        <div className="flex-1 space-y-8 pt-6 overflow-x-hidden animate-in fade-in duration-700 relative">
+        <div className="flex-1 space-y-6 overflow-x-hidden animate-in fade-in duration-700 relative -mt-4">
             {/* GLOBAL DATE HUB & LIVE PULSE */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-3xl border border-white/80 dark:border-slate-800/80 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)]">
-                <div className="space-y-1.5">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl px-5 py-3 rounded-2xl border border-white/80 dark:border-slate-800/80 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)]">
+                <div className="space-y-1">
                     <div className="flex items-center gap-3 flex-wrap">
-                        <span className="text-2xl font-black bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-600 bg-clip-text text-transparent uppercase tracking-tighter italic drop-shadow-sm">Front Office Hub</span>
+                        <span className="text-xl md:text-2xl font-black bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-600 bg-clip-text text-transparent uppercase tracking-tighter italic drop-shadow-sm">Front Office Hub</span>
                         <div className="flex items-center gap-2 px-3.5 py-1 rounded-full bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 shadow-sm">
                             <Clock className="h-3.5 w-3.5 text-indigo-500 animate-spin-slow" />
                             <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Shift Active: 08:00 AM - 07:59 AM</span>
@@ -416,7 +403,7 @@ export function ReceptionActionCenter({
                             {activeShift ? (
                                 <><CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> <span className="text-[10px] font-black uppercase tracking-wider font-sans">Counter Open</span></>
                             ) : (
-                                <><AlertTriangle className="h-3.5 w-3.5 text-rose-500" /> <span className="text-[10px] font-black uppercase tracking-wider font-sans">⚠️ Counter Closed: Click to Open Float</span></>
+                                <><AlertTriangle className="h-3.5 w-3.5 text-rose-500" /> <span className="text-[10px] font-black uppercase tracking-wider font-sans">âš ï¸ Counter Closed: Click to Open Float</span></>
                             )}
                         </div>
                     </div>
@@ -882,7 +869,7 @@ export function ReceptionActionCenter({
                                                                     </Button>
                                                                 }
                                                             />
-                                                                {/* 🖨️ ELITE MULTI-PRINT HUB: SEPARATE ONE-SHOT BUTTONS */}
+                                                                {/* ðŸ–¨ï¸ ELITE MULTI-PRINT HUB: SEPARATE ONE-SHOT BUTTONS */}
                                                                 <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-200/50">
                                                                     {/* 1. Standard Clinical OP Slip */}
                                                                     <OpSlipDialog
@@ -1368,7 +1355,7 @@ export function ReceptionActionCenter({
                                             className="h-7 px-3 text-[10px] font-black rounded-lg bg-white text-emerald-800 hover:bg-emerald-50 transition-all uppercase tracking-widest"
                                             onClick={() => router.push('/hms/accounting/payments')}
                                         >
-                                            View Expense Register ➜
+                                            View Expense Register âžœ
                                         </Button>
                                     </div>
                                 </div>

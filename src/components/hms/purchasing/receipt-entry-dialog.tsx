@@ -13,7 +13,7 @@ import {
     Calendar as CalendarIcon, FileText, Sparkles, Loader2, Scan,
     Maximize2, Minimize2, RotateCcw
 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { SearchableSelect, type Option } from "@/components/ui/searchable-select";
 import { Toaster } from "@/components/ui/toaster";
 import { getSuppliersList, getProductsPremium, getProduct, findOrCreateProduct, getUOMs } from "@/app/actions/inventory";
@@ -76,7 +76,6 @@ const TAX_OPTIONS = [0, 5, 12, 18, 28];
 
 export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }: ReceiptEntryDialogProps) {
     const { currencySymbol } = useLocalization();
-    const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isProductCreationOpen, setProductCreationOpen] = useState(false);
     const [isSupplierCreationOpen, setSupplierCreationOpen] = useState(false);
@@ -93,6 +92,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
     const [reference, setReference] = useState('');
     const [notes, setNotes] = useState('');
     const [attachmentUrl, setAttachmentUrl] = useState('');
+    const [initialAttachmentUrl, setInitialAttachmentUrl] = useState('');
 
     // PO State
     const [poId, setPoId] = useState<string | null>(null);
@@ -107,6 +107,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
     // AI Scanning State
     const [isScanning, setIsScanning] = useState(false);
     const [scanProgress, setScanProgress] = useState('');
+    const [duplicateWarning, setDuplicateWarning] = useState<{ id: string; name: string; date: string; total: number } | null>(null);
 
     // Window State
     const [isMaximized, setIsMaximized] = useState(false);
@@ -156,6 +157,11 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                         setReference(r.reference || '');
                         setNotes(r.notes || '');
                         setAttachmentUrl(r.attachmentUrl || '');
+                        setInitialAttachmentUrl(r.attachmentUrl || '');
+                        if (r.roundOff !== undefined && Math.abs(r.roundOff) > 0) {
+                            setRoundOff(r.roundOff);
+                            setIsAutoRound(false);
+                        }
                         if (r.items) {
                             setItems(r.items.map((i: any) => ({
                                 id: i.id,
@@ -273,7 +279,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                 setItems(enrichedItems);
             }
         } catch (err) {
-            toast({ title: "Error", description: "Failed to load PO details", variant: "destructive" });
+            toast.error("Error", { description: "Failed to load PO details" });
         }
     };
 
@@ -286,7 +292,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
         const baseTotal = item.unitPrice * item.receivedQty;
         const deductions = (item.discountAmt || 0) + (item.schemeDiscount || 0);
         const taxable = Math.max(0, baseTotal - deductions);
-        const taxAmt = taxable * ((item.taxRate || 0) / 100);
+        const taxAmt = Number((taxable * ((item.taxRate || 0) / 100)).toFixed(2));
         return {
             ...item,
             taxAmount: taxAmt
@@ -303,7 +309,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
         const item = newItems[index];
         if (item.mrp && salePrice > item.mrp) {
             // Keep it but show a toast warning (non-blocking)
-            toast({ title: "Price Warning", description: `Sale price ({currencySymbol}${salePrice}) is higher than MRP ({currencySymbol}${item.mrp})`, variant: "destructive" });
+            toast.error("Price Warning", { description: `Sale price ({currencySymbol}${salePrice}) is higher than MRP ({currencySymbol}${item.mrp})` });
         }
         item.salePrice = salePrice;
         item.pricingStrategy = 'manual';
@@ -395,7 +401,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
             return item;
         });
         setItems(newItems);
-        toast({ title: "Global Margin Applied", description: `Applied ${margin}% margin to all items.` });
+        toast.success("Global Margin Applied", { description: `Applied ${margin}% margin to all items.` });
     };
 
     const handleKeyDown = (e: React.KeyboardEvent, index: number, field: string) => {
@@ -427,7 +433,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
             return item;
         });
         setItems(newItems);
-        toast({ title: "Pricing Applied", description: `MRP-${discountPct}% applied to all items` });
+        toast.success("Pricing Applied", { description: `MRP-${discountPct}% applied to all items` });
     };
 
     const addItem = () => {
@@ -483,6 +489,15 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
             if (res.error) {
                 throw new Error(res.error);
             }
+
+            // ─── DUPLICATE INVOICE WARNING ───────────────────────────────────
+            if (res.duplicate) {
+                setDuplicateWarning(res.duplicate);
+            } else {
+                setDuplicateWarning(null); // Clear old warning on new clean scan
+            }
+            // ─────────────────────────────────────────────────────────────────
+
             if (res.data) {
                 const { supplierId, supplierName, date, reference: ref, items: scannedItems, gstin, address, grandTotal } = res.data;
                 if (supplierName) setSupplierName(supplierName);
@@ -581,10 +596,10 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                     setItems(mapped.filter(i => i.productName !== "Error Importing Item")); // Filter out failed items
                 }
                 setMode('direct');
-                toast({ title: "Scan Success", description: "Details extracted from invoice." });
+                toast.success("Scan Success", { description: "Details extracted from invoice." });
             }
         } catch (e: any) {
-            toast({ title: "Scan Failed", description: e.message || "Failed to read invoice", variant: "destructive" });
+            toast.error("Scan Failed", { description: e.message || "Failed to read invoice" });
         } finally {
             setIsScanning(false);
         }
@@ -602,25 +617,26 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
         setPoId(null);
         setScannedTotal(0);
         setMode('po');
-        if (!silent) toast({ title: "Form Cleared", description: "All fields have been reset." });
+        setDuplicateWarning(null);
+        if (!silent) toast.success("Form Cleared", { description: "All fields have been reset." });
     };
 
     const handleSubmit = async () => {
         if (!supplierId || items.length === 0) {
-            toast({ title: "Validation Error", description: "Please select a supplier and add at least one item.", variant: "destructive" });
+            toast.error("Validation Error", { description: "Please select a supplier and add at least one item." });
             return;
         }
 
         // Validate Sale Price
         const invalidPrices = items.filter(i => !i.salePrice || i.salePrice <= 0);
         if (invalidPrices.length > 0) {
-            toast({ title: "Missing Prices", description: `Sale Price is mandatory for all items. Found ${invalidPrices.length} items without sale price.`, variant: "destructive" });
+            toast.error("Missing Prices", { description: `Sale Price is mandatory for all items. Found ${invalidPrices.length} items without sale price.` });
             return;
         }
 
         const totalDifference = Math.abs(netTotal - scannedTotal);
         if (scannedTotal > 0 && totalDifference > 0.01) {
-            toast({ title: "Total Mismatch", description: `The calculated total (${netTotal.toFixed(2)}) does not match the scanned total (${scannedTotal.toFixed(2)}). Difference: ${totalDifference.toFixed(2)}`, variant: "destructive" });
+            toast.error("Total Mismatch", { description: `The calculated total (${netTotal.toFixed(2)}) does not match the scanned total (${scannedTotal.toFixed(2)}). Difference: ${totalDifference.toFixed(2)}` });
             return;
         }
 
@@ -631,7 +647,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
             receivedDate: new Date(receivedDate),
             reference,
             notes,
-            attachmentUrl,
+            attachmentUrl: attachmentUrl !== initialAttachmentUrl ? attachmentUrl : undefined,
+            roundOff,
             items: items.map(i => ({
                 id: i.id,
                 productId: i.productId,
@@ -658,25 +675,31 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
             }))
         } as any;
 
-        let res: any;
-        if (viewReceiptId) {
-            res = await updatePurchaseReceipt(viewReceiptId, payload) as any;
-        } else {
-            res = await createPurchaseReceipt(payload) as any;
-        }
+        try {
+            let res: any;
+            if (viewReceiptId) {
+                res = await updatePurchaseReceipt(viewReceiptId, payload) as any;
+            } else {
+                res = await createPurchaseReceipt(payload) as any;
+            }
 
-        if (res?.error) {
-            toast({ title: "Error", description: res.error, variant: "destructive" });
-        } else if (res?.warning) {
-            toast({ title: "Completed with Warning", description: res.warning, variant: "destructive" });
-            onSuccess?.();
-            onClose();
-        } else {
-            toast({ title: "Success", description: "Goods received successfully." });
-            onSuccess?.();
-            onClose();
+            if (res?.error) {
+                toast.error("Error", { description: res.error });
+            } else if (res?.warning) {
+                toast.error("Completed with Warning", { description: res.warning });
+                onSuccess?.();
+                onClose();
+            } else {
+                toast.success("Success", { description: "Goods received successfully." });
+                onSuccess?.();
+                onClose();
+            }
+        } catch (error: any) {
+            console.error("Save error:", error);
+            toast.error("Save Failed", { description: error.message || "Failed to save receipt. File might be too large." });
+        } finally {
+            setIsSubmitting(false);
         }
-        setIsSubmitting(false);
     };
 
     const totalTaxable = items.reduce((sum, item) => {
@@ -721,7 +744,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                     onClose={() => setProductCreationOpen(false)}
                     onSuccess={(createdId, createdName) => {
                         setProductCreationOpen(false);
-                        toast({ title: "Product Created", description: `Successfully added ${createdName || "new product"}.` });
+                        toast.success("Product Created", { description: `Successfully added ${createdName || "new product"}.` });
                         if (createdId && createdName && mode === 'direct') {
                             const n = [...items];
                             if (n.length > 0 && !n[n.length - 1].productId) {
@@ -761,7 +784,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                         setSupplierId(newSup.id);
                         setSupplierName(newSup.label);
                         setSupplierMeta(newSup.metadata);
-                        toast({ title: "Supplier Added", description: `Selected ${newSup.label} as vendor.` });
+                        toast.success("Supplier Added", { description: `Selected ${newSup.label} as vendor.` });
                     }}
                 />
 
@@ -769,7 +792,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                     <DialogContent className="max-w-md p-6 bg-card border border-border shadow-2xl rounded-2xl space-y-4">
                         <DialogHeader>
                             <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
-                                🔀 Pack Quantity Conversion
+                                ðŸ”€ Pack Quantity Conversion
                             </DialogTitle>
                         </DialogHeader>
                         {conversionModalIndex !== null && items[conversionModalIndex] && (
@@ -859,7 +882,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                                                 n[idx] = updateLineItemCalcs(n[idx]);
                                                 setItems(n);
                                                 setConversionModalIndex(null);
-                                                toast({ title: "Conversion Applied", description: `Converted to ${newQ} ${newUOM}. Line total {currencySymbol}${currentTotal} unchanged. Saved to Vendor Memory.` });
+                                                toast.success("Conversion Applied", { description: `Converted to ${newQ} ${newUOM}. Line total {currencySymbol}${currentTotal} unchanged. Saved to Vendor Memory.` });
                                             }}>
                                                 Confirm & Save to Memory
                                             </Button>
@@ -952,6 +975,28 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                         </div>
                     </div>
                 </div>
+
+                {/* ─── DUPLICATE INVOICE WARNING BANNER ─── */}
+                {duplicateWarning && (
+                    <div className="shrink-0 mx-8 mt-3 flex items-start gap-3 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3">
+                        <div className="text-red-400 text-xl mt-0.5">⚠️</div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-red-300">Duplicate Invoice Detected!</p>
+                            <p className="text-xs text-red-400/80 mt-0.5">
+                                Bill <span className="font-bold text-red-300">&quot;{duplicateWarning.name}&quot;</span> from this supplier was already received on{' '}
+                                <span className="font-bold text-red-300">{duplicateWarning.date}</span>.
+                                Saving this again will create double stock entry.
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setDuplicateWarning(null)}
+                            className="text-red-400 hover:text-red-200 text-xs font-bold shrink-0 px-2 py-1 rounded hover:bg-red-500/20 transition-colors"
+                            title="Dismiss warning"
+                        >
+                            DISMISS
+                        </button>
+                    </div>
+                )}
 
                 {/* Main Content Area */}
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -1295,7 +1340,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                                                         setItems(n);
                                                     }} className="w-9 bg-muted rounded p-0.5 text-center font-bold text-foreground border-none focus:ring-0 text-[11px]" />
                                                     <button type="button" onClick={() => setConversionModalIndex(index)} className="h-5 w-5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded flex items-center justify-center shrink-0 font-bold text-xs" title="Pack/UOM Quantity Conversion (Keep line total unchanged)">
-                                                        🔀
+                                                        ðŸ”€
                                                     </button>
                                                 </div>
                                             </td>

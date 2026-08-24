@@ -7,7 +7,7 @@ import { getActiveModules, syncMissingModules, createModule } from "@/app/action
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { Loader2, Plus, Trash2, Shield, Search, Lock, Code, LayoutGrid, List, Layers } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -63,7 +63,6 @@ export default function PermissionsPage() {
     const [newPermission, setNewPermission] = useState({ code: '', name: '', module: 'Custom' })
     const [newModule, setNewModule] = useState({ key: '', name: '', description: '' })
     const [submitting, setSubmitting] = useState(false)
-    const { toast } = useToast()
     // Removed isCustomModule state as we enforce strict selection
 
     const loadData = async () => {
@@ -106,16 +105,16 @@ export default function PermissionsPage() {
             });
 
             if (result.error) {
-                toast({ title: "Error", description: result.error, variant: "destructive" });
+                toast.error("Error", { description: result.error });
             } else {
-                toast({ title: "Success", description: "Permission created successfully" });
+                toast.success("Success", { description: "Permission created successfully" });
                 setCreateOpen(false);
                 setNewPermission({ code: '', name: '', module: 'Custom' });
                 // isCustomModule removed
                 loadData();
             }
         } catch (error) {
-            toast({ title: "Operation Failed", description: "Could not create permission", variant: "destructive" });
+            toast.error("Operation Failed", { description: "Could not create permission" });
         } finally {
             setSubmitting(false);
         }
@@ -127,15 +126,15 @@ export default function PermissionsPage() {
         try {
             const result = await createModule(newModule);
             if (result.error) {
-                toast({ title: "Error", description: result.error, variant: "destructive" });
+                toast.error("Error", { description: result.error });
             } else {
-                toast({ title: "Success", description: "Module registered successfully" });
+                toast.success("Success", { description: "Module registered successfully" });
                 setCreateModuleOpen(false);
                 setNewModule({ key: '', name: '', description: '' });
                 loadData(); // Refresh list
             }
         } catch (error) {
-            toast({ title: "Error", description: "Unexpected error", variant: "destructive" });
+            toast.error("Error", { description: "Unexpected error" });
         } finally {
             setSubmitting(false);
         }
@@ -146,9 +145,9 @@ export default function PermissionsPage() {
 
         const result = await deletePermission(code);
         if (result.error) {
-            toast({ title: "Error", description: result.error, variant: "destructive" });
+            toast.error("Error", { description: result.error });
         } else {
-            toast({ title: "Permission Deleted", description: `Permission '${code}' removed.` });
+            toast.success("Permission Deleted", { description: `Permission '${code}' removed.` });
             loadData();
         }
     }

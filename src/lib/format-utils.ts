@@ -69,7 +69,7 @@ export function formatNumber(amount: number, precision: number = DEFAULT_PRECISI
  */
 export function formatCurrencyWithSymbol(
   amount: number, 
-  symbol: string = 'Rs.', 
+  symbol: string = '₹', 
   precision: number = DEFAULT_PRECISION
 ): string {
   const formatted = formatNumber(amount, precision);

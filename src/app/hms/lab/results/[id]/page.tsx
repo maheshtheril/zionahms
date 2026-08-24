@@ -13,13 +13,13 @@ import {
     Printer, Hash, ShieldCheck, FileText
 } from "lucide-react"
 import { format } from "date-fns"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import Link from "next/link"
 
 export default function LabResultEntryPage() {
     const { id } = useParams()
     const router = useRouter()
-    const { toast } = useToast()
+
     const [order, setOrder] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -77,7 +77,7 @@ export default function LabResultEntryPage() {
 
         const res = await saveLabResults(payload)
         if (res.success) {
-            toast({ title: "Results Saved", description: verify ? "Reports verified and completed." : "Progress saved successfully." })
+            toast.success("Results Saved", { description: verify ? "Reports verified and completed." : "Progress saved successfully." })
             if (verify) {
                 window.open(`/api/print/lab_report/${id}`, '_blank')
                 router.push('/hms/lab/pending')
@@ -85,7 +85,7 @@ export default function LabResultEntryPage() {
                 router.push('/hms/lab/pending')
             }
         } else {
-            toast({ title: "Error", description: res.error || "Failed to save results", variant: "destructive" })
+            toast.error("Error", { description: res.error || "Failed to save results" })
         }
         setSaving(false)
     }

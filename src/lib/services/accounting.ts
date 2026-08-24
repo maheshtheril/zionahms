@@ -134,6 +134,21 @@ export class AccountingService {
                     });
                 }
 
+                // Round Off
+                const roundOffAmount = Number((invoice as any).round_off_amount || 0);
+                if (roundOffAmount !== 0) {
+                    const roundOffAccountId = (settings as any).round_off_account_id;
+                    if (roundOffAccountId) {
+                        journalLines.push({
+                            account_id: roundOffAccountId,
+                            debit: roundOffAmount < 0 ? Math.abs(roundOffAmount) : 0,
+                            credit: roundOffAmount > 0 ? roundOffAmount : 0,
+                            description: `${patientName} | Round Off - ${invoice.invoice_number}`,
+                            metadata: { source: 'auto' }
+                        });
+                    }
+                }
+
                 // Post Accrual
                 if (journalLines.length > 0) {
                     await prisma.journal_entries.create({
@@ -664,9 +679,9 @@ export class AccountingService {
 
             // 4. Prepare Lines
             const journalLines: any[] = [];
-            const totalAmount = Number(invoice.total_amount || 0);
-            const subtotal = Number(invoice.subtotal || 0);
-            const taxTotal = Number(invoice.tax_total || 0);
+            const totalAmount = Number(Number(invoice.total_amount || 0).toFixed(2));
+            const subtotal = Number(Number(invoice.subtotal || 0).toFixed(2));
+            const taxTotal = Number(Number(invoice.tax_total || 0).toFixed(2));
 
             // A. DEBIT: Purchase Expense
             journalLines.push({
@@ -695,6 +710,20 @@ export class AccountingService {
                 description: `Accounts Payable - ${invoice.hms_supplier?.name || 'Vendor'}`,
                 partner_id: invoice.supplier_id
             });
+
+            // D. Round Off
+            const roundOffAmount = Number((invoice as any).round_off_amount || 0);
+            if (roundOffAmount !== 0) {
+                const roundOffAccountId = (settings as any).round_off_account_id;
+                if (roundOffAccountId) {
+                    journalLines.push({
+                        account_id: roundOffAccountId,
+                        debit: roundOffAmount > 0 ? roundOffAmount : 0,
+                        credit: roundOffAmount < 0 ? Math.abs(roundOffAmount) : 0,
+                        description: `Round Off - Ref ${invoice.name}`
+                    });
+                }
+            }
 
             // 5. Create Transaction
             await prisma.$transaction(async (tx) => {
@@ -1172,12 +1201,10 @@ export class AccountingService {
                 } else if (type === 'equity') {
                     report.equity.push(val);
                     report.totalEquity += val.amount;
-                } else {
-                    // Revenue and Expenses transition to Retained Earnings
-                    // If Revenue: val.amount is positive (Cr-Dr)
-                    // If Expense: val.amount is negative (Cr-Dr would be negative since Dr is higher)
-                    // Actually for Expense, Cr-Dr is negative, which is correct for retained earnings reduction.
+                } else if (['revenue', 'income'].includes(type)) {
                     report.retainedEarnings += val.amount;
+                } else if (['expense', 'cogs'].includes(type)) {
+                    report.retainedEarnings -= val.amount;
                 }
             });
 
@@ -1708,16 +1735,20 @@ export class AccountingService {
     }
 
     /**
-     * Fetches Daybook entries for a specific date.
+     * Fetches Daybook entries for a specific date range.
      */
-    static async getDaybook(companyId: string, date: Date = new Date()) {
-        const { start, end } = AccountingService.getMedicalDayRange(date);
+    static async getDaybook(companyId: string, startDate: Date = new Date(), endDate: Date = new Date()) {
+        const start = new Date(startDate);
+        start.setUTCHours(0, 0, 0, 0);
+        
+        const end = new Date(endDate);
+        end.setUTCHours(23, 59, 59, 999);
 
         try {
             const entries = await (prisma.journal_entries.findMany as any)({
                 where: {
                     company_id: companyId,
-                    date: { gte: start, lte: end },
+                    created_at: { gte: start, lte: end },
                     posted: true
                 },
                 include: {
@@ -1725,7 +1756,7 @@ export class AccountingService {
                         include: { accounts: true }
                     }
                 },
-                orderBy: { date: 'asc' }
+                orderBy: { created_at: 'asc' }
             });
 
             return { success: true, data: entries, openingBalance: 0 };

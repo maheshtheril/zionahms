@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { bulkUpdateProducts } from "@/app/actions/inventory"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { Loader2, AlertCircle, Layers, Settings2, Trash2 } from "lucide-react"
 import { useLocalization } from "@/contexts/localization-context";
 
@@ -51,7 +51,7 @@ export function BulkEditModal({
 
     const handleApply = async () => {
         if (!updateCategory && !updateServiceStatus && !updateStockable && !updatePrice) {
-            toast({ title: "Operation Canceled", description: "No changes selected for bulk update." })
+            toast.success("Operation Canceled", { description: "No changes selected for bulk update." })
             return
         }
 
@@ -65,14 +65,14 @@ export function BulkEditModal({
 
             const res = await bulkUpdateProducts(selectedIds, updates)
             if (res.success) {
-                toast({ title: "Bulk Update Finished", description: res.message })
+                toast.success("Bulk Update Finished", { description: res.message })
                 onSuccess()
                 onClose()
             } else {
-                toast({ title: "Sync Interrupted", description: res.error, variant: "destructive" })
+                toast.error("Sync Interrupted", { description: res.error })
             }
         } catch (err) {
-            toast({ title: "System Error", description: "Could not execute batch operation.", variant: "destructive" })
+            toast.error("System Error", { description: "Could not execute batch operation." })
         } finally {
             setLoading(false)
         }

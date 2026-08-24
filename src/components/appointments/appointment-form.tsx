@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { createAppointment, updateAppointmentDetails } from "@/app/actions/appointment"
 import { ArrowLeft, Calendar, Clock, FileText, CheckCircle, MapPin, Video, Phone, AlertCircle, Stethoscope, Banknote, Save, Zap, ChevronRight } from "lucide-react"
@@ -10,7 +10,7 @@ import Link from "next/link"
 import { PatientDoctorSelectors } from "@/components/appointments/patient-doctor-selectors"
 import { CreatePatientForm } from "@/components/hms/create-patient-form"
 import { useState, useEffect, useMemo, useRef } from "react"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { Maximize2, Minimize2, Mic, MicOff, ShieldAlert, BadgeCheck, Sparkles, Loader2, Minus } from "lucide-react"
 import { getHMSSettings } from "@/app/actions/settings"
@@ -58,7 +58,6 @@ export function AppointmentForm({
     hospitalInfo = null
 }: AppointmentFormProps) {
     const { currencySymbol } = useLocalization();
-    const { toast } = useToast()
     console.log("DEBUG: Appointment Form Component Loaded - VERSION-FIX-APPLIED");
     const router = useRouter()
     const { patient_id: initialPatientId, date: initialDate, time: initialTime } = initialData
@@ -141,11 +140,7 @@ export function AppointmentForm({
         if (status.shouldCharge && status.status !== 'loading') {
             setIsCollectingReg(true);
             lastAutoOpenedId.current = selectedPatientId;
-            toast({
-                title: "Fee Collection Triggered",
-                description: "Opening payment terminal for mandatory registration fee.",
-                className: "bg-amber-600 text-white"
-            });
+            toast.success("Fee Collection Triggered", { description: "Opening payment terminal for mandatory registration fee." });
         }
     }, [selectedPatientId, selectedPatientData, hmsSettings, isCollectingReg]);
 
@@ -183,7 +178,7 @@ export function AppointmentForm({
             getPatientById(selectedPatientId).then(res => {
                 if (res.success) setSelectedPatientData(res.data)
                 else {
-                    toast({ title: "Data Error", description: "Could not sync patient record.", variant: "destructive" });
+                    toast.error("Data Error", { description: "Could not sync patient record." });
                     setSelectedPatientData({ id: selectedPatientId, metadata: {}, error: true });
                 }
             }).catch(err => {
@@ -243,7 +238,7 @@ export function AppointmentForm({
                     setSelectedClinicianId((prev: string) => prev || res.settings.defaultDoctorId);
                 }
             }
-        }).catch(() => { }); // Silent fail — never break the form
+        }).catch(() => { }); // Silent fail â€” never break the form
     }, []); // Run only once on mount
 
     const [appointmentsList, setAppointmentsList] = useState<any[]>(appointments);
@@ -343,11 +338,7 @@ export function AppointmentForm({
         setSuggestedTime(`${hours}:${minutes}`)
         setIsLateHours(finalTime >= dayEnd && isToday)
 
-        toast({
-            title: "Slot Suggested",
-            description: `Auto-assigned next available time: ${hours}:${minutes}`,
-            className: "bg-indigo-600 text-white"
-        });
+        toast.success("Slot Suggested", { description: `Auto-assigned next available time: ${hours}:${minutes}` });
     }
 
     // CORE: Dynamic Time Selection Engine (Reactive Triage)
@@ -465,11 +456,7 @@ export function AppointmentForm({
         setShowNewPatientModal(false)
 
         // 3. User Feedback
-        toast({
-            title: "Patient Linked",
-            description: `${newPatient.first_name} is now active in the terminal.`,
-            className: "bg-indigo-600 text-white shadow-2xl"
-        })
+        toast.success("Patient Linked", { description: `${newPatient.first_name} is now active in the terminal.` })
 
         // 4. Focus Management: Shift focus to the clinician selector for faster flow
         setTimeout(() => {
@@ -503,7 +490,7 @@ export function AppointmentForm({
 
             const res = editingAppointment ? await updateAppointmentDetails(editingAppointment.id, payload) : await createAppointment(payload) as any;
             if (res?.error) {
-                toast({ title: "Action Failed", description: res.error, variant: "destructive" });
+                toast.error("Action Failed", { description: res.error });
             } else {
                 const aptId = editingAppointment?.id || res.data?.id;
 
@@ -514,17 +501,13 @@ export function AppointmentForm({
                     clinician: doctors.find(d => d.id === selectedClinicianId)
                 };
 
-                toast({
-                    title: "Medical Record Finalized",
-                    description: editingAppointment ? "Clinical encounter updated." : "Session finalized.",
-                    className: "bg-emerald-600 text-white"
-                });
+                toast.success("Medical Record Finalized", { description: editingAppointment ? "Clinical encounter updated." : "Session finalized." });
 
                 // Automatically close/redirect back to dashboard
                 handleClose();
             }
         } catch (error: any) {
-            toast({ title: "Terminal Crash", description: error.message, variant: "destructive" })
+            toast.error("Terminal Crash", { description: error.message })
         } finally {
             setIsPending(false);
         }
@@ -532,7 +515,7 @@ export function AppointmentForm({
 
     async function handleSubmit(formData: FormData) {
         if (!selectedPatientId) {
-            toast({ title: "Patient Missing", description: "Select a patient to finalize the session.", variant: "destructive" });
+            toast.error("Patient Missing", { description: "Select a patient to finalize the session." });
             return;
         }
 
@@ -544,9 +527,7 @@ export function AppointmentForm({
                 : regStatus.status === 'expired'
                     ? "Patient's registration has expired. Please renew or waive the fee before booking."
                     : "Registration fee is unpaid. Please collect or waive it before saving.";
-            toast({
-                title: "⛔ Registration Fee Required",
-                description: msg,
+            toast.success("â›” Registration Fee Required", { description: msg,
                 variant: "destructive",
                 duration: 6000,
             });
@@ -557,7 +538,7 @@ export function AppointmentForm({
         try {
             await executeSave(formData);
         } catch (error: any) {
-            toast({ title: "Finalization Error", description: error.message, variant: "destructive" })
+            toast.error("Finalization Error", { description: error.message })
             setIsPending(false)
         }
     }
@@ -568,11 +549,7 @@ export function AppointmentForm({
         // [AUDIT-STANDARD] Require a reason for all financial waivers
         const reason = window.prompt("Enter reason for fee waiver (e.g. Staff, Emergency, Management Approval):");
         if (!reason || reason.trim().length < 3) {
-            toast({ 
-                title: "Waiver Denied", 
-                description: "A valid reason is mandatory for financial audits.", 
-                variant: "destructive" 
-            });
+            toast.error("Waiver Denied", { description: "A valid reason is mandatory for financial audits." });
             return;
         }
 
@@ -598,18 +575,14 @@ export function AppointmentForm({
             });
 
             if (res.success) {
-                toast({
-                    title: "Fee Waived",
-                    description: `Waived (${reason}). Policy applied: ${validityDays} Days.`,
-                    className: "bg-emerald-600 text-white"
-                });
+                toast.success("Fee Waived", { description: `Waived (${reason }). Policy applied: ${validityDays} Days.` });
                 refreshPatientData();
             } else {
-                toast({ title: "Error", description: "Could not waive fee.", variant: "destructive" });
+                toast.error("Error", { description: "Could not waive fee." });
                 setIsWaivingFee(false);
             }
         } catch (err) {
-            toast({ title: "Error", description: "Failed to process waiver.", variant: "destructive" });
+            toast.error("Error", { description: "Failed to process waiver." });
             setIsWaivingFee(false);
         }
     };
@@ -813,7 +786,7 @@ export function AppointmentForm({
                                         })()}
                                     </div>
                                 </div>
-                                {/* Quick-print button — only shown when editing an existing appointment */}
+                                {/* Quick-print button â€” only shown when editing an existing appointment */}
                                 {editingAppointment?.id && (
                                     <div className="flex gap-2 items-center">
                                         <button
@@ -852,7 +825,7 @@ export function AppointmentForm({
                             trigger={<span />}
                             onPaymentSuccess={(data) => {
                                 setPaidInvoiceId(data?.id || null);
-                                toast({ title: "Fee Paid", description: "Registration cleared." });
+                                toast.success("Fee Paid", { description: "Registration cleared." });
                                 refreshPatientData();
                             }}
                         />
@@ -864,7 +837,7 @@ export function AppointmentForm({
                                     <ShieldAlert className="h-5 w-5 text-amber-600" />
                                     <div>
                                         <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Fee Due</p>
-                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Patient Registration Fee — collect to enable booking</p>
+                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Patient Registration Fee â€” collect to enable booking</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -937,7 +910,7 @@ export function AppointmentForm({
                                         className={`w-full p-2.5 bg-white dark:bg-slate-950 border ${isLateHours ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-gray-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-medium`}
                                     />
                                     {isLateHours && (
-                                        <p className="text-[10px] font-black text-amber-600 mt-1 uppercase tracking-widest animate-pulse">⚠️ Late Hours / Fully Booked (Override possible)</p>
+                                        <p className="text-[10px] font-black text-amber-600 mt-1 uppercase tracking-widest animate-pulse">âš ï¸ Late Hours / Fully Booked (Override possible)</p>
                                     )}
                                 </div>
                             </div>
@@ -975,10 +948,10 @@ export function AppointmentForm({
                                 <div>
                                     <label className="block text-sm font-black uppercase tracking-tighter text-slate-400 mb-1.5 ml-1">Visit Type</label>
                                     <select name="type" defaultValue={editingAppointment?.type || 'consultation'} className="w-full p-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-700 rounded-xl outline-none font-bold text-sm tracking-tight text-slate-800">
-                                        <option value="consultation">🩺 Consultation Visit</option>
-                                        <option value="follow_up">🔄 Follow-Up Session</option>
-                                        <option value="emergency">🚨 Emergency Admission</option>
-                                        <option value="procedure">💉 Clinical Procedure</option>
+                                        <option value="consultation">ðŸ©º Consultation Visit</option>
+                                        <option value="follow_up">ðŸ”„ Follow-Up Session</option>
+                                        <option value="emergency">ðŸš¨ Emergency Admission</option>
+                                        <option value="procedure">ðŸ’‰ Clinical Procedure</option>
                                     </select>
                                 </div>
                                 <div>

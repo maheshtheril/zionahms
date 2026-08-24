@@ -112,7 +112,7 @@ export async function getDashboardData() {
         funnel: funnelData,
         activities: recentActivities,
         hotLeads,
-        currencySymbol: getCurrencySymbol(countryCode),
+        currencySymbol: (user as any)?.currencySymbol || (companyRow as any)?.currency_symbol || '₹',
         currencyCode: getCurrencyCode(countryCode)
     }
 }

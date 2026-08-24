@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { generateUniversalPDF } from "@/lib/pdf/universal-engine";
 import { getCurrentCompany } from "@/app/actions/company";
+import { generateV2HTML } from "@/lib/pdf/v2-html-renderer";
 
 export async function GET(
     request: NextRequest,
@@ -86,6 +87,34 @@ export async function GET(
             created_at: receipt.receipt_date || receipt.created_at
         };
 
+        // 2. CHECK FOR PRINT STUDIO V2 TEMPLATE
+        try {
+            if (session.user.companyId && session.user.tenantId) {
+                const activeV2 = await prisma.hms_print_template.findFirst({
+                    where: {
+                        company_id: session.user.companyId,
+                        tenant_id: session.user.tenantId,
+                        usage: 'pos_bill',
+                        is_active: true,
+                        is_default: true,
+                    }
+                });
+                const cfg = activeV2?.config as any;
+                if (cfg?.source === 'print_studio_v2' && cfg?.blocks && cfg?.theme) {
+                    const html = generateV2HTML(cfg.blocks, cfg.theme, printData, companyData, autoPrint);
+                    return new NextResponse(html, {
+                        headers: {
+                            'Content-Type': 'text/html; charset=utf-8',
+                            'Cache-Control': 'no-store',
+                        }
+                    });
+                }
+            }
+        } catch (v2err) {
+            console.warn('[RECEIPT-PRINTER] V2 check failed, falling back to PDF:', v2err);
+        }
+
+        // 3. FALLBACK: Legacy PDF engine
         const pdfBase64 = await generateUniversalPDF(
             'purchase_receipt',
             printData,

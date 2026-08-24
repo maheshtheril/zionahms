@@ -186,7 +186,7 @@ export function SignupForm({
     const isWorking = isPending || signingIn || (state && !('error' in state));
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 relative">
+        <div className="min-h-screen flex items-center justify-center bg-transparent p-4 relative w-full h-full">
             {isWorking && <WorkspaceSetupLoader />}
             
             <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex flex-col md:flex-row min-h-[600px]">
@@ -194,9 +194,9 @@ export function SignupForm({
                 {/* Sidebar Progress */}
                 <div className="bg-slate-900 p-8 md:w-1/3 flex flex-col justify-between text-white">
                     <div>
-                        <div className="bg-black w-14 h-14 rounded-xl flex items-center justify-center mb-6 overflow-hidden shadow-2xl shadow-indigo-500/20 border border-white/10 shrink-0">
+                        <div className="bg-white w-14 h-14 rounded-xl flex items-center justify-center mb-6 overflow-hidden shadow-2xl shadow-blue-500/10 border border-white/20 shrink-0">
                             {branding?.logo_url ? (
-                                <img src={branding.logo_url} alt={branding.app_name || 'Logo'} className="h-full w-full object-contain p-2" />
+                                <img src={branding.logo_url} alt={branding.app_name || 'Logo'} className="h-full w-full object-contain rounded-xl p-1" />
                             ) : (
                                 <ZionaLogo size={36} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
                             )}
@@ -239,18 +239,41 @@ export function SignupForm({
 
                         {step === 1 && (
                             <div className="flex-1 space-y-5 animate-in slide-in-from-right-4 fade-in duration-300">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">You Details</h3>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Full Name</label>
-                                    <input value={formData.name} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" placeholder="Enter your full name" />
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Create your account</h3>
+                                
+                                <div className="relative group">
+                                    <input id="name" value={formData.name} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="peer w-full border-2 border-gray-100 dark:border-slate-800 rounded-xl px-4 pt-6 pb-2 focus:border-blue-600 dark:focus:border-blue-500 bg-gray-50/50 dark:bg-slate-900/50 text-gray-900 dark:text-white outline-none transition-all placeholder-transparent" placeholder="Full Name" />
+                                    <label htmlFor="name" className="absolute left-4 top-2 text-xs font-bold text-gray-400 uppercase transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:text-gray-500 peer-focus:top-2 peer-focus:text-xs peer-focus:font-bold peer-focus:text-blue-600 pointer-events-none">Full Name</label>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Work Email</label>
-                                    <input type="email" value={formData.email} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" placeholder="name@company.com" />
+                                <div className="relative group">
+                                    <input id="email" type="email" value={formData.email} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="peer w-full border-2 border-gray-100 dark:border-slate-800 rounded-xl px-4 pt-6 pb-2 focus:border-blue-600 dark:focus:border-blue-500 bg-gray-50/50 dark:bg-slate-900/50 text-gray-900 dark:text-white outline-none transition-all placeholder-transparent" placeholder="Email Address" />
+                                    <label htmlFor="email" className="absolute left-4 top-2 text-xs font-bold text-gray-400 uppercase transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:text-gray-500 peer-focus:top-2 peer-focus:text-xs peer-focus:font-bold peer-focus:text-blue-600 pointer-events-none">Email Address</label>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Password</label>
-                                    <input type="password" value={formData.password} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, password: e.target.value })} required className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" placeholder="Min. 8 characters" />
+                                <div className="relative group">
+                                    <input id="password" type="password" value={formData.password} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, password: e.target.value })} required className="peer w-full border-2 border-gray-100 dark:border-slate-800 rounded-xl px-4 pt-6 pb-2 focus:border-blue-600 dark:focus:border-blue-500 bg-gray-50/50 dark:bg-slate-900/50 text-gray-900 dark:text-white outline-none transition-all placeholder-transparent" placeholder="Password" />
+                                    <label htmlFor="password" className="absolute left-4 top-2 text-xs font-bold text-gray-400 uppercase transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:text-gray-500 peer-focus:top-2 peer-focus:text-xs peer-focus:font-bold peer-focus:text-blue-600 pointer-events-none">Password</label>
+                                    
+                                    {/* Password Strength Indicator */}
+                                    <div className="mt-3 space-y-1.5">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`h-1.5 flex-1 rounded-full ${formData.password.length > 0 ? (formData.password.length >= 8 && /[A-Z]/.test(formData.password) && /[0-9]/.test(formData.password) && /[^A-Za-z0-9]/.test(formData.password) ? 'bg-green-500' : 'bg-amber-400') : 'bg-gray-200 dark:bg-slate-800'}`}></div>
+                                            <div className={`h-1.5 flex-1 rounded-full ${formData.password.length >= 8 && /[A-Z]/.test(formData.password) && /[0-9]/.test(formData.password) && /[^A-Za-z0-9]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-200 dark:bg-slate-800'}`}></div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                            <div className={`flex items-center gap-1.5 ${formData.password.length >= 8 ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-slate-500'}`}>
+                                                <Check className="h-3 w-3" /> 8+ Characters
+                                            </div>
+                                            <div className={`flex items-center gap-1.5 ${/[A-Z]/.test(formData.password) ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-slate-500'}`}>
+                                                <Check className="h-3 w-3" /> Capital Letter
+                                            </div>
+                                            <div className={`flex items-center gap-1.5 ${/[0-9]/.test(formData.password) ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-slate-500'}`}>
+                                                <Check className="h-3 w-3" /> Number
+                                            </div>
+                                            <div className={`flex items-center gap-1.5 ${/[^A-Za-z0-9]/.test(formData.password) ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-slate-500'}`}>
+                                                <Check className="h-3 w-3" /> Special Char (!@#)
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}

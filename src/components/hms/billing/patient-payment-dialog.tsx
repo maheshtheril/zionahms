@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2, DollarSign } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { DEFAULT_REGISTRATION_FEE, REG_FEE_DESCRIPTION, REG_FEE_SKU } from "@/lib/hms-constants";
 
 
@@ -34,7 +34,7 @@ export function PatientPaymentDialog({
     autoOpen = false,
     isRegistrationFee = false
 }: PatientPaymentDialogProps) {
-    const { toast } = useToast();
+
     const [isOpen, setIsOpen] = useState(autoOpen);
 
     // [STABILITY] Sync internal open state with parent prop (crucial for autoOpen triggers)
@@ -83,11 +83,7 @@ export function PatientPaymentDialog({
                     setPatients([{ id: patientId, label: patientName }]);
                 }).catch(err => {
                     console.error("Failed to load billing dependencies", err);
-                    toast({
-                        title: "Warning",
-                        description: "Could not load some billing configurations. You can still proceed.",
-                        variant: "destructive"
-                    });
+                    toast.error("Warning", { description: "Could not load some billing configurations. You can still proceed." });
                 }).finally(() => setIsLoading(false));
             });
         }

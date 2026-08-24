@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dialog"
 import { searchPatients } from "@/app/actions/patient-search"
 import { createPatientV10 } from "@/app/actions/patient-v10"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -54,7 +54,7 @@ export function PatientSearchWithCreate({ onSelect, selectedPatientId }: Patient
     const [patients, setPatients] = useState<Patient[]>([])
     const [loading, setLoading] = useState(false)
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
-    const { toast } = useToast()
+
 
     const fetchPatients = useCallback(async (q: string) => {
         if (!q || q.length < 1) {
@@ -87,7 +87,7 @@ export function PatientSearchWithCreate({ onSelect, selectedPatientId }: Patient
             patient_number: data.patient_number,
             phone: (data.contact as any)?.phone || (data.contact as any)?.mobile || ''
         }
-        toast({ title: "Success", description: "Patient registered successfully." })
+        toast.success("Success", { description: "Patient registered successfully." })
         onSelect(newPatient)
         setSelectedPatient(newPatient)
         setDialogOpen(false)

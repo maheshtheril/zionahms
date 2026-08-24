@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { BillingClientEntry } from "@/components/billing/billing-client-entry"
 import { getBillableItems, getTaxConfiguration, getUoms } from "@/app/actions/billing"
 import { auth } from "@/auth"
+import { SYSTEM_DEFAULT_CURRENCY_SYMBOL } from "@/lib/currency"
 
 export default async function PharmacyBillingPage({
     searchParams
@@ -61,7 +62,7 @@ export default async function PharmacyBillingPage({
     const billableItems = itemsRes.success ? itemsRes.data : [];
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
     const uoms = (uomsRes as any).success ? (uomsRes as any).data : [];
-    const currency = companySettings?.currencies?.symbol || session.user.currencySymbol || "$";
+    const currency = companySettings?.currencies?.symbol || session.user.currencySymbol || SYSTEM_DEFAULT_CURRENCY_SYMBOL;
 
     // 1. Fetch prescription if patientId is provided
     let initialItems: Array<{ id: string; name: string; price: number; quantity: number; type: string }> = [];

@@ -5,6 +5,7 @@ import { generateUniversalPDF, PDFUsage } from "@/lib/pdf/universal-engine";
 import { getCurrentCompany } from "@/app/actions/company";
 import { ensureAppointmentToken } from "@/app/actions/appointment";
 import { getShiftSummary } from "@/app/actions/shift";
+import { generateV2HTML } from "@/lib/pdf/v2-html-renderer";
 
 export async function GET(
     req: NextRequest, 
@@ -216,7 +217,35 @@ export async function GET(
         const autoPrint = req.nextUrl.searchParams.get('autoPrint') === 'true';
         const templateId = req.nextUrl.searchParams.get('templateId') || undefined;
 
-        // 3. GENERATE WORLD-CLASS PDF
+        // 3. CHECK FOR PRINT STUDIO V2 TEMPLATE
+        try {
+            const session2 = await auth();
+            if (session2?.user?.companyId && session2?.user?.tenantId) {
+                const activeV2 = await prisma.hms_print_template.findFirst({
+                    where: {
+                        company_id: session2.user.companyId,
+                        tenant_id: session2.user.tenantId,
+                        usage,
+                        is_active: true,
+                        is_default: true,
+                    }
+                })
+                const cfg = activeV2?.config as any
+                if (cfg?.source === 'print_studio_v2' && cfg?.blocks && cfg?.theme) {
+                    const html = generateV2HTML(cfg.blocks, cfg.theme, data, companyData, autoPrint)
+                    return new NextResponse(html, {
+                        headers: {
+                            'Content-Type': 'text/html; charset=utf-8',
+                            'Cache-Control': 'no-store',
+                        }
+                    })
+                }
+            }
+        } catch (v2err) {
+            console.warn('[PRINT] V2 template check failed, falling back to PDF engine:', v2err)
+        }
+
+        // 4. FALLBACK: GENERATE LEGACY PDF
         const pdfBase64 = await generateUniversalPDF(
             usage,
             data,

@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Plus, User, Clock, Calendar as CalendarIcon, Search } from 'lucide-react'
 import { assignStaffToShift } from '@/app/actions/attendance'
-import { toast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
@@ -37,11 +37,11 @@ export function RosterAssignmentDialog({
         const result = await assignStaffToShift(staffMember.id, selectedShift, date)
 
         if (result.success) {
-            toast({ title: "Deployment Confirmed", description: "Roster updated successfully." })
+            toast.success("Deployment Confirmed", { description: "Roster updated successfully." })
             setOpen(false)
             setSelectedShift(null)
         } else {
-            toast({ variant: "destructive", title: "Error", description: result.error as string })
+            toast.error("Error", { description: result.error as string })
         }
         setLoading(false)
     }

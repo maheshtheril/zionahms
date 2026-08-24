@@ -7,7 +7,7 @@ import { completeFollowup } from '@/app/actions/crm/auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, CheckCircle, Clock, CalendarDays } from 'lucide-react'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 import { format } from 'date-fns'
 
 interface Followup {
@@ -26,7 +26,6 @@ interface FollowupBlockerProps {
 
 export function FollowupBlocker({ followups }: FollowupBlockerProps) {
     const router = useRouter()
-    const { toast } = useToast()
     const [completingId, setCompletingId] = useState<string | null>(null)
 
     const handleComplete = async (id: string) => {
@@ -48,16 +47,9 @@ export function FollowupBlocker({ followups }: FollowupBlockerProps) {
             // I'll update action signature in a sec.
 
             if (res.error) {
-                toast({
-                    title: "Error",
-                    description: res.error,
-                    variant: "destructive"
-                })
+                toast.error("Error", { description: res.error })
             } else {
-                toast({
-                    title: "Completed",
-                    description: "Follow-up marked as done."
-                })
+                toast.success("Completed", { description: "Follow-up marked as done." })
                 router.refresh()
             }
         } catch (error) {

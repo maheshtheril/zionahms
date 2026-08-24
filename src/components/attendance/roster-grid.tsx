@@ -11,7 +11,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { RosterAssignmentDialog } from './roster-assignment-dialog'
 import { removeStaffFromShift } from '@/app/actions/attendance'
-import { toast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 
 export default function RosterGrid({
     staff,
@@ -38,9 +38,9 @@ export default function RosterGrid({
         if (!confirm("Retract this deployment?")) return
         const result = await removeStaffFromShift(rosterId)
         if (result.success) {
-            toast({ title: "Deployment Retracted", description: "Personnel removed from roster." })
+            toast.success("Deployment Retracted", { description: "Personnel removed from roster." })
         } else {
-            toast({ variant: "destructive", title: "Error", description: result.error as string })
+            toast.error("Error", { description: result.error as string })
         }
     }
 

@@ -12,10 +12,10 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
     try {
         // 1. Database Lookup for Custom Tenants (Highest Priority)
 
-        if (appBrand === 'ZIONA' || appBrand === 'CLOUD_HMS' || host.toLowerCase().includes('cloud-hms')) {
+        if (appBrand === 'ZIONA' || appBrand === 'CLOUD_HMS' || host.toLowerCase().includes('cloud-hms') || host.toLowerCase().includes('ziona')) {
             return {
                 app_name: "Ziona ERP",
-                logo_url: "/logo-ziona.svg",
+                logo_url: `/ziona.png?v=${Date.now()}_saas`,
                 name: "Ziona Solutions",
                 isPublic: true
             };

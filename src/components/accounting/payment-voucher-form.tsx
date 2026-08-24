@@ -21,8 +21,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { useToast } from "@/components/ui/use-toast";
-import { Toaster } from "@/components/ui/toaster";
+import { toast } from "sonner";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { recordExpense } from "@/app/actions/accounting/expenses";
 import { upsertPayment } from '@/app/actions/accounting/payments';
@@ -62,7 +61,7 @@ interface PaymentVoucherFormProps {
 
 export function PaymentVoucherForm({ onClose, className, onSuccess, headerActions, initialData, simplified }: PaymentVoucherFormProps) {
     const { currencySymbol } = useLocalization();
-    const { toast } = useToast();
+
     const [loading, setLoading] = useState(false);
     const [isCreateLedgerOpen, setIsCreateLedgerOpen] = useState(false);
     const [newLedger, setNewLedger] = useState({ name: '', code: '', type: 'Expense', parent_id: '' });
@@ -212,24 +211,24 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                 });
 
                 if (result.success) {
-                    toast({ title: "Success", description: `Voucher ${result.data?.payment_number} Saved` });
+                    toast.success("Success", { description: `Voucher ${result.data?.payment_number} Saved` });
                     setSuccessVoucher({ 
                         id: result.data?.id || '',
                         number: result.data?.payment_number || 'New Voucher',
                         amount: mode === 'GENERAL' ? generalTotal : totalAllocated
                     });
                 } else {
-                    toast({ title: "Error", description: result.error, variant: "destructive" });
+                    toast.error("Error", { description: result.error });
                 }
 
             } else {
                 // BILL SETTLEMENT MODE
                 if (!selectedVendorId) {
-                    toast({ title: "Error", description: "Select a Vendor", variant: "destructive" });
+                    toast.error("Error", { description: "Select a Vendor" });
                     setLoading(false); return;
                 }
                 if (totalAllocated <= 0) {
-                    toast({ title: "Error", description: "Allocate amount to at least one bill", variant: "destructive" });
+                    toast.error("Error", { description: "Allocate amount to at least one bill" });
                     setLoading(false); return;
                 }
 
@@ -251,19 +250,19 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                 const result = await upsertPayment(payload);
 
                 if (result.success) {
-                    toast({ title: "Success", description: `Payment Voucher Saved` });
+                    toast.success("Success", { description: `Payment Voucher Saved` });
                     setSuccessVoucher({ 
                         id: (result.data as any)?.id || '',
                         number: (result.data as any)?.payment_number || 'New Voucher',
                         amount: totalAllocated
                     });
                 } else {
-                    toast({ title: "Error", description: (result as any).error, variant: "destructive" });
+                    toast.error("Error", { description: (result as any).error });
                 }
             }
         } catch (error) {
             console.error(error)
-            toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
+            toast.error("Error", { description: "Something went wrong" });
         } finally {
             setLoading(false)
         }
@@ -322,7 +321,7 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
 
     return (
         <div className={cn("bg-gradient-to-br from-slate-50 via-indigo-50/20 to-emerald-50/20 dark:from-slate-950 dark:via-indigo-950/30 dark:to-emerald-950/20 font-sans text-sm flex flex-col h-full overflow-hidden text-slate-900 dark:text-slate-100", className)}>
-            <Toaster />
+
 
             {/* Header - Fixed Stick Top */}
             <div className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-emerald-700 text-white px-8 py-4 flex justify-between items-center shadow-lg shrink-0 relative z-50 border-b border-indigo-500/30">
@@ -764,12 +763,12 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                                 });
                                 setIsSavingLedger(false);
                                 if (res.success) {
-                                    toast({ title: "Ledger created successfully" });
+                                    toast.success("Ledger created successfully");
                                     setIsCreateLedgerOpen(false);
                                     setNewLedger({ name: '', code: '', type: 'Expense', parent_id: '' });
                                     fetchAccounts();
                                 } else {
-                                    toast({ title: "Error", description: res.error, variant: "destructive" });
+                                    toast.error("Error", { description: res.error });
                                 }
                             }}
                         >

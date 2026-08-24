@@ -16,7 +16,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 import { bulkInviteUsers } from '@/app/actions/users'
 import { useRouter } from 'next/navigation'
 
@@ -25,7 +25,6 @@ interface BulkStaffUploadDialogProps {
 }
 
 export function BulkStaffUploadDialog({ roles = [] }: BulkStaffUploadDialogProps) {
-    const { toast } = useToast()
     const router = useRouter()
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -83,7 +82,7 @@ export function BulkStaffUploadDialog({ roles = [] }: BulkStaffUploadDialogProps
     const processUpload = async () => {
         const validUsers = parsedData.filter(u => u.isValid)
         if (validUsers.length === 0) {
-            toast({ title: "No valid data", description: "Please check your file for valid emails.", variant: "destructive" })
+            toast.error("No valid data", { description: "Please check your file for valid emails." })
             return
         }
 
@@ -101,7 +100,7 @@ export function BulkStaffUploadDialog({ roles = [] }: BulkStaffUploadDialogProps
             setStep('results')
             router.refresh()
         } else {
-            toast({ title: "Upload Failed", description: res.error || "Internal error", variant: "destructive" })
+            toast.error("Upload Failed", { description: res.error || "Internal error" })
         }
     }
 

@@ -4,6 +4,7 @@ import { getBillableItems, getTaxConfiguration, getUoms } from "@/app/actions/bi
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { DEFAULT_REGISTRATION_FEE, REG_FEE_SKU, REG_FEE_DESCRIPTION } from "@/lib/hms-constants"
+import { SYSTEM_DEFAULT_CURRENCY_SYMBOL } from "@/lib/currency"
 
 export const dynamic = 'force-dynamic'
 
@@ -44,7 +45,7 @@ export default async function RegistrationVoucherPage() {
     const billableItems = itemsRes.success ? itemsRes.data : [];
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
     const uoms = (uomsRes as any).success ? (uomsRes as any).data : [];
-    const currency = companySettings?.currencies?.symbol || session.user.currencySymbol || "$";
+    const currency = companySettings?.currencies?.symbol || session.user.currencySymbol || SYSTEM_DEFAULT_CURRENCY_SYMBOL;
 
     // 3. Prepare Initial Item (Registration Fee)
     const initialItems = [];

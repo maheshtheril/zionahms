@@ -1,7 +1,7 @@
 import { QRCodeSVG } from 'qrcode.react'
 import { User, Phone, Calendar, MapPin, Activity, Banknote, CreditCard, Wifi } from "lucide-react"
 import { useRef, useState } from 'react'
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { ZionaLogo } from '@/components/branding/ziona-logo'
 
 interface PatientIDCardProps {
@@ -39,7 +39,7 @@ export function PatientIDCard({
     hospitalName = 'Cloud HMS',
     hospitalLogo
 }: PatientIDCardProps) {
-    const { toast } = useToast()
+
     const [terminalStatus, setTerminalStatus] = useState<'idle' | 'connecting' | 'waiting' | 'success'>('idle')
 
     const cardRef = useRef<HTMLDivElement>(null)

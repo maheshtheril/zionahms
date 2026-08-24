@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SelectNative } from '@/components/ui/select-native'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 import {
     Loader2, Target, Sparkles, TrendingUp, Zap, Calendar,
     Check, Plus, Trash2, ShieldAlert, BarChart, Activity,
@@ -41,7 +41,6 @@ interface TargetFormProps {
 export function TargetForm(props: TargetFormProps) {
     const { currencySymbol } = useLocalization();
     const [loading, setLoading] = useState(false)
-    const { toast } = useToast()
     const router = useRouter()
 
     // State for multi-selection
@@ -95,11 +94,7 @@ export function TargetForm(props: TargetFormProps) {
         event.preventDefault()
 
         if (selectedAssignees.length === 0 && !props.initialData) {
-            toast({
-                title: "Agent Attribution Required",
-                description: "You must designate at least one operational asset for this mission.",
-                variant: "destructive"
-            })
+            toast.error("Agent Attribution Required", { description: "You must designate at least one operational asset for this mission." })
             return
         }
 
@@ -118,12 +113,9 @@ export function TargetForm(props: TargetFormProps) {
         setLoading(false)
 
         if (res.error) {
-            toast({ title: "Error", description: res.error, variant: "destructive" })
+            toast.error("Error", { description: res.error })
         } else {
-            toast({
-                title: props.initialData ? "Objective Recalibrated" : "Objective Locked",
-                description: "Full-scale performance parameters synchronized."
-            })
+            toast.success(props.initialData ? "Objective Recalibrated" : "Objective Locked", { description: "Full-scale performance parameters synchronized." })
             router.push('/crm/targets')
             router.refresh()
         }

@@ -1,4 +1,4 @@
-
+﻿
 'use client'
 
 import { useState } from 'react'
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from "sonner"
 import { Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
@@ -18,18 +18,13 @@ import { isValidPhoneNumber } from 'react-phone-number-input'
 export function ContactForm() {
     const [loading, setLoading] = useState(false)
     const [phone, setPhone] = useState<any>()
-    const { toast } = useToast()
     const router = useRouter()
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
 
         if (phone && !isValidPhoneNumber(phone)) {
-            toast({
-                title: "Validation Error",
-                description: "Invalid phone number format.",
-                variant: "destructive"
-            })
+            toast.error("Validation Error", { description: "Invalid phone number format." })
             return
         }
 
@@ -43,16 +38,9 @@ export function ContactForm() {
         setLoading(false)
 
         if (res.error) {
-            toast({
-                title: "Error",
-                description: res.error,
-                variant: "destructive"
-            })
+            toast.error("Error", { description: res.error })
         } else {
-            toast({
-                title: "Success",
-                description: "Contact created successfully."
-            })
+            toast.success("Success", { description: "Contact created successfully." })
             router.push('/crm/contacts')
         }
     }

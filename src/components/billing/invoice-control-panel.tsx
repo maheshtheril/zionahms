@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -25,7 +25,7 @@ import {
     DialogTrigger
 } from '@/components/ui/dialog';
 import { recordPayment, updateInvoiceStatus, shareInvoiceWhatsapp } from '@/app/actions/billing';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from "sonner";
 import { generateInvoicePDFBase64 } from '@/lib/utils/pdf-generator';
 import { useLocalization } from "@/contexts/localization-context";
 
@@ -80,15 +80,11 @@ export function InvoiceControlPanel({
                 });
                 router.refresh();
             } else {
-                toast({
-                    title: "Action Failed",
-                    description: res.error || "Could not update status",
-                    variant: "destructive"
-                });
+                toast.error("Action Failed", { description: res.error || "Could not update status" });
             }
         } catch (error) {
             console.error(error);
-            toast({ title: "Error", description: "Something went wrong.", variant: "destructive" });
+            toast.error("Error", { description: "Something went wrong." });
         } finally {
             setIsLoading(false);
         }
@@ -112,15 +108,11 @@ export function InvoiceControlPanel({
                 router.refresh();
                 setIsPaymentModalOpen(false);
             } else {
-                toast({
-                    title: "Payment Failed",
-                    description: res.error || "Could not record payment",
-                    variant: "destructive"
-                });
+                toast.error("Payment Failed", { description: res.error || "Could not record payment" });
             }
         } catch (error) {
             console.error(error);
-            toast({ title: "Error", description: "Transaction failed.", variant: "destructive" });
+            toast.error("Error", { description: "Transaction failed." });
         } finally {
             setIsLoading(false);
         }
@@ -168,7 +160,7 @@ export function InvoiceControlPanel({
             document.body.removeChild(link);
         } catch (e) {
             console.error(e);
-            toast({ title: "PDF Generation Failed", description: "Could not generate PDF download.", variant: "destructive" });
+            toast.error("PDF Generation Failed", { description: "Could not generate PDF download." });
         } finally {
             setIsLoading(false);
         }
@@ -179,24 +171,13 @@ export function InvoiceControlPanel({
         try {
             const res = await shareInvoiceWhatsapp(invoiceId) as any;
             if (res && res.success) {
-                toast({
-                    title: "WhatsApp",
-                    description: res.message || "Invoice sent to patient.",
-                });
+                toast.success("WhatsApp", { description: res.message || "Invoice sent to patient.", });
             } else {
-                toast({
-                    title: "Share Failed",
-                    description: (res && res.error) || "Could not send WhatsApp",
-                    variant: "destructive"
-                });
+                toast.error("Share Failed", { description: (res && res.error) || "Could not send WhatsApp" });
             }
         } catch (error) {
             console.error(error);
-            toast({
-                title: "Error",
-                description: "Failed to connect to WhatsApp service.",
-                variant: "destructive"
-            });
+            toast.error("Error", { description: "Failed to connect to WhatsApp service." });
         } finally {
             setIsLoading(false);
         }

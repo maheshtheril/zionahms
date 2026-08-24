@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -8,7 +8,7 @@ import {
     X, ClipboardList
 } from "lucide-react"
 import { saveVitals, getVitals } from "@/app/actions/nursing-v2"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 
 interface Props {
@@ -22,7 +22,6 @@ interface Props {
 
 export default function NursingVitalsForm({ patientId, encounterId, tenantId, initialData, onCancel, isModal }: Props) {
     const router = useRouter()
-    const { toast } = useToast()
     const [loading, setLoading] = useState(false)
     const [fetching, setFetching] = useState(!initialData)
 
@@ -121,27 +120,15 @@ export default function NursingVitalsForm({ patientId, encounterId, tenantId, in
             })
 
             if (res.success) {
-                toast({
-                    title: "Assessment Saved",
-                    description: "Vitals recorded successfully.",
-                    className: "bg-green-600 text-white border-none"
-                })
+                toast.success("Assessment Saved", { description: "Vitals recorded successfully." })
                 if (onCancel) onCancel() // Close modal if in modal
                 else router.back()
                 router.refresh()
             } else {
-                toast({
-                    title: "Error",
-                    description: res.error,
-                    variant: "destructive"
-                })
+                toast.error("Error", { description: res.error })
             }
         } catch (error) {
-            toast({
-                title: "Error",
-                description: "Failed to save vitals",
-                variant: "destructive"
-            })
+            toast.error("Error", { description: "Failed to save vitals" })
         } finally {
             setLoading(false)
         }
@@ -295,7 +282,7 @@ export default function NursingVitalsForm({ patientId, encounterId, tenantId, in
                                     className="w-full text-3xl font-black text-slate-900 outline-none bg-transparent placeholder-slate-200"
                                     placeholder="--"
                                 />
-                                <span className="text-[10px] font-bold text-slate-400">°F</span>
+                                <span className="text-[10px] font-bold text-slate-400">Â°F</span>
                             </div>
                         </div>
 

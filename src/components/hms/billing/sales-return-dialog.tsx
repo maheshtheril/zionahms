@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RotateCcw, AlertCircle, ShoppingBag, Loader2 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { createSalesReturn } from '@/app/actions/returns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocalization } from "@/contexts/localization-context";
@@ -41,7 +41,7 @@ export function SalesReturnDialog({
     onSuccess
 }: SalesReturnDialogProps) {
     const { currencySymbol } = useLocalization();
-    const { toast } = useToast();
+
     const [items, setItems] = useState<SalesReturnItem[]>([]);
     const [reason, setReason] = useState('Patient Return / Change of mind');
     const [refundMethod, setRefundMethod] = useState<'credit_note' | 'cash'>('credit_note');
@@ -58,7 +58,7 @@ export function SalesReturnDialog({
     const handleSubmit = async () => {
         const itemsToReturn = items.filter(i => i.returnQty > 0);
         if (itemsToReturn.length === 0) {
-            toast({ title: "No items", description: "Please enter return quantity for at least one item.", variant: "destructive" });
+            toast.error("No items", { description: "Please enter return quantity for at least one item." });
             return;
         }
 
@@ -78,14 +78,14 @@ export function SalesReturnDialog({
             });
 
             if (res.error) {
-                toast({ title: "Error", description: res.error, variant: "destructive" });
+                toast.error("Error", { description: res.error });
             } else {
-                toast({ title: "Return Recorded", description: `Credit Note generated successfully.` });
+                toast.success("Return Recorded", { description: `Credit Note generated successfully.` });
                 onSuccess?.();
                 onClose();
             }
         } catch (err) {
-            toast({ title: "Error", description: "Failed to process return.", variant: "destructive" });
+            toast.error("Error", { description: "Failed to process return." });
         } finally {
             setIsSubmitting(false);
         }

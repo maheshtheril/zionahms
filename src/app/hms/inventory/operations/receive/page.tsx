@@ -10,13 +10,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table" // Assuming these exist, otherwise standard table
 import { Plus, Trash2, Calendar, Save, CheckCircle2, ChevronRight, Package, Search, Sparkles, Image as ImageIcon, Loader2 } from "lucide-react"
 import { scanPurchaseReceiptAction } from "@/app/actions/product-scan"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { getProductsPremium, searchProducts } from "@/app/actions/inventory"
 import { receiveStock, ReceiveStockData, ReceiveStockItem } from "@/app/actions/inventory-operations"
 
 export default function ReceiveStockPage() {
     const router = useRouter()
-    const { toast } = useToast()
+
     const [isLoading, setIsLoading] = useState(false)
     const [step, setStep] = useState(1) // 1: Details, 2: Items, 3: Review
 
@@ -80,7 +80,7 @@ export default function ReceiveStockPage() {
 
         // Validation
         if (currentItem.quantity <= 0) {
-            toast({ title: "Invalid Quantity", description: "Quantity must be greater than 0", variant: "destructive" })
+            toast.error("Invalid Quantity", { description: "Quantity must be greater than 0" })
             return
         }
 
@@ -88,7 +88,7 @@ export default function ReceiveStockPage() {
         const isTracked = metadata.tracking === 'batch'
 
         if (isTracked && !currentItem.batchNumber) {
-            toast({ title: "Batch Number Required", description: "This product is batch tracked. Please enter a batch number.", variant: "destructive" })
+            toast.error("Batch Number Required", { description: "This product is batch tracked. Please enter a batch number." })
             return
         }
 
@@ -119,7 +119,7 @@ export default function ReceiveStockPage() {
 
     const handleAIScan = async (file: File) => {
         setIsScanningAI(true)
-        const toastId = toast({ title: "AI Scanning...", description: "Identifying products and batch info..." })
+        toast.success("AI Scanning...", { description: "Identifying products and batch info..." })
 
         try {
             const formData = new FormData()
@@ -127,7 +127,7 @@ export default function ReceiveStockPage() {
             const result = await scanPurchaseReceiptAction(formData)
 
             if (result.success && result.data) {
-                toast({ title: "Scan Complete", description: `Found ${result.data.length} items. Matching with inventory...` })
+                toast.success("Scan Complete", { description: `Found ${result.data.length} items. Matching with inventory...` })
                 
                 const newItems: any[] = []
                 const notFoundItems: string[] = []
@@ -153,7 +153,7 @@ export default function ReceiveStockPage() {
                 }
 
                 if (notFoundItems.length > 0) {
-                    toast({ title: "Products Not Found", description: `Could not find ${notFoundItems.length} product(s) in catalogue. They were skipped.`, variant: "destructive" })
+                    toast.error("Products Not Found", { description: `Could not find ${notFoundItems.length} product(s) in catalogue. They were skipped.` })
                 }
 
                 if (newItems.length > 0) {
@@ -161,13 +161,13 @@ export default function ReceiveStockPage() {
                         ...prev,
                         items: [...(prev.items || []), ...newItems]
                     }))
-                    toast({ title: "Success", description: `Added ${newItems.length} items from scan.` })
+                    toast.success("Success", { description: `Added ${newItems.length} items from scan.` })
                 }
             } else {
-                toast({ title: "Scan Failed", description: result.error || "Unknown error", variant: "destructive" })
+                toast.error("Scan Failed", { description: result.error || "Unknown error" })
             }
         } catch (e) {
-            toast({ title: "Error", description: "AI Scanning failed.", variant: "destructive" })
+            toast.error("Error", { description: "AI Scanning failed." })
         } finally {
             setIsScanningAI(false)
         }
@@ -175,7 +175,7 @@ export default function ReceiveStockPage() {
 
     const handleSubmit = async () => {
         if (!formData.items || formData.items.length === 0) {
-            toast({ title: "No Items", description: "Please add at least one item", variant: "destructive" })
+            toast.error("No Items", { description: "Please add at least one item" })
             return
         }
 
@@ -183,13 +183,13 @@ export default function ReceiveStockPage() {
         try {
             const result = await receiveStock(formData as ReceiveStockData)
             if (result.success) {
-                toast({ title: "Success", description: "Stock received successfully", className: "bg-green-500 text-white" })
+                toast.success("Success", { description: "Stock received successfully" })
                 router.push('/hms/inventory/products')
             } else {
-                toast({ title: "Error", description: result.error, variant: "destructive" })
+                toast.error("Error", { description: result.error })
             }
         } catch (e) {
-            toast({ title: "Error", description: "Something went wrong", variant: "destructive" })
+            toast.error("Error", { description: "Something went wrong" })
         } finally {
             setIsLoading(false)
         }

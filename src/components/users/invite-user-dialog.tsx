@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { cn, copyToClipboard } from '@/lib/utils'
 import { useState, useEffect } from 'react'
@@ -22,7 +22,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { inviteUser } from '@/app/actions/users'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from "sonner"
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { GeographySelector } from './geography-selector'
 import { getApplicableHolidays } from '@/app/actions/holidays'
@@ -41,7 +41,6 @@ interface InviteUserDialogProps {
 
 export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
     const router = useRouter()
-    const { toast } = useToast()
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [currentRoles, setCurrentRoles] = useState<any[]>([])
@@ -128,12 +127,8 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
         setLoading(false)
 
         if (result.error) {
-            toast({
-                title: 'Operation Failed',
-                description: result.error,
-                variant: 'destructive',
-                className: "bg-red-500 text-white border-none shadow-2xl"
-            })
+            toast.success('Operation Failed', { description: result.error,
+                variant: 'destructive' })
         } else {
             // SUCCESS STATE
             setInviteResult({
@@ -141,12 +136,9 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                 emailStatus: result.emailStatus || 'unknown'
             })
 
-            toast({
-                title: 'User Onboarded Successfully',
-                description: result.message,
+            toast.success('User Onboarded Successfully', { description: result.message,
                 className: 'bg-indigo-600 text-white border-none shadow-2xl',
-                duration: 5000,
-            })
+                duration: 5000, })
             router.refresh()
         }
     }
@@ -155,9 +147,9 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
         if (inviteResult?.link) {
             const success = await copyToClipboard(inviteResult.link)
             if (success) {
-                toast({ title: 'Link Copied', description: 'Invitation link copied to clipboard' })
+                toast.success("Link Copied", { description: 'Invitation link copied to clipboard' })
             } else {
-                toast({ title: 'Copy Failed', description: 'Please copy the link manually', variant: 'destructive' })
+                toast.error("Copy Failed", { description: 'Please copy the link manually' })
             }
         }
     }

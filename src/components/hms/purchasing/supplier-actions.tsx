@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { MoreHorizontal, Pencil, Trash2, Power, Eye } from 'lucide-react';
 import { deleteSupplier, updateSupplier } from '@/app/actions/purchase';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -21,7 +21,6 @@ interface SupplierActionsProps {
 }
 
 export function SupplierActions({ supplier }: SupplierActionsProps) {
-    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [showEditDialog, setShowEditDialog] = useState(false);
     const router = useRouter();
@@ -33,13 +32,13 @@ export function SupplierActions({ supplier }: SupplierActionsProps) {
         try {
             const result = await updateSupplier(supplier.id, { is_active: !isActive });
             if (result.success) {
-                toast({ title: "Success", description: `Supplier ${isActive ? 'deactivated' : 'activated'} successfully` });
+                toast.success("Success", { description: `Supplier ${isActive ? 'deactivated' : 'activated'} successfully` });
                 router.refresh();
             } else {
-                toast({ variant: "destructive", title: "Error", description: result.error });
+                toast.error("Error", { description: result.error });
             }
         } catch (error) {
-            toast({ variant: "destructive", title: "Error", description: "Something went wrong" });
+            toast.error("Error", { description: "Something went wrong" });
         } finally {
             setLoading(false);
         }
@@ -52,13 +51,13 @@ export function SupplierActions({ supplier }: SupplierActionsProps) {
         try {
             const result = await deleteSupplier(supplier.id);
             if (result.success) {
-                toast({ title: "Success", description: "Supplier deleted successfully" });
+                toast.success("Success", { description: "Supplier deleted successfully" });
                 router.refresh();
             } else {
-                toast({ variant: "destructive", title: "Error", description: result.error });
+                toast.error("Error", { description: result.error });
             }
         } catch (error) {
-            toast({ variant: "destructive", title: "Error", description: "Something went wrong" });
+            toast.error("Error", { description: "Something went wrong" });
         } finally {
             setLoading(false);
         }
@@ -108,7 +107,7 @@ export function SupplierActions({ supplier }: SupplierActionsProps) {
                     onSuccess={() => {
                         setShowEditDialog(false);
                         router.refresh();
-                        toast({ title: "Success", description: "Supplier updated successfully" });
+                        toast.success("Success", { description: "Supplier updated successfully" });
                     }}
                     initialData={supplier}
                 />

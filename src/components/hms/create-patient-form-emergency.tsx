@@ -8,11 +8,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 
 export function CreatePatientFormEmergency() {
     const router = useRouter()
-    const { toast } = useToast()
+
     const [isPending, setIsPending] = useState(false)
 
     async function onSubmit(formData: FormData) {
@@ -23,14 +23,14 @@ export function CreatePatientFormEmergency() {
             console.log("Result:", res);
 
             if (res.error) {
-                toast({ title: "Error", description: res.error, variant: "destructive" })
+                toast.error("Error", { description: res.error })
             } else if (res.success) {
-                toast({ title: "Success", description: "Patient registered (Invoice Skipped)." })
+                toast.success("Success", { description: "Patient registered (Invoice Skipped)." })
                 // Redirect to confirm
                 window.location.href = `/hms/patients/${res.data.id}`
             }
         } catch (err: any) {
-            toast({ title: "Crash", description: err.message, variant: "destructive" })
+            toast.error("Crash", { description: err.message })
         } finally {
             setIsPending(false)
         }

@@ -32,15 +32,20 @@ import {
  * THEME AWARE: Tally-Inspired in Dark Mode / Professional ERP in Light Mode.
  */
 export function FinancialDashboard({
-    currencyCode = 'INR',
-    currencySymbol = 'Rs.', // SAFE FALLBACK: Switched to Rs. to prevent character corruption
+    currencyCode,
+    currencySymbol: propCurrencySymbol,
+    initialView,
+    initialTab,
 }: {
     currencyCode?: string,
     currencySymbol?: string,
+    initialView?: string,
+    initialTab?: string,
 }) {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const { formatCurrency, formatDate } = useLocalization()
+    const { formatCurrency, formatDate, currencySymbol: locCurrencySymbol } = useLocalization()
+    const activeCurrencySymbol = propCurrencySymbol || locCurrencySymbol || '₹';
     
     // Sync date with URL Search Param
     const queryDate = searchParams.get('date')
@@ -75,7 +80,7 @@ export function FinancialDashboard({
                 if (daily.success) setDailyData(daily.data)
                 if (pl.success) setPlData(pl.data)
                 if (bs.success) setBsData(bs.data)
-                if (insightRes.success) setInsights((insightRes as any).data || [])
+                if (insightRes.success) setInsights(insightRes.data)
             } catch (error) {
                 console.error("Institutional Fetching Failed", error)
             } finally {
@@ -87,11 +92,8 @@ export function FinancialDashboard({
 
     // SAFE CURRENCY RENDERER
     const renderAmount = (amount: number, options: { color?: string, large?: boolean } = {}) => {
-        const { currencySymbol } = useLocalization();
-        const val = formatCurrency(amount, currencySymbol);
-        // Ensure symbol is always before and correct
-        const cleanVal = val.replace('\u20B9', 'Rs.').replace('Γé╣', 'Rs.');
-        return <span className={cn(options.large ? "text-xl font-black tracking-tighter" : "font-black", options.color || "text-foreground")}>{cleanVal}</span>;
+        const val = formatCurrency(amount, activeCurrencySymbol);
+        return <span className={cn(options.large ? "text-xl font-black tracking-tighter" : "font-black", options.color || "text-foreground")}>{val}</span>;
     }
 
     if (loading && !dailyData) {
@@ -176,7 +178,7 @@ export function FinancialDashboard({
                         <div className="flex flex-col gap-4 overflow-auto max-h-[400px]">
                             {insights.length > 0 ? insights.map((insight, idx) => (
                                 <div key={idx} className="bg-secondary p-3 border-l-2 border-red-500">
-                                    <p className="text-[10px] leading-relaxed text-foreground">{insight.replace('\u20B9', 'Rs.').replace(currencySymbol, 'Rs.')}</p>
+                                    <p className="text-[10px] leading-relaxed text-foreground">{insight}</p>
                                 </div>
                             )) : (
                                 <div className="text-center py-10 opacity-30">

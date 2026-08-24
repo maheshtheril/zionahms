@@ -6,7 +6,7 @@ import { Search, UserPlus, Filter, Edit, Power, Trash2, Mail, Shield, CheckCircl
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { updateUserStatus, deleteUser, deleteUserPermanently, resendInvitation } from '@/app/actions/users'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from "sonner"
 import { cn, copyToClipboard } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -40,7 +40,7 @@ interface UserTableProps {
 
 export function UserTable({ users, total, pages, currentPage }: UserTableProps) {
     const router = useRouter()
-    const { toast } = useToast()
+
     const [searchQuery, setSearchQuery] = useState('')
     const [roleFilter, setRoleFilter] = useState('all')
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
@@ -57,18 +57,11 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
         const result = await resendInvitation(userId)
 
         if (result.error) {
-            toast({
-                title: 'Operation Failed',
-                description: result.error,
-                variant: 'destructive',
-                className: "bg-red-500 text-white border-none shadow-2xl"
-            })
+            toast.error('Operation Failed', { description: result.error })
         } else {
             const isEmailFailed = result.emailStatus === 'failed'
 
-            toast({
-                title: isEmailFailed ? 'Email Service Configuration Required' : 'Invitation Dispatches',
-                className: isEmailFailed ? 'border-indigo-500 bg-slate-900 text-white shadow-[0_20px_50px_rgba(79,70,229,0.3)]' : 'bg-indigo-600 text-white border-none shadow-2xl',
+            toast.success(isEmailFailed ? 'Email Service Configuration Required' : 'Invitation Dispatches', {
                 description: (
                     <div className="flex flex-col gap-4 mt-3">
                         <p className="font-bold text-sm leading-tight">{result.message}</p>
@@ -78,7 +71,7 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
                                 <button
                                     onClick={() => {
                                         const success = copyToClipboard(result.inviteLink!)
-                                        if (success) toast({ title: "Copied!", variant: "default", className: "bg-emerald-600 text-white" })
+                                        if (success) toast.success("Copied to clipboard!")
                                     }}
                                     className="w-full bg-white/20 hover:bg-white hover:text-indigo-600 p-2 rounded-lg text-white text-left font-bold text-[10px] flex items-center justify-between transition-all group"
                                 >
@@ -98,17 +91,9 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
     const handleToggleStatus = async (userId: string, currentStatus: boolean) => {
         const result = await updateUserStatus(userId, !currentStatus)
         if (result.error) {
-            toast({
-                title: 'Status Update Denied',
-                description: result.error,
-                variant: 'destructive'
-            })
+            toast.error('Status Update Denied', { description: result.error })
         } else {
-            toast({
-                title: 'User Updated',
-                description: `User ${!currentStatus ? 'activated' : 'deactivated'} successfully`,
-                className: "bg-indigo-600 text-white border-none shadow-xl"
-            })
+            toast.success('User Updated', { description: `User ${!currentStatus ? 'activated' : 'deactivated'} successfully` })
             router.refresh()
         }
     }
@@ -118,17 +103,9 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
 
         const result = await deleteUser(userId)
         if (result.error) {
-            toast({
-                title: 'Error Rendering Command',
-                description: result.error,
-                variant: 'destructive'
-            })
+            toast.error('Error Rendering Command', { description: result.error })
         } else {
-            toast({
-                title: 'User Suspended',
-                description: result.message || 'User restricted successfully',
-                className: "bg-red-600 text-white border-none shadow-xl"
-            })
+            toast.success('User Suspended', { description: result.message || 'User restricted successfully' })
             router.refresh()
         }
     }
@@ -138,18 +115,9 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
 
         const result = await deleteUserPermanently(userId)
         if (result.error) {
-            toast({
-                title: 'Purge Failed',
-                description: result.error,
-                variant: 'destructive',
-                className: "bg-black text-white border-red-500 border-2 shadow-2xl"
-            })
+            toast.error('Purge Failed', { description: result.error })
         } else {
-            toast({
-                title: 'User Purged',
-                description: 'User record removed from core database.',
-                className: "bg-emerald-600 text-white border-none shadow-xl"
-            })
+            toast.success('User Purged', { description: 'User record removed from core database.' })
             router.refresh()
         }
     }

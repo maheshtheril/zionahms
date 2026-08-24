@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useMemo } from 'react'
 import {
@@ -21,7 +21,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { upsertDepartment, deleteDepartment } from '@/app/actions/crm/departments'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from "sonner"
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -40,7 +40,6 @@ interface Props {
 }
 
 export function DepartmentManager({ initialDepartments }: Props) {
-    const { toast } = useToast()
     const [departments, setDepartments] = useState(initialDepartments)
     const [search, setSearch] = useState('')
     const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -93,12 +92,12 @@ export function DepartmentManager({ initialDepartments }: Props) {
         setLoading(false)
 
         if (result.success) {
-            toast({ title: 'Success', description: 'Department saved successfully' })
+            toast.success("Success", { description: 'Department saved successfully' })
             setIsDialogOpen(false)
             // Refresh logic - real apps would fetch or use revalidatePath
             window.location.reload()
         } else {
-            toast({ title: 'Error', description: result.error || 'Failed to save', variant: 'destructive' })
+            toast.error("Error", { description: result.error || 'Failed to save' })
         }
     }
 
@@ -107,10 +106,10 @@ export function DepartmentManager({ initialDepartments }: Props) {
 
         const result = await deleteDepartment(id)
         if (result.success) {
-            toast({ title: 'Deleted', description: 'Department removed successfully' })
+            toast.success("Deleted", { description: 'Department removed successfully' })
             window.location.reload()
         } else {
-            toast({ title: 'Error', description: result.error || 'Failed to delete', variant: 'destructive' })
+            toast.error("Error", { description: result.error || 'Failed to delete' })
         }
     }
 

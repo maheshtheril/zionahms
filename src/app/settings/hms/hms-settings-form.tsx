@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { updateHMSSettings, updatePaymentGatewaySettings, updateWhatsAppSettings, updatePDFSettings, setAsDefaultTemplate, deletePDFTemplate, renamePDFCategory, updateAISettings, resetWhatsAppSession } from "@/app/actions/settings"
 import { Shield, CreditCard, Save, Calendar, Sparkles, AlertCircle, CheckCircle, Stethoscope, Eye, EyeOff, MessageSquare, FileText, AlignLeft, AlignCenter, AlignRight, Printer, Zap, X, Loader2, Trash2, Layout } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { Label } from "@/components/ui/label"
 import { DynamicPrintDesigner } from "@/components/print/dynamic-print-designer"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -31,7 +31,7 @@ export function HMSSettingsForm({
     searchUsage?: string 
 }) {
     const router = useRouter()
-    const { toast } = useToast()
+
     const [mounted, setMounted] = useState(false)
     const autosaverRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -46,21 +46,13 @@ export function HMSSettingsForm({
         try {
             const res = await setAsDefaultTemplate(id, usage, settings.company_id);
             if (!res.success) {
-                toast({ 
-                    title: "Activation Failed", 
-                    description: res.error || "System could not finalize design.", 
-                    variant: "destructive" 
-                });
+                toast.error("Activation Failed", { description: res.error || "System could not finalize design." });
             } else {
-                toast({ 
-                    title: "System Live", 
-                    description: "The selected layout is now active for production.",
-                    variant: "default"
-                });
+                toast.success("System Live", { description: "The selected layout is now active for production." });
                 router.refresh();
             }
         } catch (err: any) {
-            toast({ title: "Critical Error", description: err.message, variant: "destructive" });
+            toast.error("Critical Error", { description: err.message });
         }
     }
 
@@ -256,13 +248,13 @@ export function HMSSettingsForm({
         try {
             const res = await fetch(`http://${window.location.hostname}:8081/logout`, { method: 'POST' });
             if (res.ok) {
-                toast({ title: "Disconnected", description: "Old session wiped. Restarting bridge..." });
+                toast.success("Disconnected", { description: "Old session wiped. Restarting bridge..." });
                 setBridgeStatus(null);
             } else {
                 // If local bridge is unreachable, try direct file reset
                 const coldRes = await resetWhatsAppSession();
                 if (coldRes.success) {
-                    toast({ title: "Session Reset", description: "Login files deleted via server. Restart Bridge." });
+                    toast.success("Session Reset", { description: "Login files deleted via server. Restart Bridge." });
                     setBridgeStatus(null);
                 } else {
                     throw new Error("Local Bridge Bridge unreachable.");
@@ -272,10 +264,10 @@ export function HMSSettingsForm({
             // Fallback to cold reset on connection error
             const coldRes = await resetWhatsAppSession();
             if (coldRes.success) {
-                toast({ title: "Emergency Reset", description: "Login files deleted. Restart BRIDGE manually." });
+                toast.success("Emergency Reset", { description: "Login files deleted. Restart BRIDGE manually." });
                 setBridgeStatus(null);
             } else {
-                toast({ title: "Error", description: "Could not reach bridge or reset files.", variant: "destructive" });
+                toast.error("Error", { description: "Could not reach bridge or reset files." });
             }
         } finally {
             setLoading(false);
@@ -284,28 +276,20 @@ export function HMSSettingsForm({
 
     const handleTestAi = async () => {
         setLoading(true);
-        toast({ title: "Testing AI...", description: "Connecting to Google Gemini..." });
+        toast.success("Testing AI...", { description: "Connecting to Google Gemini..." });
 
         try {
             const formData = new FormData();
             formData.append('apiKey', aiApiKey);
             const result = await testAIConnection(formData);
             if (result.success) {
-                toast({
-                    title: "AI Test SUCCESS ✓",
-                    description: "Connected to Gemini Pro 1.5 successfully.",
-                    className: "bg-emerald-600 text-white"
-                });
+                toast.success("AI Test SUCCESS ✓", { description: "Connected to Gemini Pro 1.5 successfully." });
                 setHasExistingAiKey(true);
             } else {
-                toast({
-                    title: "AI Test FAILED ✗",
-                    description: result.error || "Connection error. Please check your key.",
-                    variant: "destructive"
-                });
+                toast.error("AI Test FAILED ✗", { description: result.error || "Connection error. Please check your key." });
             }
         } catch (err: any) {
-            toast({ title: "Error", description: err.message, variant: "destructive" });
+            toast.error("Error", { description: err.message });
         } finally {
             setLoading(false);
         }
@@ -314,10 +298,10 @@ export function HMSSettingsForm({
     const renameCategory = async (oldUsage: string, newUsage: string) => {
         const res = await renamePDFCategory(oldUsage, newUsage);
         if (res.success) {
-            toast({ title: "Category Renamed", description: `Changed to ${newUsage}` });
+            toast.success("Category Renamed", { description: `Changed to ${newUsage}` });
             router.refresh();
         } else {
-            toast({ title: "Error", description: res.error || "Failed to rename", variant: "destructive" });
+            toast.error("Error", { description: res.error || "Failed to rename" });
         }
         return res;
     };
@@ -327,10 +311,7 @@ export function HMSSettingsForm({
         setLoading(true);
         setMsg(null);
 
-        const loadingToast = toast({
-            title: "Saving Configuration",
-            description: "Updating hospital settings and products...",
-        });
+        const loadingToast = toast.loading("Saving Configuration", { description: "Updating hospital settings and products..." });
 
         try {
             const [res, gatewayRes, whatsappRes, aiRes] = await Promise.all([
@@ -386,10 +367,10 @@ export function HMSSettingsForm({
             if (!whatsappRes.success) throw new Error(whatsappRes.error || "Failed to save WhatsApp settings");
             if (!aiRes.success) throw new Error(aiRes.error || "Failed to save AI configuration");
 
-            if (loadingToast) loadingToast.dismiss();
+            if (loadingToast) toast.dismiss(loadingToast);
 
             setMsg({ type: 'success', text: 'Configuration saved successfully.' });
-            toast({ title: "Success", description: "All settings updated." });
+            toast.success("Success", { description: "All settings updated." });
 
             if (gatewayKeySecret) { setGatewayKeySecret(''); setHasExistingSecret(true); }
             if (whatsappToken) { setWhatsappToken(''); setHasExistingWhatsappToken(true); }
@@ -397,9 +378,9 @@ export function HMSSettingsForm({
 
             router.refresh();
         } catch (err: any) {
-            if (loadingToast) loadingToast.dismiss();
+            if (loadingToast) toast.dismiss(loadingToast);
             setMsg({ type: 'error', text: err.message || 'Failed to save configuration' });
-            toast({ title: "Error", description: err.message, variant: "destructive" });
+            toast.error("Error", { description: err.message });
         } finally {
             setLoading(false);
         }
@@ -812,7 +793,7 @@ export function HMSSettingsForm({
                                         onClick={async () => {
                                             if (confirm("Restore to original .env key?")) {
                                                 const res = await updateAISettings({ enabled: aiEnabled, apiKey: "", reset: true });
-                                                if (res.success) { setHasExistingAiKey(false); setAiApiKey(""); toast({ title: "AI Reset", description: "Using default .env key." }); }
+                                                if (res.success) { setHasExistingAiKey(false); setAiApiKey(""); toast.success("AI Reset", { description: "Using default .env key." }); }
                                             }
                                         }}
                                         className="px-4 bg-slate-800 text-slate-400 border border-white/5 rounded-xl hover:text-red-400"
@@ -921,7 +902,7 @@ export function HMSSettingsForm({
                                                         isDefault: true
                                                     });
                                                     if (res.success) {
-                                                        toast({ title: "Template Saved", description: "Your custom print layout coordinates have been securely locked." });
+                                                        toast.success("Template Saved", { description: "Your custom print layout coordinates have been securely locked." });
                                                         router.refresh();
                                                     }
                                                 }}

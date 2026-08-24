@@ -625,8 +625,55 @@ async function processInvoiceData(session: any, data: any) {
         }
     }
 
+    // ─── DUPLICATE INVOICE DETECTION ────────────────────────────────────────────
+    // After we know the supplierId and reference (bill number), check if this
+    // invoice has already been received in the system. This prevents double-entry.
+    let duplicate: { id: string; name: string; date: string; total: number } | null = null;
+
+    if (supplierId && data.reference && companyId) {
+        try {
+            const billRef = String(data.reference).trim();
+            const existingReceipt = await prisma.hms_purchase_receipt.findFirst({
+                where: {
+                    company_id: companyId,
+                    supplier_id: supplierId,
+                    OR: [
+                        // Check the receipt "name" field (often set to bill/ref number)
+                        { name: { equals: billRef, mode: 'insensitive' } },
+                        // Check inside metadata.reference if stored there
+                        { metadata: { path: ['reference'], equals: billRef } },
+                        { metadata: { path: ['supplier_bill_no'], equals: billRef } },
+                    ]
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    receipt_date: true,
+                    metadata: true
+                }
+            });
+
+            if (existingReceipt) {
+                const meta = existingReceipt.metadata as any;
+                duplicate = {
+                    id: existingReceipt.id,
+                    name: existingReceipt.name || billRef,
+                    date: existingReceipt.receipt_date
+                        ? new Date(existingReceipt.receipt_date).toLocaleDateString('en-IN')
+                        : 'Unknown date',
+                    total: parseNumber(meta?.grand_total || 0)
+                };
+            }
+        } catch (dupErr) {
+            // Non-critical: if duplicate check fails, don't block the scan
+            console.error('[ScanInvoice] Duplicate check error (non-blocking):', dupErr);
+        }
+    }
+    // ─────────────────────────────────────────────────────────────────────────────
+
     return {
         success: true,
+        duplicate,          // null = no duplicate  |  object = already received!
         data: {
             supplierId,
             supplierName,

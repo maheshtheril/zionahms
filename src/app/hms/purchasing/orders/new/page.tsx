@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -6,7 +6,7 @@ import { scanInvoiceAction } from '@/app/actions/scan-invoice';
 import { createPurchaseOrder, searchSuppliers, createSupplierQuick, searchProducts, getCompanyDefaults } from '@/app/actions/purchase';
 import { Loader2, Sparkles, Plus, Trash2, Calendar, Save, ArrowLeft, ArrowUpRight, Search, CheckCircle2 } from 'lucide-react';
 import { SearchableSelect, type Option } from '@/components/ui/searchable-select';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from "sonner";
 import { Toaster } from '@/components/ui/toaster';
 import { useLocalization } from "@/contexts/localization-context";
 
@@ -46,7 +46,7 @@ export default function NewPurchaseOrderPage() {
         try {
             const result = await scanInvoiceAction(formData);
             if (result.error) {
-                toast({ title: "Scan Failed", description: result.error, variant: "destructive" });
+                toast.error("Scan Failed", { description: result.error });
             } else if (result.success && result.data) {
                 const { data } = result;
                 if (data.supplierId) {
@@ -62,18 +62,18 @@ export default function NewPurchaseOrderPage() {
                         productId: item.productId || '',
                         productName: item.productName || item.name,
                         qty: item.qty || 1,
-                        uom: item.uom || 'PCS', // ← Extract UOM from scan
+                        uom: item.uom || 'PCS', // â† Extract UOM from scan
                         unitPrice: item.unitPrice || 0,
-                        taxRate: item.taxRate || 0, // ← Capture Tax from scan
+                        taxRate: item.taxRate || 0, // â† Capture Tax from scan
                         sku: item.sku || ''
                     })));
                 } else if (items.length === 0) {
                     setItems([{ productId: '', productName: '', qty: 1, uom: 'PCS', unitPrice: 0, taxRate: 0 }]);
                 }
-                toast({ title: "Invoice Processed", description: "Data auto-filled from document." });
+                toast.success("Invoice Processed", { description: "Data auto-filled from document." });
             }
         } catch (error) {
-            toast({ title: "Error", description: "Could not process invoice.", variant: "destructive" });
+            toast.error("Error", { description: "Could not process invoice." });
         } finally {
             setIsScanning(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -87,7 +87,7 @@ export default function NewPurchaseOrderPage() {
         const validItems = items.filter(i => i.qty > 0 && i.unitPrice >= 0 && i.productId);
 
         if (!supplierId) {
-            toast({ title: "Required", description: "Please select a supplier.", variant: "destructive" });
+            toast.error("Required", { description: "Please select a supplier." });
             setIsSubmitting(false);
             return;
         }
@@ -110,9 +110,9 @@ export default function NewPurchaseOrderPage() {
 
         const res = await createPurchaseOrder(payload);
         if (res.error) {
-            toast({ title: "Error", description: res.error, variant: "destructive" });
+            toast.error("Error", { description: res.error });
         } else {
-            toast({ title: "Success", description: "Purchase Order created." });
+            toast.success("Success", { description: "Purchase Order created." });
             setTimeout(() => router.push('/hms/purchasing/orders'), 500);
         }
         setIsSubmitting(false);
@@ -247,8 +247,8 @@ export default function NewPurchaseOrderPage() {
                                 className="bg-transparent border-none text-right text-sm font-bold text-neutral-200 focus:ring-0 cursor-pointer"
                             >
                                 <option value="USD" className="bg-neutral-900">USD ($)</option>
-                                <option value="EUR" className="bg-neutral-900">EUR (€)</option>
-                                <option value="GBP" className="bg-neutral-900">GBP (£)</option>
+                                <option value="EUR" className="bg-neutral-900">EUR (â‚¬)</option>
+                                <option value="GBP" className="bg-neutral-900">GBP (Â£)</option>
                                 <option value="INR" className="bg-neutral-900">INR ({currencySymbol})</option>
                             </select>
                         </div>
@@ -384,7 +384,7 @@ export default function NewPurchaseOrderPage() {
                 <div className="bg-neutral-900/90 backdrop-blur-xl border border-white/10 rounded-full p-2 pl-6 pr-2 flex items-center gap-6 shadow-2xl pointer-events-auto">
                     <div className="flex items-center gap-2 text-xs font-medium text-neutral-400">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        {items.length} Items • Draft
+                        {items.length} Items â€¢ Draft
                     </div>
                     <button
                         onClick={handleSubmit}

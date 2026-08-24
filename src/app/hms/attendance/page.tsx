@@ -5,6 +5,8 @@ import { format } from "date-fns"
 import { ensureHmsMenus } from "@/lib/menu-seeder"
 import { DownloadGuidePDF } from "@/components/attendance/guide-download"
 import { BroadcastAlert } from "@/components/attendance/broadcast-alert"
+import { FaceCheckinModal } from "@/components/hms/staff/face-checkin-modal"
+
 import {
     Calendar,
     ChevronRight,
@@ -33,11 +35,12 @@ export default async function AttendancePage() {
                     </div>
                     <h1 className="text-4xl font-black text-foreground tracking-tight">Staff Attendance</h1>
                     <p className="text-muted-foreground mt-2 text-sm">Real-time shift management and tactical roster synchronization.</p>
-                </div>
-
                 <div className="flex items-center gap-4">
+
+                    <FaceCheckinModal />
                     <DownloadGuidePDF />
                     <div className="hidden md:flex items-center gap-4 bg-muted/50 border border-border rounded-2xl p-4 backdrop-blur-xl">
+
                         <UserCircle className="h-10 w-10 text-muted-foreground" />
                         <div>
                             <p className="text-foreground font-bold text-sm leading-tight">{session?.user?.name || 'Authorized Staff'}</p>

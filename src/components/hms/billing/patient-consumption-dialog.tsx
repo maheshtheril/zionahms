@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Package, Loader2 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { recordPatientConsumption } from '@/app/actions/billing';
 import { SearchableSelect, Option } from "@/components/ui/searchable-select";
 import { getBillableItems } from '@/app/actions/billing';
@@ -19,7 +19,7 @@ interface PatientConsumptionDialogProps {
 
 export function PatientConsumptionDialog({ patientId, patientName }: PatientConsumptionDialogProps) {
     const { currencySymbol } = useLocalization();
-    const { toast } = useToast();
+
     const [isOpen, setIsOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -80,7 +80,7 @@ export function PatientConsumptionDialog({ patientId, patientName }: PatientCons
         }
 
         if (finalItemsToSubmit.length === 0) {
-            toast({ title: "No Items", description: "Please add items to the list.", variant: "destructive" });
+            toast.error("No Items", { description: "Please add items to the list." });
             return;
         }
 
@@ -89,13 +89,9 @@ export function PatientConsumptionDialog({ patientId, patientName }: PatientCons
             const res = await recordPatientConsumption(patientId, finalItemsToSubmit, notes);
 
             if (res.error) {
-                toast({ title: "Error", description: res.error, variant: "destructive" });
+                toast.error("Error", { description: res.error });
             } else {
-                toast({
-                    title: "Added to Bill",
-                    description: `Successfully added ${finalItemsToSubmit.length} items to running bill.`,
-                    className: "bg-blue-50 border-blue-200 text-blue-900"
-                });
+                toast.success("Added to Bill", { description: `Successfully added ${finalItemsToSubmit.length} items to running bill.` });
                 setIsOpen(false);
                 setSelectedItem(null);
                 setAddedItems([]);
@@ -103,7 +99,7 @@ export function PatientConsumptionDialog({ patientId, patientName }: PatientCons
                 setNotes('');
             }
         } catch (err) {
-            toast({ title: "Error", description: "Failed to record consumption", variant: "destructive" });
+            toast.error("Error", { description: "Failed to record consumption" });
         } finally {
             setIsSubmitting(false);
         }

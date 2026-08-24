@@ -56,8 +56,8 @@ export default async function CompaniesPage() {
                         </div>
 
                         <div className="mt-6 pt-4 border-t border-gray-50 flex justify-end">
-                            <Link href={`#`} className="text-blue-600 text-sm font-medium hover:underline">
-                                Settings &rarr;
+                            <Link href={`/settings/branches?company=${company.id}`} className="text-blue-600 text-sm font-medium hover:underline">
+                                Settings →
                             </Link>
                         </div>
                     </div>

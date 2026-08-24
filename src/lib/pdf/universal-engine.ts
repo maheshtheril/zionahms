@@ -346,10 +346,13 @@ export async function generateUniversalPDF(
             ),
             company: {
                 ...companyData,
-                name: companyData.name || meta.hospital_name || "",
+                logo: companyData.logo_url || "",
+                name: companyData.name || meta.hospital_name || "Hospital Name",
                 address: companyData.address || meta.address || "",
                 phone: companyData.phone || meta.phone || meta.mobile || "",
                 email: companyData.email || meta.email || "",
+                gstin: meta.gstin || meta.GSTIN || meta.tax_id || "",
+                tax_id: meta.gstin || meta.GSTIN || meta.tax_id || "",
             },
             patient: {
                 ...patientData,

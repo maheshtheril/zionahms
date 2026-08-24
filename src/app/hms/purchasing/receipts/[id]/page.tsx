@@ -65,7 +65,8 @@ export default function EditPurchaseReceiptPage() {
     const [receivedDate, setReceivedDate] = useState(new Date().toISOString().split('T')[0]);
     const [reference, setReference] = useState('');
     const [notes, setNotes] = useState('');
-    const [attachmentUrl, setAttachmentUrl] = useState('');
+    const [attachmentUrl, setAttachmentUrl] = useState<string>('');
+    const [initialAttachmentUrl, setInitialAttachmentUrl] = useState<string>('');
 
     // PO State
     const [poId, setPoId] = useState<string | null>(null);
@@ -178,6 +179,13 @@ export default function EditPurchaseReceiptPage() {
                     setReference(r.reference);
                     setNotes(r.notes);
                     setAttachmentUrl(r.attachmentUrl || '');
+                    setInitialAttachmentUrl(r.attachmentUrl || '');
+                    if (r.roundOff !== undefined) {
+                        setIsAutoRound(false);
+                        setRoundOff(r.roundOff);
+                    } else {
+                        setIsAutoRound(true);
+                    }
 
                     if (r.items) {
                         setItems(r.items.map((i: any) => ({
@@ -473,7 +481,7 @@ export default function EditPurchaseReceiptPage() {
             receivedDate: new Date(receivedDate),
             reference,
             notes,
-            attachmentUrl,
+            ...(attachmentUrl !== initialAttachmentUrl ? { attachmentUrl } : {}),
             items: validItems.map(i => ({
                 id: i.id, // Pass ID for updates
                 productId: i.productId,
@@ -492,7 +500,8 @@ export default function EditPurchaseReceiptPage() {
                 hsn: i.hsn,
                 packing: i.packing,
                 conversionFactor: i.conversionFactor
-            }))
+            })),
+            roundOff: Number(roundOff) || 0
         };
 
         if (params.id) {

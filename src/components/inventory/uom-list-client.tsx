@@ -11,12 +11,12 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 
 export function UOMListClient({ uoms }: { uoms: any[] }) {
     const [editingUom, setEditingUom] = useState<any>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const { toast } = useToast();
+
 
     const handleEdit = (uom: any) => {
         setEditingUom(uom);
@@ -26,10 +26,7 @@ export function UOMListClient({ uoms }: { uoms: any[] }) {
     const handleDelete = async (id: string) => {
         if (confirm("Are you sure you want to delete this unit?")) {
             await deleteUOM(id);
-            toast({
-                title: "Unit Deleted",
-                description: "The unit of measure has been removed successfully.",
-            });
+            toast.success("Unit Deleted", { description: "The unit of measure has been removed successfully." });
         }
     };
 

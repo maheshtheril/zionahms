@@ -14,7 +14,7 @@ import { useState, useEffect } from "react";
 import { Printer, ChevronDown, Star, Eye, X, Loader2, Check, FileText } from "lucide-react";
 import { getPDFSettings } from "@/app/actions/settings";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 interface PrintFormatSelectorProps {
     usage: string;

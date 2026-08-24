@@ -10,6 +10,7 @@ import { getDaybook, getCashBankBook, getCategoryAccounts } from "@/app/actions/
 import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
 import React from 'react'
+import { useLocalization } from '@/contexts/localization-context'
 import { cn } from '@/lib/utils'
 
 interface DetailedLedgerProps {
@@ -20,9 +21,11 @@ interface DetailedLedgerProps {
 
 export function DetailedLedgerReport({
     type,
-    currencyCode = 'INR',
-    currencySymbol = 'Rs.'
+    currencyCode,
+    currencySymbol: propCurrencySymbol
 }: DetailedLedgerProps) {
+    const { currencySymbol: locCurrencySymbol } = useLocalization()
+    const currencySymbol = propCurrencySymbol || locCurrencySymbol || '₹';
     const [loading, setLoading] = useState(true)
     const [date, setDate] = useState(new Date())
     const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1))
@@ -54,7 +57,7 @@ export function DetailedLedgerReport({
         try {
             let res;
             if (type === 'daybook') {
-                res = await getDaybook(date)
+                res = await getDaybook(startDate, endDate)
             } else {
                 res = await getCashBankBook(
                     type === 'cashbook' ? 'cash' : 'bank', 
@@ -171,41 +174,27 @@ export function DetailedLedgerReport({
                             </h1>
                         </div>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                            {type === 'daybook' 
-                                ? `Daily transactions for ${format(date, 'dd MMM yyyy')}` 
-                                : `Ledger entries from ${format(startDate, 'dd MMM')} to ${format(endDate, 'dd MMM yyyy')}`}
+                            Ledger entries from {format(startDate, 'dd MMM')} to {format(endDate, 'dd MMM yyyy')}
                         </p>
                     </div>
 
                     <div className="flex items-center gap-3 flex-wrap">
-                        {type === 'daybook' ? (
-                            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2">
-                                <Calendar className="h-4 w-4 text-slate-400" />
-                                <input
-                                    type="date"
-                                    value={format(date, 'yyyy-MM-dd')}
-                                    onChange={e => setDate(new Date(e.target.value))}
-                                    className="bg-transparent text-sm text-slate-700 dark:text-slate-200 outline-none [color-scheme:light] dark:[color-scheme:dark]"
-                                />
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2">
-                                <Calendar className="h-4 w-4 text-slate-400" />
-                                <input
-                                    type="date"
-                                    value={format(startDate, 'yyyy-MM-dd')}
-                                    onChange={e => setStartDate(new Date(e.target.value))}
-                                    className="bg-transparent text-sm text-slate-700 dark:text-slate-200 outline-none [color-scheme:light] dark:[color-scheme:dark]"
-                                />
-                                <span className="text-slate-400 text-xs">to</span>
-                                <input
-                                    type="date"
-                                    value={format(endDate, 'yyyy-MM-dd')}
-                                    onChange={e => setEndDate(new Date(e.target.value))}
-                                    className="bg-transparent text-sm text-slate-700 dark:text-slate-200 outline-none [color-scheme:light] dark:[color-scheme:dark]"
-                                />
-                            </div>
-                        )}
+                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2">
+                            <Calendar className="h-4 w-4 text-slate-400" />
+                            <input
+                                type="date"
+                                value={format(startDate, 'yyyy-MM-dd')}
+                                onChange={e => setStartDate(new Date(e.target.value))}
+                                className="bg-transparent text-sm text-slate-700 dark:text-slate-200 outline-none [color-scheme:light] dark:[color-scheme:dark]"
+                            />
+                            <span className="text-slate-400 text-xs">to</span>
+                            <input
+                                type="date"
+                                value={format(endDate, 'yyyy-MM-dd')}
+                                onChange={e => setEndDate(new Date(e.target.value))}
+                                className="bg-transparent text-sm text-slate-700 dark:text-slate-200 outline-none [color-scheme:light] dark:[color-scheme:dark]"
+                            />
+                        </div>
 
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />

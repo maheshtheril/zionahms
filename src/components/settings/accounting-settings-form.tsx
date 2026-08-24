@@ -1,11 +1,11 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, AlertCircle, BookOpen, Layers, DollarSign, Package, Settings, Calendar, Lock, ShieldCheck } from 'lucide-react'
+import { Save, AlertCircle, BookOpen, Layers, DollarSign, Package, Settings, Calendar, Lock, ShieldCheck, CheckCircle2 } from 'lucide-react'
 import { updateAccountingSettings, lockAccountingPeriod } from '@/app/actions/accounting-settings'
 import { updatePaymentMappings } from '@/app/actions/settings'
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { CreditCard, Smartphone, Banknote, Building } from 'lucide-react'
 
 export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel, journals, paymentMappings, taxTypes }: {
@@ -18,7 +18,6 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
     taxTypes?: any[]
 }) {
     const router = useRouter()
-    const { toast } = useToast()
     const [loading, setLoading] = useState(false)
     const [lockLoading, setLockLoading] = useState(false)
 
@@ -48,6 +47,7 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
         ar_account_id: settings?.ar_account_id || '',
         sales_account_id: settings?.sales_account_id || '',
         sales_discount_account_id: settings?.sales_discount_account_id || '',
+        round_off_account_id: settings?.round_off_account_id || '',
         output_tax_account_id: settings?.output_tax_account_id || '',
         default_sale_tax_id: settings?.default_sale_tax_id || '',
 
@@ -78,17 +78,13 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
         try {
             const res = await lockAccountingPeriod(lockDate, supervisorPin)
             if (res.success) {
-                toast({
-                    title: "Security Controls Saved",
-                    description: `Period locked & Supervisor PIN updated successfully.`,
-                    className: "bg-amber-600 text-white border-none"
-                })
+                toast.success("Security Controls Saved", { description: `Period locked & Supervisor PIN updated successfully.` })
                 router.refresh()
             } else {
-                toast({ title: "Error", description: res.error, variant: "destructive" })
+                toast.error("Error", { description: res.error })
             }
         } catch (e: any) {
-            toast({ title: "Error", description: e.message, variant: "destructive" })
+            toast.error("Error", { description: e.message })
         } finally {
             setLockLoading(false)
         }
@@ -104,24 +100,13 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
             });
 
             if (res.success) {
-                toast({
-                    title: "Success",
-                    description: "Accounting settings and mappings updated successfully.",
-                })
+                toast.success("Success", { description: "Accounting settings and mappings updated successfully.", })
                 router.refresh()
             } else {
-                toast({
-                    title: "Warning",
-                    description: res.error || 'Some settings failed to save',
-                    variant: "destructive"
-                })
+                toast.error("Warning", { description: res.error || 'Some settings failed to save' })
             }
         } catch (error) {
-            toast({
-                title: "Error",
-                description: 'An unexpected error occurred',
-                variant: "destructive"
-            })
+            toast.error("Error", { description: 'An unexpected error occurred' })
         } finally {
             setLoading(false)
         }
@@ -132,17 +117,13 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
         try {
             const res = await updatePaymentMappings(paymentMap)
             if (res.success) {
-                toast({
-                    title: "Mappings Saved",
-                    description: "Payment method account mappings updated.",
-                    className: "bg-blue-600 text-white border-none"
-                })
+                toast.success("Mappings Saved", { description: "Payment method account mappings updated." })
                 router.refresh()
             } else {
-                toast({ title: "Error", description: res.error, variant: "destructive" })
+                toast.error("Error", { description: res.error })
             }
         } catch (e: any) {
-            toast({ title: "Error", description: e.message, variant: "destructive" })
+            toast.error("Error", { description: e.message })
         } finally {
             setLoading(false)
         }
@@ -155,10 +136,10 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
             const { seedDefaultAccountsAction } = await import('@/app/actions/seed-accounts');
             const res = await seedDefaultAccountsAction();
             if (res.success) {
-                toast({ title: "Success", description: "Default accounts created." });
+                toast.success("Success", { description: "Default accounts created." });
                 router.refresh();
             } else {
-                toast({ title: "Error", description: "Failed to create accounts: " + res.error, variant: "destructive" });
+                toast.error("Error", { description: "Failed to create accounts: " + res.error });
             }
             setLoading(false);
         };
@@ -186,6 +167,7 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
     // Styles
     const sectionClass = "bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm relative overflow-hidden";
     const inputClass = "w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all";
+    const labelClass = "block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5";
     const subLabelClass = "text-xs text-slate-500 mt-1 block";
 
     const LabelWithStatus = ({ label, isConfigured }: { label: string, isConfigured: boolean }) => (
@@ -321,6 +303,14 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
                             {accounts.filter(a => a.type === 'Expense' || a.type === 'Revenue').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
                         <span className={subLabelClass}>Tracks discounts given to customers.</span>
+                    </div>
+                    <div className="space-y-1">
+                        <LabelWithStatus label="Round-Off Account" isConfigured={!!formData.round_off_account_id} />
+                        <select value={formData.round_off_account_id} onChange={e => setFormData({ ...formData, round_off_account_id: e.target.value })} className={inputClass}>
+                            <option value="">Select Account...</option>
+                            {accounts.filter(a => a.type === 'Expense' || a.type === 'Revenue').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                        <span className={subLabelClass}>Tracks penny differences in invoice rounding.</span>
                     </div>
                     <div className="space-y-1">
                         <LabelWithStatus label="Output Tax Account" isConfigured={!!formData.output_tax_account_id} />

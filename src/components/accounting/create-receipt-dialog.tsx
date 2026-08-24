@@ -9,7 +9,7 @@ import {
     Receipt, FileText, CheckCircle2, AlertCircle, X, ArrowRight
 } from 'lucide-react';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from "sonner";
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -71,11 +71,11 @@ export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateRec
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!partnerId) {
-            toast({ title: "Missing Payer", description: "Please select who the receipt is from.", variant: "destructive", className: "bg-red-950 border-red-900 text-white" });
+            toast.error("Missing Payer", { description: "Please select who the receipt is from." });
             return;
         }
         if (!amount || Number(amount) <= 0) {
-            toast({ title: "Invalid Amount", description: "Please enter a positive amount.", variant: "destructive", className: "bg-red-950 border-red-900 text-white" });
+            toast.error("Invalid Amount", { description: "Please enter a positive amount." });
             return;
         }
 
@@ -95,14 +95,10 @@ export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateRec
         });
 
         if (res.error) {
-            toast({ title: "Failed to Save", description: res.error, variant: "destructive", className: "bg-red-950 border-red-900 text-white" });
+            toast.error("Failed to Save", { description: res.error });
             setIsSubmitting(false);
         } else {
-            toast({
-                title: "Receipt Saved",
-                description: `Successfully recorded receipt for {currencySymbol}${amount}`,
-                className: "bg-black border-emerald-900 text-white"
-            });
+            toast.success("Receipt Saved", { description: `Successfully recorded receipt for ${amount}` });
             setIsSubmitting(false);
             onOpenChange(false);
             onSuccess?.();

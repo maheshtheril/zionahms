@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
+import { SYSTEM_DEFAULT_CURRENCY_SYMBOL } from '@/lib/currency';
 import { 
   DEFAULT_DATE_FORMAT, 
   DEFAULT_PRECISION, 
@@ -27,7 +28,7 @@ export function LocalizationProvider({ children }: { children: ReactNode }) {
   const user = session?.user as any;
   const dateFormat = user?.dateFormat || DEFAULT_DATE_FORMAT;
   const precision = user?.precision ?? DEFAULT_PRECISION;
-  const currencySymbol = user?.currencySymbol || 'Rs.';
+  const currencySymbol = user?.currencySymbol || SYSTEM_DEFAULT_CURRENCY_SYMBOL;
 
   const formatDate = (date: Date | string | number, overrideFormat?: string) => {
     return libFormatDate(date, overrideFormat || dateFormat);
@@ -62,9 +63,9 @@ export const useLocalization = () => {
     return {
       dateFormat: DEFAULT_DATE_FORMAT,
       precision: DEFAULT_PRECISION,
-      currencySymbol: 'Rs.',
+      currencySymbol: SYSTEM_DEFAULT_CURRENCY_SYMBOL,
       formatDate: (date: Date | string | number, f?: string) => libFormatDate(date, f || DEFAULT_DATE_FORMAT),
-      formatCurrency: (amount: number, s?: string, p?: number) => libFormatCurrencyWithSymbol(amount, s || 'Rs.', p ?? DEFAULT_PRECISION),
+      formatCurrency: (amount: number, s?: string, p?: number) => libFormatCurrencyWithSymbol(amount, s || SYSTEM_DEFAULT_CURRENCY_SYMBOL, p ?? DEFAULT_PRECISION),
       formatNumber: (amount: number, p?: number) => libFormatNumber(amount, p ?? DEFAULT_PRECISION)
     };
   }

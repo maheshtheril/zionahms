@@ -4,6 +4,7 @@ import { auth } from "@/auth"
 import { notFound } from "next/navigation"
 import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 import { getPDFConfig } from "@/app/actions/settings"
+import { SYSTEM_DEFAULT_CURRENCY_SYMBOL } from "@/lib/currency"
 
 export default async function EditSalesReturnPage({ 
     params 
@@ -74,7 +75,7 @@ export default async function EditSalesReturnPage({
                 }}
                 initialInvoice={JSON.parse(JSON.stringify(sReturn.hms_invoice))}
                 initialReturn={JSON.parse(JSON.stringify(sReturn))}
-                currency={pdfConfig.currencySymbol || "$"}
+                currency={pdfConfig.currencySymbol || (session?.user as any)?.currencySymbol || SYSTEM_DEFAULT_CURRENCY_SYMBOL}
             />
         </div>
     );

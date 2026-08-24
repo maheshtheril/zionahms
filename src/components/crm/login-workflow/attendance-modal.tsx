@@ -6,7 +6,7 @@ import { markAttendance } from '@/app/actions/crm/auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, MapPin, CheckCircle2, Clock, CalendarDays } from 'lucide-react'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
 
@@ -16,7 +16,6 @@ interface AttendanceModalProps {
 
 export function AttendanceModal({ onSuccess }: AttendanceModalProps) {
     const [loading, setLoading] = useState(false)
-    const { toast } = useToast()
     const [currentTime, setCurrentTime] = useState(new Date())
     const [status, setStatus] = useState<'idle' | 'locating' | 'marking' | 'success'>('idle')
 
@@ -49,29 +48,17 @@ export function AttendanceModal({ onSuccess }: AttendanceModalProps) {
 
             if (res.error) {
                 setStatus('idle')
-                toast({
-                    title: "Attendance Failed",
-                    description: res.error,
-                    variant: "destructive"
-                })
+                toast.error("Attendance Failed", { description: res.error })
             } else {
                 setStatus('success')
-                toast({
-                    title: "Success",
-                    description: "Your attendance has been marked for today.",
-                    variant: "default"
-                })
+                toast.success("Success", { description: "Your attendance has been marked for today." })
                 // Small delay to show success state before closing
                 setTimeout(onSuccess, 1500)
             }
         } catch (error) {
             console.error(error)
             setStatus('idle')
-            toast({
-                title: "Error",
-                description: "Something went wrong. Please try again.",
-                variant: "destructive"
-            })
+            toast.error("Error", { description: "Something went wrong. Please try again." })
         } finally {
             if (status !== 'success') {
                 setLoading(false)

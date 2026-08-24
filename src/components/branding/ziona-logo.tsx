@@ -45,7 +45,7 @@ export const ZionaLogo: React.FC<ZionaLogoProps> = ({
                 style={{ width: finalSize, height: finalSize }}
             >
                 <img 
-                    src="/ziona.png" 
+                    src="/ziona.png?v=1" 
                     alt="Ziona" 
                     className="w-full h-full object-contain transform scale-110"
                 />

@@ -29,6 +29,7 @@ import { ZionaLogo } from '@/components/branding/ziona-logo';
 import { WorkspaceTabs } from './workspace-tabs';
 import { CommandCapsule } from './command-capsule';
 import { Breadcrumbs } from './breadcrumbs';
+import { GlobalSearch } from './global-search';
 
 // Dynamically retrieve icons
 const getIcon = (iconName: string) => {
@@ -63,15 +64,17 @@ export function AppSidebar({ menuItems, currentCompany, tenant, user: initialUse
     };
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [collapsed, setCollapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(true);
     const [mounted, setMounted] = useState(false);
 
     // Prevent hydration mismatch for collision detection/rendering
     useEffect(() => {
         setMounted(true);
         const savedState = localStorage.getItem('sidebar-collapsed');
-        if (savedState) {
+        if (savedState !== null) {
             setCollapsed(JSON.parse(savedState));
+        } else {
+            localStorage.setItem('sidebar-collapsed', 'true');
         }
 
         const handleResize = () => {
@@ -189,6 +192,9 @@ export function AppSidebar({ menuItems, currentCompany, tenant, user: initialUse
                         </AvatarFallback>
                     </Avatar>
                 </header>
+
+                {/* Global Search — Ctrl+K */}
+                <GlobalSearch />
 
                 {/* Workspace Multi-Tab System */}
                 <WorkspaceTabs />
@@ -483,32 +489,76 @@ function ModuleSection({ group, collapsed, onLinkClick, setCollapsed, globalColl
         }
     }, [pathname, hasActiveItem]);
 
+    const formatModuleName = (name: string) => {
+        return name
+            .toLowerCase()
+            .split(' ')
+            .map(word => {
+                if (word === '&') return '&';
+                if (word === 'hr') return 'HR';
+                if (word === 'crm') return 'CRM';
+                if (word === 'scm') return 'SCM';
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            })
+            .join(' ');
+    };
+
+    const getModuleIcon = (name: string) => {
+        const lowerName = name.toLowerCase();
+        if (lowerName.includes('health') || lowerName.includes('hms') || lowerName.includes('clinical')) return <LucideIcons.HeartPulse className="h-4 w-4" />;
+        if (lowerName.includes('finance') || lowerName.includes('account')) return <LucideIcons.PieChart className="h-4 w-4" />;
+        if (lowerName.includes('inventory') || lowerName.includes('scm')) return <LucideIcons.Package className="h-4 w-4" />;
+        if (lowerName.includes('crm') || lowerName.includes('engage')) return <LucideIcons.Users className="h-4 w-4" />;
+        if (lowerName.includes('setting') || lowerName.includes('admin')) return <LucideIcons.Settings className="h-4 w-4" />;
+        if (lowerName.includes('hr') || lowerName.includes('human')) return <LucideIcons.Briefcase className="h-4 w-4" />;
+        return <LucideIcons.Folder className="h-4 w-4" />;
+    };
+
     return (
-        <div className={collapsed ? "text-center" : "mb-2"}>
-            {!collapsed && (
+        <div className={collapsed ? "text-center mb-2" : "mb-4"}>
+            {!collapsed ? (
                 <button 
                     onClick={() => setExpanded(!expanded)}
-                    className="w-full flex items-center justify-between px-3 py-1.5 mb-1 group outline-none hover:bg-slate-100 dark:hover:bg-zinc-800/50 rounded-lg transition-colors cursor-pointer"
+                    className="w-full flex items-center justify-between px-3 py-2 mb-1.5 group outline-none hover:bg-slate-100 dark:hover:bg-zinc-800/50 rounded-xl transition-colors cursor-pointer"
                 >
-                    <h3 className="text-sm font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wide group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                        {group.module.name}
-                    </h3>
+                    <div className="flex items-center gap-3">
+                        <div className="p-1.5 rounded-lg bg-indigo-50/80 text-indigo-500 dark:bg-indigo-500/10 dark:text-indigo-400 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors shadow-sm">
+                            {getModuleIcon(group.module.name)}
+                        </div>
+                        <h3 className="text-[13px] font-bold text-slate-700 dark:text-zinc-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors tracking-tight">
+                            {formatModuleName(group.module.name)}
+                        </h3>
+                    </div>
                     <ChevronRight className={cn(
                         "h-3.5 w-3.5 text-slate-400 transition-transform duration-200",
                         expanded ? "rotate-90 text-indigo-500" : "group-hover:text-indigo-400"
                     )} />
                 </button>
-            )}
-            {collapsed && (
-                <div className="h-px w-8 bg-slate-200 dark:bg-zinc-800 mx-auto mb-4 mt-2"></div>
+            ) : (
+                <button
+                    onClick={() => {
+                        if (setCollapsed) {
+                            setCollapsed(false);
+                            setExpanded(true);
+                        }
+                    }}
+                    className="group relative flex items-center justify-center w-10 h-10 mx-auto rounded-xl bg-indigo-50/50 dark:bg-indigo-500/10 text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-all shadow-sm mb-2"
+                >
+                    {getModuleIcon(group.module.name)}
+                    {/* Tooltip */}
+                    <div className="absolute left-full ml-4 px-3 py-1.5 bg-slate-900 dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-50 shadow-xl border border-white/10 dark:border-black/5">
+                        {formatModuleName(group.module.name)}
+                        <div className="absolute -left-1 top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900 dark:border-r-white"></div>
+                    </div>
+                </button>
             )}
 
             <AnimatePresence initial={false}>
-                {(expanded || collapsed) && (
+                {!collapsed && expanded && (
                     <motion.div
-                        initial={collapsed ? false : { height: 0, opacity: 0 }}
-                        animate={collapsed ? false : { height: "auto", opacity: 1 }}
-                        exit={collapsed ? false : { height: 0, opacity: 0 }}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden"
                     >

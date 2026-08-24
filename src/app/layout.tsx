@@ -64,6 +64,8 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+import { RealtimeNotificationListener } from "@/components/notifications/realtime-notification-listener";
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -96,6 +98,7 @@ export default async function RootLayout({
               {children}
               <Toaster />
               <SonnerToaster position="top-center" richColors />
+              <RealtimeNotificationListener />
             </LocalizationProvider>
           </AuthProvider>
         </ThemeProvider>
@@ -103,3 +106,4 @@ export default async function RootLayout({
     </html>
   );
 }
+

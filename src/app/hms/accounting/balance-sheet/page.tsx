@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { useLocalization } from '@/contexts/localization-context';
 
 export default function BalanceSheetPage() {
-    const { currencySymbol } = useLocalization();
+    const { currencySymbol, precision } = useLocalization();
     const [data, setData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [companyName, setCompanyName] = useState('');
@@ -32,7 +32,7 @@ export default function BalanceSheetPage() {
         setIsLoading(false);
     }
 
-    const fmt = (num: number) => Math.abs(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmt = (num: number) => Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: precision, maximumFractionDigits: precision });
     
     const totalLiabilities = data?.totalLiabilities || 0;
     const totalEquity = data?.totalEquity || 0;

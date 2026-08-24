@@ -44,11 +44,11 @@ export async function getExecutiveInsights() {
     return serialize(res)
 }
 
-export async function getDaybook(date: Date) {
+export async function getDaybook(startDate: Date, endDate?: Date) {
     const session = await auth()
     if (!session?.user?.companyId) return { success: false, error: "Unauthorized" }
 
-    const res = await AccountingService.getDaybook(session.user.companyId, date)
+    const res = await AccountingService.getDaybook(session.user.companyId, startDate, endDate || startDate)
     return serialize(res)
 }
 

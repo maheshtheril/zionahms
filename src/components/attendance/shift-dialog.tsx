@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Plus, Clock, Palette } from 'lucide-react'
 import { createShift } from '@/app/actions/attendance'
-import { toast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 
 const PRESET_COLORS = [
     '#6366f1', // Indigo
@@ -39,7 +39,7 @@ export function ShiftDialog() {
 
     const handleSubmit = async () => {
         if (!name) {
-            toast({ variant: "destructive", title: "Missing Data", description: "Please name the protocol." })
+            toast.error("Missing Data", { description: "Please name the protocol." })
             return
         }
 
@@ -53,12 +53,12 @@ export function ShiftDialog() {
         })
 
         if (result.success) {
-            toast({ title: "Protocol Established", description: "Shift created successfully." })
+            toast.success("Protocol Established", { description: "Shift created successfully." })
             setOpen(false)
             // Reset
             setName('')
         } else {
-            toast({ variant: "destructive", title: "Error", description: result.error as string })
+            toast.error("Error", { description: result.error as string })
         }
         setLoading(false)
     }

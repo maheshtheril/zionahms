@@ -16,6 +16,7 @@ export type PurchaseReceiptData = {
     notes?: string
     attachmentUrl?: string
     isOpening?: boolean
+    roundOff?: number
     items: {
         productId: string
         poLineId?: string
@@ -206,8 +207,10 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     metadata: {
                         reference: data.reference,
                         notes: data.notes,
-                        is_opening: data.isOpening
+                        is_opening: data.isOpening,
+                        round_off_amount: data.roundOff || 0
                     },
+                    attachments: data.attachmentUrl ? { url: data.attachmentUrl } : {},
                 }
             })
 
@@ -507,6 +510,9 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                 };
             });
 
+            invoiceSubtotal = Number(invoiceSubtotal.toFixed(2));
+            invoiceTaxTotal = Number(invoiceTaxTotal.toFixed(2));
+
             const newInvoice = await tx.hms_purchase_invoice.create({
                 data: {
                     id: crypto.randomUUID(),
@@ -521,7 +527,8 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     currency: session.user.currencyCode || "INR",
                     subtotal: invoiceSubtotal,
                     tax_total: invoiceTaxTotal,
-                    total_amount: invoiceSubtotal + invoiceTaxTotal,
+                    total_amount: Math.round((invoiceSubtotal + invoiceTaxTotal + (data.roundOff || 0)) * 100) / 100,
+                    round_off_amount: data.roundOff || 0,
                     paid_amount: 0,
                     metadata: { source_receipt_id: receipt.id, notes: data.notes }
                 }
@@ -568,7 +575,22 @@ export async function getPurchaseReceipts() {
     try {
         const receipts = await prisma.hms_purchase_receipt.findMany({
             where: { company_id: session.user.companyId },
-            include: { hms_supplier: { select: { name: true } }, hms_purchase_receipt_line: true },
+            select: {
+                id: true,
+                name: true,
+                receipt_date: true,
+                status: true,
+                created_at: true,
+                metadata: true,
+                hms_supplier: { select: { name: true } },
+                hms_purchase_receipt_line: {
+                    select: {
+                        qty: true,
+                        unit_price: true,
+                        metadata: true
+                    }
+                }
+            },
             orderBy: { created_at: 'desc' }
         });
 
@@ -578,8 +600,10 @@ export async function getPurchaseReceipts() {
                 const totalAmount = r.hms_purchase_receipt_line.reduce((sum, line) => {
                     const meta = line.metadata as any || {};
                     const taxAmount = meta.tax?.amount ?? meta.tax_amount ?? 0;
-                    return sum + (Number(line.qty || 0) * Number(line.unit_price || 0)) + Number(taxAmount);
-                }, 0);
+                    const discount = (Number(meta.discount_amt) || 0) + (Number(meta.scheme_discount) || 0);
+                    const baseTotal = Number(line.qty || 0) * Number(line.unit_price || 0);
+                    return sum + Math.max(0, baseTotal - discount) + Number(taxAmount);
+                }, 0) + Number((r.metadata as any)?.round_off_amount || 0);
 
                 return {
                     id: r.id,
@@ -636,7 +660,8 @@ export async function getPurchaseReceipt(id: string) {
             purchaseOrderId: receipt.purchase_order_id,
             reference: (receipt.metadata as any)?.reference || '',
             notes: (receipt.metadata as any)?.notes || '',
-            attachmentUrl: (receipt.metadata as any)?.attachment_url || '',
+            attachmentUrl: (receipt.attachments as any)?.url || (receipt.metadata as any)?.attachment_url || '',
+            roundOff: (receipt.metadata as any)?.round_off_amount !== undefined ? Number((receipt.metadata as any)?.round_off_amount) : undefined,
             items: receipt.hms_purchase_receipt_line.map(line => {
                 const meta = line.metadata as any || {};
                 return {
@@ -688,12 +713,33 @@ export async function updatePurchaseReceipt(id: string, data: PurchaseReceiptDat
     }
 
     try {
+        const currentReceipt = await prisma.hms_purchase_receipt.findUnique({
+            where: { id, company_id: session.user.companyId },
+            select: { metadata: true, attachments: true }
+        });
+        
+        const existingMeta = (currentReceipt?.metadata as any) || {};
+        const existingAttachments = (currentReceipt?.attachments as any) || {};
+        
+        // Remove attachment_url from existing meta to clean it up
+        if (existingMeta.attachment_url) {
+            delete existingMeta.attachment_url;
+        }
+
         await prisma.hms_purchase_receipt.update({
             where: { id, company_id: session.user.companyId },
             data: {
                 supplier_id: data.supplierId,
                 receipt_date: data.receivedDate,
-                metadata: { reference: data.reference, notes: data.notes, attachment_url: data.attachmentUrl }
+                metadata: { 
+                    ...existingMeta, 
+                    reference: data.reference, 
+                    notes: data.notes, 
+                    round_off_amount: data.roundOff || 0 
+                },
+                attachments: data.attachmentUrl !== undefined 
+                    ? (data.attachmentUrl ? { url: data.attachmentUrl } : {}) 
+                    : existingAttachments
             }
         });
 
@@ -771,6 +817,48 @@ export async function updatePurchaseReceipt(id: string, data: PurchaseReceiptDat
                         }
                     });
                 }
+            }
+        }
+
+        let invoiceSubtotal = 0;
+        let invoiceTaxTotal = 0;
+        for (const item of data.items) {
+            const qty = Number(item.qtyReceived) || 0;
+            const unitPrice = Number(item.unitPrice) || 0;
+            const taxAmt = Number(item.taxAmount) || 0;
+            const discount = (Number(item.discountAmt) || 0) + (Number(item.schemeDiscount) || 0);
+            invoiceSubtotal += Math.max(0, (qty * unitPrice) - discount);
+            invoiceTaxTotal += taxAmt;
+        }
+        invoiceSubtotal = Number(invoiceSubtotal.toFixed(2));
+        invoiceTaxTotal = Number(invoiceTaxTotal.toFixed(2));
+
+        const invoices = await prisma.hms_purchase_invoice.findMany({
+            where: { company_id: session.user.companyId, supplier_id: data.supplierId },
+            orderBy: { created_at: 'desc' },
+            take: 100
+        });
+        const invoice = invoices.find(inv => (inv.metadata as any)?.source_receipt_id === id);
+
+        if (invoice) {
+            await prisma.hms_purchase_invoice.update({
+                where: { id: invoice.id },
+                data: {
+                    subtotal: invoiceSubtotal,
+                    tax_total: invoiceTaxTotal,
+                    total_amount: Math.round((invoiceSubtotal + invoiceTaxTotal + (data.roundOff || 0)) * 100) / 100,
+                    round_off_amount: data.roundOff || 0
+                }
+            });
+
+            // Auto-sync Accounting: If the journal entry exists, delete it and repost with updated amounts
+            const existingJournal = await prisma.journal_entries.findFirst({
+                where: { purchase_invoice_id: invoice.id }
+            });
+            if (existingJournal) {
+                const { AccountingService } = await import('@/lib/services/accounting');
+                await prisma.journal_entries.delete({ where: { id: existingJournal.id } });
+                await AccountingService.postPurchaseInvoice(invoice.id, session.user.id);
             }
         }
 

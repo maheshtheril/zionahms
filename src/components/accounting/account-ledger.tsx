@@ -53,7 +53,7 @@ interface Account {
 }
 
 export function AccountLedger({ initialAccountId }: { initialAccountId?: string }) {
-  const { formatCurrency } = useLocalization();
+  const { formatCurrency, currencySymbol } = useLocalization();
   const [loading, setLoading] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string | undefined>(initialAccountId);
   
@@ -164,7 +164,7 @@ export function AccountLedger({ initialAccountId }: { initialAccountId?: string 
 
   // SAFE CURRENCY RENDERER
   const renderAmount = (amount: number, color?: string) => {
-      const val = formatCurrency(amount, 'Rs.'); // FORCED SAFE SYMBOL
+      const val = formatCurrency(amount, currencySymbol);
       return <span className={cn("font-black tracking-tighter", color)}>{val}</span>;
   }
 

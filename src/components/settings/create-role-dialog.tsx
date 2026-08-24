@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useCallback, useMemo } from "react"
 import { cn } from "@/lib/utils"
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { Loader2, Plus, Shield, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
@@ -31,7 +31,6 @@ export function CreateRoleDialog() {
         key: '',
         name: ''
     })
-    const { toast } = useToast()
     const router = useRouter()
 
     // Helper to normalize module names
@@ -72,20 +71,12 @@ export function CreateRoleDialog() {
         e.preventDefault()
 
         if (!formData.key || !formData.name) {
-            toast({
-                title: "Validation Error",
-                description: "Please fill in all required fields",
-                variant: "destructive"
-            })
+            toast.error("Validation Error", { description: "Please fill in all required fields" })
             return
         }
 
         if (selectedPermissions.length === 0) {
-            toast({
-                title: "Validation Error",
-                description: "Please select at least one permission",
-                variant: "destructive"
-            })
+            toast.error("Validation Error", { description: "Please select at least one permission" })
             return
         }
 
@@ -98,25 +89,14 @@ export function CreateRoleDialog() {
             })
 
             if ('error' in result) {
-                toast({
-                    title: "Error",
-                    description: result.error,
-                    variant: "destructive"
-                })
+                toast.error("Error", { description: result.error })
             } else {
-                toast({
-                    title: "Success",
-                    description: "Role created successfully"
-                })
+                toast.success("Success", { description: "Role created successfully" })
                 setOpen(false)
                 router.refresh()
             }
         } catch (error) {
-            toast({
-                title: "Error",
-                description: "Failed to create role",
-                variant: "destructive"
-            })
+            toast.error("Error", { description: "Failed to create role" })
         } finally {
             setLoading(false)
         }

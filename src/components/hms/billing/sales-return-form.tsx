@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Search, RotateCcw, User, FileText, CheckCircle2, ArrowLeft, Loader2 } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
     Select,
@@ -25,7 +25,6 @@ import { useLocalization } from "@/contexts/localization-context";
 export default function SalesReturnForm() {
     const { currencySymbol } = useLocalization();
     const router = useRouter();
-    const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [step, setStep] = useState(1); // 1: Patient, 2: Invoice, 3: Items
 
@@ -48,7 +47,7 @@ export default function SalesReturnForm() {
                 setPatient({ id: pId }); // Simplified
                 setStep(2);
             } else {
-                toast({ title: "Error", description: "Failed to load patient invoices", variant: "destructive" });
+                toast.error("Error", { description: "Failed to load patient invoices" });
             }
         } catch (e) {
             console.error(e);
@@ -98,7 +97,7 @@ export default function SalesReturnForm() {
     const handleSubmit = async () => {
         const itemsToReturn = items.filter(i => i.returnQty > 0);
         if (itemsToReturn.length === 0) {
-            toast({ title: "Validation Error", description: "Please enter at least one item to return.", variant: "destructive" });
+            toast.error("Validation Error", { description: "Please enter at least one item to return." });
             return;
         }
 
@@ -113,13 +112,13 @@ export default function SalesReturnForm() {
             });
 
             if (res.success) {
-                toast({ title: "Success", description: "Sales return processed and stock updated." });
+                toast.success("Success", { description: "Sales return processed and stock updated." });
                 router.push(`/hms/billing/returns/${(res.data as any).id}`);
             } else {
-                toast({ title: "Error", description: res.error, variant: "destructive" });
+                toast.error("Error", { description: res.error });
             }
         } catch (e) {
-            toast({ title: "Error", description: "Failed to process return", variant: "destructive" });
+            toast.error("Error", { description: "Failed to process return" });
         } finally {
             setIsLoading(false);
         }

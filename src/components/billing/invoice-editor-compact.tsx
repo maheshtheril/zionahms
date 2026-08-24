@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   MessageSquare, Plus, Trash2, Search, Save, User, DollarSign, Receipt, X,
@@ -18,7 +18,7 @@ import { createProductQuick } from '@/app/actions/purchase'
 import { createSalesReturn, updateSalesReturn } from '@/app/actions/returns'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { searchPatients } from '@/app/actions/patient-search'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from "sonner"
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -124,7 +124,7 @@ export function CompactInvoiceEditor({
   const [safeCurrency, setSafeCurrency] = useState(currency || '\u20B9');
   useEffect(() => {
     let clean = currency || '\u20B9';
-    if (clean.includes('Γé╣') || clean.length > 3) {
+    if (clean.includes('Î“Ã©â•£') || clean.length > 3) {
       clean = '\u20B9';
     }
     setSafeCurrency(clean);
@@ -275,7 +275,6 @@ export function CompactInvoiceEditor({
 
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { toast } = useToast()
 
   const isAdmin = currentUser?.isAdmin || (initialInvoice as any)?.isAdmin || false;
   const tenantId = currentUser?.tenantId || (initialInvoice as any)?.tenant_id;
@@ -403,7 +402,7 @@ export function CompactInvoiceEditor({
     return {
       id: p.id,
       label: rawName,
-      subLabel: `${p.phone || p.contact?.phone || p.contact?.mobile || ''} ${p.patient_number ? `• UID: ${p.patient_number}` : ''}`.trim()
+      subLabel: `${p.phone || p.contact?.phone || p.contact?.mobile || ''} ${p.patient_number ? `â€¢ UID: ${p.patient_number}` : ''}`.trim()
     };
   }), [safePatients]);
 
@@ -412,12 +411,12 @@ export function CompactInvoiceEditor({
     const loc = m.storageLocation;
     const salePrice = m.last_sale_price || m.salePrice || i.price || 0;
     const expStr = m.expiryDate || m.expiry_date || m.best_before;
-    const expText = expStr ? ` • Exp: ${new Date(expStr).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })}` : '';
-    const compositionText = m.composition ? ` • [${m.composition}]` : '';
+    const expText = expStr ? ` â€¢ Exp: ${new Date(expStr).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })}` : '';
+    const compositionText = m.composition ? ` â€¢ [${m.composition}]` : '';
     return {
       id: i.id,
       label: i.label || i.name,
-      subLabel: `${i.sku ? `SKU: ${i.sku} • ` : ''}${safeCurrency}${salePrice}${i.type !== 'service' ? ` • Stock: ${Number(i.totalStock || 0).toLocaleString()}` : ''}${expText}${loc ? ` • Loc: ${loc}` : ''}${compositionText}`
+      subLabel: `${i.sku ? `SKU: ${i.sku} â€¢ ` : ''}${safeCurrency}${salePrice}${i.type !== 'service' ? ` â€¢ Stock: ${Number(i.totalStock || 0).toLocaleString()}` : ''}${expText}${loc ? ` â€¢ Loc: ${loc}` : ''}${compositionText}`
     };
   }), [localBillableItems, safeCurrency]);
 
@@ -813,11 +812,8 @@ export function CompactInvoiceEditor({
           setBalanceType((res.type as "due" | "advance") || 'due');
           
           if (res.type === 'advance' && (res.balance || 0) > 0) {
-            toast({
-              title: "Credit Available",
-              description: `Patient has a credit balance of ${safeCurrency}${res.balance.toFixed(2)}. You can apply this during settlement.`,
-              duration: 5000
-            });
+            toast.success("Credit Available", { description: `Patient has a credit balance of ${safeCurrency}${res.balance.toFixed(2)}. You can apply this during settlement.`,
+              duration: 5000 });
           }
         }
       });
@@ -887,7 +883,7 @@ export function CompactInvoiceEditor({
         setSyncingHub(null);
         const hub = freshHubs.find((h: any) => h.id === hubId);
         if (!hub) {
-            toast({ title: "Hub Empty", description: "No clinical items found in this section.", variant: "destructive" });
+            toast.error("Hub Empty", { description: "No clinical items found in this section." });
             return;
         }
         
@@ -901,7 +897,7 @@ export function CompactInvoiceEditor({
         });
         
         if (imported > 0) {
-            toast({ title: `${hub.label} Synced`, description: `Imported ${imported} items.` });
+            toast.success(`${hub.label} Synced`, { description: `Imported ${imported} items.` });
         }
     };
 
@@ -909,7 +905,7 @@ export function CompactInvoiceEditor({
         // [SERIOUS-SYNC] Force a live refresh of all clinical departments
         const freshHubs = await checkContext();
         if (!freshHubs || freshHubs.length === 0) {
-            toast({ title: "Sync Result", description: "No new clinical items found for this patient.", variant: "destructive" });
+            toast.error("Sync Result", { description: "No new clinical items found for this patient." });
             return;
         }
 
@@ -925,17 +921,10 @@ export function CompactInvoiceEditor({
         });
         
         if (totalImported > 0) {
-            toast({ 
-                title: "Unified Sync Complete", 
-                description: `Successfully imported ${totalImported} orders from clinical hubs.`,
-                variant: "default" 
-            });
+            toast.success("Unified Sync Complete", { description: `Successfully imported ${totalImported} orders from clinical hubs.`,
+                variant: "default" });
         } else {
-            toast({ 
-                title: "Nothing to Import", 
-                description: "All detected items are already in the billing grid.",
-                variant: "destructive" 
-            });
+            toast.error("Nothing to Import", { description: "All detected items are already in the billing grid." });
         }
     };
 
@@ -951,11 +940,7 @@ export function CompactInvoiceEditor({
     });
     
     if (exists) {
-      toast({ 
-        title: "Already Added", 
-        description: `${item.name} is already in the billing grid.`,
-        variant: "destructive"
-      });
+      toast.error("Already Added", { description: `${item.name} is already in the billing grid.` });
       return;
     }
 
@@ -987,11 +972,8 @@ export function CompactInvoiceEditor({
       return [...prev, newLine as any];
     });
 
-    toast({
-      title: "Item Imported",
-      description: `Successfully added ${item.name} to voucher.`,
-      variant: "default"
-    });
+    toast.success("Item Imported", { description: `Successfully added ${item.name} to voucher.`,
+      variant: "default" });
   };
 
   useEffect(() => {
@@ -1032,11 +1014,7 @@ export function CompactInvoiceEditor({
           // [DUPLICATE GUARD] - Check if item already exists in other lines
           const isDuplicate = lines.some(l => l.id !== id && l.product_id === value);
           if (isDuplicate && value) {
-            toast({
-              title: "Duplicate Item Detected",
-              description: `${item?.name || 'Item'} is already in the list. You can adjust its quantity instead.`,
-              variant: "destructive"
-            });
+            toast.error("Duplicate Item Detected", { description: `${item?.name || 'Item'} is already in the list. You can adjust its quantity instead.` });
           }
 
           if (item) {
@@ -1164,7 +1142,7 @@ export function CompactInvoiceEditor({
     const isReturn = mode === 'return';
 
     if (!isReturn && effectiveStatus === 'paid' && finalPayments.length === 0) {
-      return toast({ title: "Payment Required", description: "Apply at least one payment method to mark as paid.", variant: "destructive" });
+      return toast.error("Payment Required", { description: "Apply at least one payment method to mark as paid." });
     }
 
     // Focus cleanup on sync
@@ -1245,10 +1223,10 @@ export function CompactInvoiceEditor({
         // Create or update based on activeInvoice state (which handles post-initial-fetch resolution)
         let supervisorPin: string | undefined = undefined;
         if (activeInvoice?.id && !isAdmin && activeInvoice.status !== 'draft' && !isRegistrationFee) {
-          const pin = window.prompt("🔒 SUPERVISOR AUTHORIZATION REQUIRED:\nYou are logged in as a Receptionist/Cashier. To EDIT and save changes to this finalized transaction, please enter your authorized 4-digit Supervisor Security PIN:");
+          const pin = window.prompt("ðŸ”’ SUPERVISOR AUTHORIZATION REQUIRED:\nYou are logged in as a Receptionist/Cashier. To EDIT and save changes to this finalized transaction, please enter your authorized 4-digit Supervisor Security PIN:");
           if (!pin || pin.trim().length < 4) {
             setLoading(false);
-            return toast({ title: "Access Denied", description: "A valid Supervisor PIN is required to save edits to finalized bills.", variant: "destructive" });
+            return toast.error("Access Denied", { description: "A valid Supervisor PIN is required to save edits to finalized bills." });
           }
           supervisorPin = pin.trim();
         }
@@ -1288,15 +1266,11 @@ export function CompactInvoiceEditor({
 
         // WhatsApp Failure Notification (if auto-send was triggered)
         if ((res as any)?.whatsapp_sent) {
-          toast({ title: "Invoice Created & Shared", description: `Billed to ${(res as any).data.patient_id}. WhatsApp receipt delivered.` });
+          toast.success("Invoice Created & Shared", { description: `Billed to ${(res as any).data.patient_id}. WhatsApp receipt delivered.` });
         } else if ((res as any).whatsapp_sent === false) {
-          toast({
-            title: "WhatsApp Delivery Failed",
-            description: (res as any).whatsapp_error || "Could not send automated bill to patient. Please check bridge status.",
-            variant: "destructive"
-          });
+          toast.error("WhatsApp Delivery Failed", { description: (res as any).whatsapp_error || "Could not send automated bill to patient. Please check bridge status." });
         } else {
-          toast({ title: "Invoice Created", description: `Unique Serial: ${(res as any).data.invoice_number} generated.` });
+          toast.success("Invoice Created", { description: `Unique Serial: ${(res as any).data.invoice_number} generated.` });
         }
 
         const invoiceId = (res as any).data?.id;
@@ -1363,11 +1337,7 @@ export function CompactInvoiceEditor({
         setIsPaymentModalOpen(false); // nuking this modal first to be sure
         setIsErrorDialogOpen(true);
 
-        toast({
-          title: "Sync Interrupted",
-          description: errorMsg,
-          variant: "destructive"
-        })
+        toast.error("Sync Interrupted", { description: errorMsg })
       }
     } catch (error: any) {
       setLoading(false)
@@ -1378,11 +1348,7 @@ export function CompactInvoiceEditor({
       setIsPaymentModalOpen(false); // nuking this modal first to be sure
       setIsErrorDialogOpen(true);
 
-      toast({
-        title: "Network / Engine Failure",
-        description: errorMsg,
-        variant: "destructive"
-      })
+      toast.error("Network / Engine Failure", { description: errorMsg })
     }
   }
 
@@ -1391,16 +1357,16 @@ export function CompactInvoiceEditor({
 
     let supervisorPin: string | undefined = undefined;
     if (!isAdmin) {
-      const pin = window.prompt("🔒 SUPERVISOR AUTHORIZATION REQUIRED:\nYou are logged in as a Receptionist/Cashier. To VOID this finalized transaction, please enter your authorized 4-digit Supervisor Security PIN:");
+      const pin = window.prompt("ðŸ”’ SUPERVISOR AUTHORIZATION REQUIRED:\nYou are logged in as a Receptionist/Cashier. To VOID this finalized transaction, please enter your authorized 4-digit Supervisor Security PIN:");
       if (!pin || pin.trim().length < 4) {
-        return toast({ title: "Access Denied", description: "A valid Supervisor PIN is required to authorize voiding.", variant: "destructive" });
+        return toast.error("Access Denied", { description: "A valid Supervisor PIN is required to authorize voiding." });
       }
       supervisorPin = pin.trim();
     }
 
     const reason = window.prompt("AUDIT COMPLIANCE: Please enter the reason for VOIDING this transaction:")
     if (!reason) return
-    if (reason.length < 5) return toast({ title: "Compliance Error", description: "Please provide a more detailed reason (min 5 chars).", variant: "destructive" })
+    if (reason.length < 5) return toast.error("Compliance Error", { description: "Please provide a more detailed reason (min 5 chars)." })
 
     const confirmed = window.confirm("WORLD CLASS SECURITY ALERT: Are you sure you want to VOID this transaction? This will invalidate the ledger node and reverse all financials.")
     if (!confirmed) return
@@ -1409,14 +1375,14 @@ export function CompactInvoiceEditor({
     try {
       const res = await (cancelInvoice as any)(initialInvoice.id, reason, supervisorPin)
       if (res.success) {
-        toast({ title: "Node Invalidated", description: res.message })
+        toast.success("Node Invalidated", { description: res.message })
         router.push('/hms/billing')
         router.refresh()
       } else {
-        toast({ title: "Validation Failed", description: res.error, variant: "destructive" })
+        toast.error("Validation Failed", { description: res.error })
       }
     } catch (error) {
-      toast({ title: "System Error", description: "Failed to communicate with settlement engine.", variant: "destructive" })
+      toast.error("System Error", { description: "Failed to communicate with settlement engine." })
     } finally {
       setLoading(false)
     }
@@ -1427,9 +1393,9 @@ export function CompactInvoiceEditor({
 
     let supervisorPin: string | undefined = undefined;
     if (!isAdmin) {
-      const pin = window.prompt("🔒 SUPERVISOR AUTHORIZATION REQUIRED:\nYou are logged in as a Receptionist/Cashier. To RESTORE this voided transaction, please enter your authorized 4-digit Supervisor Security PIN:");
+      const pin = window.prompt("ðŸ”’ SUPERVISOR AUTHORIZATION REQUIRED:\nYou are logged in as a Receptionist/Cashier. To RESTORE this voided transaction, please enter your authorized 4-digit Supervisor Security PIN:");
       if (!pin || pin.trim().length < 4) {
-        return toast({ title: "Access Denied", description: "A valid Supervisor PIN is required to authorize restoration.", variant: "destructive" });
+        return toast.error("Access Denied", { description: "A valid Supervisor PIN is required to authorize restoration." });
       }
       supervisorPin = pin.trim();
     }
@@ -1441,13 +1407,13 @@ export function CompactInvoiceEditor({
     try {
       const res = await (restoreInvoice as any)(initialInvoice.id, supervisorPin)
       if (res.success) {
-        toast({ title: "Node Reactivated", description: res.message })
+        toast.success("Node Reactivated", { description: res.message })
         router.refresh()
       } else {
-        toast({ title: "Restoration Failed", description: res.error, variant: "destructive" })
+        toast.error("Restoration Failed", { description: res.error })
       }
     } catch (error) {
-      toast({ title: "System Error", description: "Failed to communicate with settlement engine.", variant: "destructive" })
+      toast.error("System Error", { description: "Failed to communicate with settlement engine." })
     } finally {
       setLoading(false)
     }
@@ -1463,7 +1429,7 @@ export function CompactInvoiceEditor({
       });
 
       if (res.success) {
-        toast({ title: "Payment Successful", description: `Received ${safeCurrency}${amount} via Device` });
+        toast.success("Payment Successful", { description: `Received ${safeCurrency}${amount} via Device` });
         setPayments(prev => {
           const newPayments: Payment[] = [...prev, { method: method.toLowerCase() as any, amount, reference: res.reference } as Payment];
           const currentTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -1472,14 +1438,14 @@ export function CompactInvoiceEditor({
           return newPayments;
         });
       } else {
-        toast({ title: "Device Error", description: res.error || "Transaction failed on machine", variant: "destructive" });
+        toast.error("Device Error", { description: res.error || "Transaction failed on machine" });
         if (method === 'UPI') {
           // Fallback to static QR (Not implemented yet in UI state)
           // setShowUPIQR({ amount, vpa: 'hospital@upi' });
         }
       }
     } catch (err: any) {
-      toast({ title: "Sync Error", description: "Could not reach POS service", variant: "destructive" });
+      toast.error("Sync Error", { description: "Could not reach POS service" });
     } finally {
       setIsPOSLoading(false);
     }
@@ -1487,7 +1453,7 @@ export function CompactInvoiceEditor({
 
   const handleRazorpayQR = async (amount: number) => {
     if (!gatewayConfig?.enabled || !gatewayConfig?.keyId) {
-      toast({ title: 'Gateway Not Ready', description: 'Configure Razorpay in Settings → HMS Configuration.', variant: 'destructive' });
+      toast.error("Gateway Not Ready", { description: 'Configure Razorpay in Settings â†’ HMS Configuration.' });
       return;
     }
     setRazorpayQRAmount(amount);
@@ -1510,7 +1476,7 @@ export function CompactInvoiceEditor({
 
       if (!res.ok || !data.orderId) {
         setRazorpayStatus('error');
-        toast({ title: 'Order Failed', description: data.error || 'Failed to create payment order.', variant: 'destructive' });
+        toast.error("Order Failed", { description: data.error || 'Failed to create payment order.' });
         return;
       }
 
@@ -1520,7 +1486,7 @@ export function CompactInvoiceEditor({
       setRazorpayStatus('waiting');
     } catch (err: any) {
       setRazorpayStatus('error');
-      toast({ title: 'Gateway Error', description: err.message, variant: 'destructive' });
+      toast.error("Gateway Error", { description: err.message });
     }
   };
 
@@ -1531,17 +1497,17 @@ export function CompactInvoiceEditor({
     setPayments(prev => [...prev, { method: 'upi', amount: amt, reference: razorpayOrderId || 'RAZORPAY' }]);
     setIsRazorpayQROpen(false);
     setActivePaymentAmount('');
-    toast({ title: '✅ Payment Recorded', description: `\u20B9${amt.toFixed(2)} via Razorpay recorded. Click Save to finalize.` });
+    toast.success("âœ… Payment Recorded", { description: `\u20B9${amt.toFixed(2)} via Razorpay recorded. Click Save to finalize.` });
   };
 
   const handleSendPaymentLink = async (amount: number) => {
     if (!gatewayConfig?.enabled || !gatewayConfig?.keyId) {
-      toast({ title: 'Gateway Not Ready', description: 'Configure Razorpay in Settings → HMS Configuration.', variant: 'destructive' });
+      toast.error("Gateway Not Ready", { description: 'Configure Razorpay in Settings â†’ HMS Configuration.' });
       return;
     }
 
     if (!selectedPatientId) {
-      toast({ title: 'Select Patient', description: 'Cannot send link without a patient context.', variant: 'destructive' });
+      toast.error("Select Patient", { description: 'Cannot send link without a patient context.' });
       return;
     }
 
@@ -1563,15 +1529,12 @@ export function CompactInvoiceEditor({
 
       const data = await res.json();
       if (res.ok && data.success) {
-        toast({
-          title: '🚀 Payment Link Sent',
-          description: data.whatsappSent ? 'Link delivered to patient\'s WhatsApp.' : 'Link generated successfully.',
-        });
+        toast.success("ðŸš€ Payment Link Sent", { description: data.whatsappSent ? 'Link delivered to patient\'s WhatsApp.' : 'Link generated successfully.', });
       } else {
-        toast({ title: 'Delivery Failed', description: data.error || 'Check server logs.', variant: 'destructive' });
+        toast.error("Delivery Failed", { description: data.error || 'Check server logs.' });
       }
     } catch (err: any) {
-      toast({ title: 'System Error', description: err.message, variant: 'destructive' });
+      toast.error("System Error", { description: err.message });
     } finally {
       setIsSendingLink(false);
     }
@@ -1607,12 +1570,12 @@ export function CompactInvoiceEditor({
       return { ...line, unit_price: newPrice, tax_amount: newTax };
     });
     setLines(newLines);
-    toast({ title: "Pricing Updated", description: `Switched all lines to ${mode === 'mrp' ? 'MRP' : 'Standard'} pricing.` });
+    toast.success("Pricing Updated", { description: `Switched all lines to ${mode === 'mrp' ? 'MRP' : 'Standard'} pricing.` });
   }
 
   // Auto-load Logic for prescriptions
   const loadPrescriptionItems = async () => {
-    if (!selectedPatientId) return toast({ title: "Identify Patient", description: "Select a patient to pull records." });
+    if (!selectedPatientId) return toast.success("Identify Patient", { description: "Select a patient to pull records." });
     setLoading(true)
     try {
       const res = await fetch(`/api/prescriptions/by-patient/${selectedPatientId}`)
@@ -1648,13 +1611,13 @@ export function CompactInvoiceEditor({
           };
         }));
         setLines(newLines)
-        toast({ title: "History Loaded", description: "Pulled medicines from latest prescription with FEFO batch selection." })
+        toast.success("History Loaded", { description: "Pulled medicines from latest prescription with FEFO batch selection." })
       } else {
-        toast({ title: "No Records", description: "No unbilled prescriptions found for this patient." })
+        toast.success("No Records", { description: "No unbilled prescriptions found for this patient." })
       }
     } catch (e) {
       console.log(e)
-      toast({ title: "Load Failed", description: "A system error occurred while fetching prescriptions.", variant: "destructive" })
+      toast.error("Load Failed", { description: "A system error occurred while fetching prescriptions." })
     }
     setLoading(false)
   }
@@ -1746,16 +1709,12 @@ export function CompactInvoiceEditor({
                   if (!lastSavedId) return;
                   const res = await shareInvoiceWhatsapp(lastSavedId);
                   if ((res as any).success) {
-                    toast({ title: "WhatsApp Sent", description: "Receipt shared with patient." });
+                    toast.success("WhatsApp Sent", { description: "Receipt shared with patient." });
                   } else {
                     const error = (res as any).error || "System error";
                     const isUltraMsgStopped = error.toLowerCase().includes("instance stopped") || error.toLowerCase().includes("non-payment");
                     
-                    toast({ 
-                      title: "WhatsApp Failed", 
-                      description: isUltraMsgStopped ? "Your WhatsApp service (UltraMsg) is stopped. Please check your billing/subscription." : error, 
-                      variant: "destructive" 
-                    });
+                    toast.error("WhatsApp Failed", { description: isUltraMsgStopped ? "Your WhatsApp service (UltraMsg) is stopped. Please check your billing/subscription." : error });
                   }
                 }}
                 className="group p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-emerald-500 transition-all text-center"
@@ -1816,7 +1775,7 @@ export function CompactInvoiceEditor({
               </button>
             </div>
 
-            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Financial Cycle Closed • Identity Node Deselected</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Financial Cycle Closed â€¢ Identity Node Deselected</p>
           </div>
         </div>
       </div>
@@ -1887,7 +1846,7 @@ export function CompactInvoiceEditor({
             <div className="bg-emerald-600 py-1.5 flex items-center justify-center gap-3 animate-in slide-in-from-top duration-500 z-[200]">
               <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
               <span className="text-[9px] font-black text-white uppercase tracking-[0.4em] italic">
-                CREDIT NOTE TERMINAL ACTIVE • INVENTORY RECOVERY MODE
+                CREDIT NOTE TERMINAL ACTIVE â€¢ INVENTORY RECOVERY MODE
               </span>
               <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
             </div>
@@ -1965,7 +1924,7 @@ export function CompactInvoiceEditor({
                             return results.map(p => ({
                               id: p.id,
                               label: `${p.first_name} ${p.last_name || ''}`.trim(),
-                              subLabel: `${p.phone || (p.contact as any)?.phone || (p.contact as any)?.mobile || ''} ${p.patient_number ? `• UID: ${p.patient_number}` : ''}`
+                              subLabel: `${p.phone || (p.contact as any)?.phone || (p.contact as any)?.mobile || ''} ${p.patient_number ? `â€¢ UID: ${p.patient_number}` : ''}`
                             }));
                           } catch (err) {
                             console.error("Search failed:", err);
@@ -2592,11 +2551,7 @@ export function CompactInvoiceEditor({
                       // WORLD STANDARD VALIDATION: Prevent settlement if zero-price items exist
                       const zeroLines = lines.filter(l => (l.product_id || l.description) && (l.quantity * l.unit_price) === 0 && l.product_id !== 'REG-FEE');
                       if (zeroLines.length > 0) {
-                        return toast({
-                          title: "Settlement Blocked",
-                          description: `You have ${zeroLines.length} item(s) with zero total. Please update the price/quantity or remove them before proceeding.`,
-                          variant: "destructive"
-                        });
+                        return toast.error("Settlement Blocked", { description: `You have ${zeroLines.length} item(s) with zero total. Please update the price/quantity or remove them before proceeding.` });
                       }
 
                       // World Class Focus Management: Clear cursor and lists before overlaying
@@ -2868,7 +2823,7 @@ export function CompactInvoiceEditor({
                                 return newPayments;
                               });
                               
-                              toast({ title: "Credit Applied", description: `${safeCurrency}${amountToApply.toFixed(2)} deducted from bill.` });
+                              toast.success("Credit Applied", { description: `${safeCurrency}${amountToApply.toFixed(2)} deducted from bill.` });
                             }
                           }}
                           className="px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95"
@@ -3095,7 +3050,7 @@ export function CompactInvoiceEditor({
                               return newPayments;
                           });
                         } else {
-                          toast({ title: "Amount Required", description: "Enter an amount before selecting a payment method.", variant: "destructive" });
+                          toast.error("Amount Required", { description: "Enter an amount before selecting a payment method." });
                         }
                       }}
                       className={`group relative py-4 bg-white dark:bg-slate-900/50 border rounded-2xl flex flex-col items-center justify-center gap-2 transition-all hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95 shadow-sm dark:shadow-none ${isPOSLoading ? 'opacity-50 cursor-not-allowed' : 'border-slate-200 dark:border-white/5 hover:border-indigo-600'}`}
@@ -3127,7 +3082,7 @@ export function CompactInvoiceEditor({
                       if (amt > 0) {
                         handleRazorpayQR(amt);
                       } else {
-                        toast({ title: "Amount Required", description: "Enter an amount before starting Razorpay payment.", variant: "destructive" });
+                        toast.error("Amount Required", { description: "Enter an amount before starting Razorpay payment." });
                       }
                     }}
                     className="w-full h-16 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-2xl flex items-center justify-center gap-4 transition-all active:scale-[0.98] shadow-lg shadow-indigo-500/20 group"
@@ -3154,7 +3109,7 @@ export function CompactInvoiceEditor({
                       if (amt > 0) {
                         handleSendPaymentLink(amt);
                       } else {
-                        toast({ title: "Amount Required", description: "Enter an amount before sending payment link.", variant: "destructive" });
+                        toast.error("Amount Required", { description: "Enter an amount before sending payment link." });
                       }
                     }}
                     className="w-full h-16 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl flex items-center justify-center gap-4 transition-all active:scale-[0.98] shadow-lg shadow-emerald-500/20 group disabled:opacity-50"
@@ -3177,7 +3132,7 @@ export function CompactInvoiceEditor({
                             const creditAmt = Math.min(Number(patientBalanceData.balance), grandTotal + (includePrevBalance ? patientBalance : 0) - totalPaid);
                             if (creditAmt > 0) {
                               setPayments(prev => [...prev, { method: 'advance', amount: creditAmt, reference: 'CREDIT_NOTE_RECONCILIATION' } as Payment]);
-                              toast({ title: "Credit Applied", description: `Reconciled ${safeCurrency}${creditAmt.toFixed(2)} from available credit notes.` });
+                              toast.success("Credit Applied", { description: `Reconciled ${safeCurrency}${creditAmt.toFixed(2)} from available credit notes.` });
                             }
                           }}
                           className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl cursor-pointer hover:bg-indigo-100 transition-all group relative overflow-hidden"
@@ -3483,7 +3438,7 @@ export function CompactInvoiceEditor({
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(errorDetails.message);
-                    toast({ title: "Copied!", description: "Error message copied to clipboard." });
+                    toast.success("Copied!", { description: "Error message copied to clipboard." });
                   }}
                   className="flex-1 flex items-center justify-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all"
                 >
@@ -3577,14 +3532,14 @@ export function CompactInvoiceEditor({
                       : 'text-slate-400'
                   }`}
                 >
-                  {t === 'item' ? '📦 Goods/Stock' : '⚡ Service'}
+                  {t === 'item' ? 'ðŸ“¦ Goods/Stock' : 'âš¡ Service'}
                 </button>
               ))}
             </div>
           </div>
 
           <p className="text-[10px] text-slate-400 dark:text-slate-500 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
-            💡 You can set full details (UOM, batch, tax) later in Inventory → Products.
+            ðŸ’¡ You can set full details (UOM, batch, tax) later in Inventory â†’ Products.
           </p>
 
           {/* Actions */}
@@ -3643,10 +3598,10 @@ export function CompactInvoiceEditor({
 
                       if (quickProductResolver) quickProductResolver(newItem);
                       setIsQuickProductOpen(false);
-                      toast({ title: '✅ Product Created', description: `"${result.label}" added and available in registry.` });
+                      toast.success("âœ… Product Created", { description: `"${result.label}" added and available in registry.` });
 
                     } else {
-                    toast({ title: 'Failed', description: 'Could not create product. Try again.', variant: 'destructive' });
+                    toast.error("Failed", { description: 'Could not create product. Try again.' });
                   }
                 } finally {
                   setIsCreatingProduct(false);

@@ -247,10 +247,10 @@ export default function JournalsPage() {
                                                         {line.description || '—'}
                                                     </td>
                                                     <td className="px-6 py-4 text-right font-mono font-black text-sm text-slate-900 dark:text-white">
-                                                        {Number(line.debit) > 0 ? `${currencySymbol}${Number(line.debit).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '—'}
+                                                        {Number(line.debit) > 0 ? `${currencySymbol}${Number(line.debit).toLocaleString('en-IN', { minimumFractionDigits: precision, maximumFractionDigits: precision })}` : '—'}
                                                     </td>
                                                     <td className="px-6 py-4 text-right font-mono font-black text-sm text-slate-900 dark:text-white">
-                                                        {Number(line.credit) > 0 ? `${currencySymbol}${Number(line.credit).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '—'}
+                                                        {Number(line.credit) > 0 ? `${currencySymbol}${Number(line.credit).toLocaleString('en-IN', { minimumFractionDigits: precision, maximumFractionDigits: precision })}` : '—'}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -258,10 +258,10 @@ export default function JournalsPage() {
                                             <tr className="bg-slate-50/80 dark:bg-slate-800/50 border-t-2 border-slate-200 dark:border-slate-800 font-mono font-black text-sm text-slate-900 dark:text-white">
                                                 <td colSpan={3} className="px-6 py-4 text-right text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 font-sans font-bold">Balanced Voucher Total :</td>
                                                 <td className="px-6 py-4 text-right text-indigo-600 dark:text-indigo-400">
-                                                    {currencySymbol}{entry.journal_entry_lines?.reduce((s: number, l: any) => s + Number(l.debit || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                    {currencySymbol}{entry.journal_entry_lines?.reduce((s: number, l: any) => s + Number(l.debit || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: precision, maximumFractionDigits: precision })}
                                                 </td>
                                                 <td className="px-6 py-4 text-right text-indigo-600 dark:text-indigo-400">
-                                                    {currencySymbol}{entry.journal_entry_lines?.reduce((s: number, l: any) => s + Number(l.credit || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                    {currencySymbol}{entry.journal_entry_lines?.reduce((s: number, l: any) => s + Number(l.credit || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: precision, maximumFractionDigits: precision })}
                                                 </td>
                                             </tr>
                                         </tbody>

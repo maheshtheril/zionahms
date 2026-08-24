@@ -79,6 +79,7 @@ export async function updateAccountingSettings(data: any) {
             output_tax_account_id,
             default_sale_tax_id,
             sales_discount_account_id,
+            round_off_account_id,
 
             // Purchases
             ap_account_id,
@@ -120,6 +121,7 @@ export async function updateAccountingSettings(data: any) {
                     output_tax_account_id: output_tax_account_id || null,
                     default_sale_tax_id: default_sale_tax_id || null,
                     sales_discount_account_id: sales_discount_account_id || null,
+                    round_off_account_id: round_off_account_id || null,
                     ap_account_id: ap_account_id || null,
                     purchase_account_id: purchase_account_id || null,
                     input_tax_account_id: input_tax_account_id || null,
@@ -173,7 +175,7 @@ export async function updateAccountingSettings(data: any) {
                         }
                     });
                 }
-            })()
+            })(),
             // 3. Save Payment Method Mappings if provided
             (async () => {
                 if (data.paymentMap) {
