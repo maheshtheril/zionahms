@@ -2,9 +2,10 @@
 
 import { useState } from "react"
 import { signIn } from "next-auth/react"
-import { Mail, Lock, ArrowRight, Loader2, Sparkles, Building2, Activity } from "lucide-react"
-import { motion } from "framer-motion"
+import { Mail, Lock, ArrowRight, Loader2, Sparkles, Building2, Activity, KeyRound, CheckCircle2, AlertCircle, X, ExternalLink } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 import { ZionaLogo } from "@/components/branding/ziona-logo"
+import { requestPasswordReset } from "@/app/actions/password-reset"
 
 interface Branding {
     app_name: string | null;
@@ -13,15 +14,45 @@ interface Branding {
     isPublic: boolean;
 }
 
-export default function LoginClient({ branding }: { branding: Branding | null }) {
+export default function LoginClient({ branding, initialMessage }: { branding: Branding | null; initialMessage?: string }) {
     const [isLoading, setIsLoading] = useState(false)
     const [focusedField, setFocusedField] = useState<string | null>(null)
+    const [bannerMessage, setBannerMessage] = useState<string | null>(initialMessage || null)
+
+    // Forgot Password Modal State
+    const [showForgotModal, setShowForgotModal] = useState(false)
+    const [forgotEmail, setForgotEmail] = useState('')
+    const [forgotLoading, setForgotLoading] = useState(false)
+    const [forgotStatus, setForgotStatus] = useState<{ type: 'success' | 'error'; message: string; devUrl?: string } | null>(null)
 
     // Form State for Login
     const [formData, setFormData] = useState({
         email: '',
         password: '',
     })
+
+    async function handleForgotPassword(e: React.FormEvent) {
+        e.preventDefault()
+        setForgotLoading(true)
+        setForgotStatus(null)
+        try {
+            const res = await requestPasswordReset(forgotEmail)
+            if (res.error) {
+                setForgotStatus({ type: 'error', message: res.error })
+            } else {
+                setForgotStatus({
+                    type: 'success',
+                    message: res.message || 'Password reset instructions have been sent.',
+                    devUrl: res.devResetUrl
+                })
+            }
+        } catch (err: any) {
+            setForgotStatus({ type: 'error', message: 'An unexpected error occurred. Please try again.' })
+        } finally {
+            setForgotLoading(false)
+        }
+    }
+
 
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault()
@@ -183,6 +214,25 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                 </motion.div>
                             </div>
 
+                            {/* Banner Notification (e.g. from password reset) */}
+                            {bannerMessage && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-300 text-xs font-medium flex items-center gap-3 backdrop-blur-md"
+                                >
+                                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                                    <div className="flex-1">{bannerMessage}</div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setBannerMessage(null)}
+                                        className="text-slate-400 hover:text-white transition-colors"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </motion.div>
+                            )}
+
                             {/* Login Form */}
                             <form onSubmit={handleLogin} className="space-y-5">
                                 <div className="space-y-1.5">
@@ -208,7 +258,17 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                 <div className="space-y-1.5">
                                     <div className="flex items-center justify-between ml-1">
                                         <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Password</label>
-                                        <a href="#" className="text-xs font-medium text-cyan-400 hover:text-cyan-300 transition-colors">Forgot?</a>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShowForgotModal(true)
+                                                setForgotStatus(null)
+                                                setForgotEmail(formData.email)
+                                            }}
+                                            className="text-xs font-medium text-cyan-400 hover:text-cyan-300 transition-colors focus:outline-none"
+                                        >
+                                            Forgot?
+                                        </button>
                                     </div>
                                     <div className={`relative group transition-all duration-300 ${focusedField === 'password' ? 'scale-[1.02]' : ''}`}>
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -259,6 +319,134 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                     </div>
                 </motion.div>
             </div>
+
+            {/* Forgot Password Modal */}
+            <AnimatePresence>
+                {showForgotModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowForgotModal(false)}
+                            className="absolute inset-0 bg-black/70 backdrop-blur-md"
+                        />
+
+                        {/* Modal Card */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            transition={{ duration: 0.2 }}
+                            className="relative z-10 w-full max-w-md backdrop-blur-2xl bg-slate-900/90 border border-white/20 shadow-[0_16px_48px_0_rgba(0,0,0,0.6)] rounded-3xl p-6 md:p-8 overflow-hidden"
+                        >
+                            {/* Decorative Glow */}
+                            <div className="absolute -top-20 -right-20 w-40 h-40 bg-cyan-500/20 rounded-full blur-[60px]" />
+                            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-indigo-500/20 rounded-full blur-[60px]" />
+
+                            <div className="relative z-10">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2.5 bg-cyan-500/10 border border-cyan-500/20 rounded-xl text-cyan-400">
+                                            <KeyRound className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold text-white tracking-tight">Reset Password</h3>
+                                            <p className="text-xs text-slate-400">Recover your account credentials</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowForgotModal(false)}
+                                        className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                {forgotStatus && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className={`mb-6 p-4 rounded-2xl text-xs font-medium flex flex-col gap-2 ${
+                                            forgotStatus.type === 'success'
+                                                ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
+                                                : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            {forgotStatus.type === 'success' ? (
+                                                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                                            ) : (
+                                                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                                            )}
+                                            <span>{forgotStatus.message}</span>
+                                        </div>
+                                        {forgotStatus.devUrl && (
+                                            <div className="mt-2 pt-2 border-t border-emerald-500/20">
+                                                <p className="text-[11px] text-slate-400 mb-1">Local Dev Mode Direct Reset Link:</p>
+                                                <a
+                                                    href={forgotStatus.devUrl}
+                                                    className="text-cyan-400 hover:text-cyan-300 text-[11px] underline break-all flex items-center gap-1 font-mono"
+                                                >
+                                                    <ExternalLink className="w-3 h-3 shrink-0" />
+                                                    Click to Open Reset Page
+                                                </a>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                )}
+
+                                <form onSubmit={handleForgotPassword} className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-slate-300 ml-1 uppercase tracking-wider">Account Email</label>
+                                        <div className="relative group">
+                                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                                <Mail className="h-5 w-5 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
+                                            </div>
+                                            <input
+                                                type="email"
+                                                value={forgotEmail}
+                                                onChange={e => setForgotEmail(e.target.value)}
+                                                required
+                                                placeholder="doctor@hospital.com"
+                                                className="block w-full pl-12 pr-4 py-3.5 bg-black/40 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 focus:bg-black/60 focus:ring-1 focus:ring-cyan-500/50 transition-all duration-300 backdrop-blur-sm text-sm"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-3 pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowForgotModal(false)}
+                                            className="w-1/3 py-3 px-4 rounded-xl border border-white/10 text-slate-300 hover:text-white hover:bg-white/5 font-semibold text-sm transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={forgotLoading}
+                                            className="w-2/3 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white py-3 px-4 rounded-xl font-bold text-sm shadow-lg shadow-cyan-900/40 hover:shadow-cyan-500/20 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                        >
+                                            {forgotLoading ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    <span>Sending...</span>
+                                                </>
+                                            ) : (
+                                                <span>Send Reset Link</span>
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
+
+

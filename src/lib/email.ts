@@ -63,3 +63,73 @@ export async function sendInvitationEmail(email: string, token: string, name: st
         return { success: false, error: 'An unexpected error occurred' };
     }
 }
+
+export async function sendPasswordResetEmail(
+    email: string,
+    token: string,
+    name: string,
+    logoUrl?: string | null,
+    appName?: string,
+    customAppUrl?: string
+) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+        console.warn('RESEND_API_KEY is not set. Email will not be sent.');
+        return { success: false, error: 'Email service configuration missing' };
+    }
+
+    const resend = new Resend(apiKey);
+    const appUrl = customAppUrl || process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://cloud-hms.onrender.com');
+    const resetUrl = `${appUrl}/auth/reset-password?token=${token}`;
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    const displayAppName = appName || process.env.NEXT_PUBLIC_APP_BRAND || 'Hospital Management System';
+
+    try {
+        const { data, error } = await resend.emails.send({
+            from: `${displayAppName} <${fromEmail}>`,
+            to: email,
+            subject: `Password Reset Request - ${displayAppName}`,
+            html: `
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
+                    <div style="background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 50%, #6366f1 100%); padding: 40px; text-align: center;">
+                        ${logoUrl ? `
+                        <div style="display: inline-block; background-color: rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 12px; border-radius: 16px; margin-bottom: 20px;">
+                            <img src="${logoUrl}" alt="Logo" style="width: 48px; height: 48px; object-fit: contain;" />
+                        </div>` : ''}
+                        <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.02em;">Password Reset Request</h1>
+                    </div>
+                    
+                    <div style="padding: 40px;">
+                        <p style="color: #334155; font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">Hello <strong>${name}</strong>,</p>
+                        <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 28px 0;">We received a request to reset your password for your <strong>${displayAppName}</strong> account. Click the secure button below to choose a new password:</p>
+                        
+                        <div style="text-align: center; margin-bottom: 32px;">
+                            <a href="${resetUrl}" style="display: inline-block; background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%); color: #ffffff; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 15px; box-shadow: 0 8px 20px -4px rgba(14, 165, 233, 0.4);">Reset My Password</a>
+                        </div>
+                        
+                        <p style="color: #64748b; font-size: 13px; line-height: 1.5; margin: 0 0 24px 0;">This password reset link will expire in <strong>1 hour</strong>. If you did not request this change, you can safely ignore this email — your account remains secure.</p>
+                        
+                        <div style="background-color: #f8fafc; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0;">
+                            <p style="color: #64748b; font-size: 12px; line-height: 1.5; margin: 0;"><strong>Can't click the button?</strong> Copy and paste this URL into your browser:<br/> <a href="${resetUrl}" style="color: #0284c7; text-decoration: none; word-break: break-all;">${resetUrl}</a></p>
+                        </div>
+                    </div>
+                    
+                    <div style="background-color: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #f1f5f9;">
+                        <p style="color: #94a3b8; font-size: 12px; margin: 0;">&copy; ${new Date().getFullYear()} ${displayAppName}. Enterprise Grade Security.</p>
+                    </div>
+                </div>
+            `
+        });
+
+        if (error) {
+            console.error('Resend error in password reset:', error);
+            return { success: false, error: 'Failed to send password reset email' };
+        }
+
+        return { success: true };
+    } catch (err) {
+        console.error('Password reset email caught error:', err);
+        return { success: false, error: 'An unexpected error occurred' };
+    }
+}
+
