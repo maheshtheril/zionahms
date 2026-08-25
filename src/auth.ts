@@ -48,7 +48,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         console.error("[AUTH] REJECTED: User has NO password hash in DB.");
                         return null;
                     }
-                    let passwordsMatch = await bcrypt.compare(credentials.password as string, user.password);
+                    let passwordsMatch = await bcrypt.compare(password, user.password);
+
 
 
                     console.log("[AUTH] Passwords match:", passwordsMatch);
