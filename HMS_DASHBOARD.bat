@@ -1,5 +1,5 @@
 @echo off
-title ZIONA HMS - COMMAND CENTER
+title ZIONA HEALTHCARE ERP - COMMAND CENTER
 color 0B
 cd /d "%~dp0"
 SETLOCAL EnableDelayedExpansion
@@ -7,7 +7,7 @@ SETLOCAL EnableDelayedExpansion
 :MENU
 cls
 echo ===================================================
-echo           ZIONA HMS - COMMAND CENTER
+echo        ZIONA HEALTHCARE ERP - COMMAND CENTER
 echo ===================================================
 echo.
 echo [1] START HOSPITAL (Full Suite)

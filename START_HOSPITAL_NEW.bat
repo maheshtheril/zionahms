@@ -1,11 +1,11 @@
 @echo off
 setlocal
-title HMS - HIGH-SPEED PRODUCTION CONSOLE
+title ZIONA HEALTHCARE ERP - PRODUCTION CONSOLE
 color 0B
 cd /d "%~dp0"
 
 echo ========================================================
-echo   HOSPITAL MANAGEMENT SYSTEM - PRODUCTION GATEWAY
+echo   ZIONA HEALTHCARE ERP - PRODUCTION GATEWAY
 echo ========================================================
 echo.
 
