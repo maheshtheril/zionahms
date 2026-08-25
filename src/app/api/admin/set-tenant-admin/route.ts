@@ -34,10 +34,17 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: "No tenants found in database" }, { status: 400 })
         }
 
-        // Fetch tenant, company, branch details
+        // Fetch tenant, company, branch details and ensure proper branding name
+        await prisma.$executeRaw`
+            UPDATE tenant 
+            SET name = 'Global Medicare Hospital', app_name = 'Global Medicare Hospital' 
+            WHERE id = ${tenantId}::uuid;
+        `
+
         const tenantRows: any[] = await prisma.$queryRaw`
             SELECT id, name, slug FROM tenant WHERE id = ${tenantId}::uuid LIMIT 1;
         `
+
         const companyRows: any[] = await prisma.$queryRaw`
             SELECT id, name FROM company WHERE tenant_id = ${tenantId}::uuid LIMIT 1;
         `
