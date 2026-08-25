@@ -114,7 +114,7 @@ async function prismaExport() {
     const prisma = new PrismaClient();
 
     try {
-        await prisma.();
+        await prisma.$connect();
         console.log('[OK] Connected to database successfully.');
 
         console.log('[2/2] Fetching hospital records (patients, invoices, inventory, staff)...');
@@ -157,7 +157,7 @@ async function prismaExport() {
         console.error('[ERROR] Export failed: ' + e.message);
         process.exit(1);
     } finally {
-        await prisma.();
+        await prisma.$disconnect();
     }
 }
 
