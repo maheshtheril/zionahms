@@ -11,25 +11,29 @@ import { SYSTEM_DEFAULT_CURRENCY_CODE } from "@/lib/currency-constants";
 import { ensureDefaultAccounts } from "@/lib/account-seeder";
 
 export async function loginWithCredentials(emailInput: string, passwordInput: string) {
-    try {
-        const email = (emailInput || '').trim().toLowerCase();
-        const password = (passwordInput || '').trim();
+    const email = (emailInput || '').trim().toLowerCase();
+    const password = (passwordInput || '').trim();
 
+    try {
         await signIn("credentials", {
             email,
             password,
-            redirectTo: "/"
+            redirect: false,
         });
 
         return { success: true };
     } catch (err: any) {
-        if (err?.message === 'NEXT_REDIRECT' || err?.digest?.startsWith('NEXT_REDIRECT')) {
-            throw err;
+        if (err?.type === 'CredentialsSignin' || err?.name === 'CredentialsSignin' || err?.message?.includes('CredentialsSignin')) {
+            return { error: "Invalid email or password. Please try again." };
+        }
+        if (err?.message === 'NEXT_REDIRECT' || err?.digest?.includes('NEXT_REDIRECT')) {
+            return { success: true };
         }
         console.error("[Auth Action] Login failed:", err);
         return { error: "Invalid email or password. Please try again." };
     }
 }
+
 
 export async function logout() {
     console.log("[Auth Action] Logging out...");

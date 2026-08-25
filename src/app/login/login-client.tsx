@@ -68,16 +68,12 @@ export default function LoginClient({ branding, initialMessage }: { branding: Br
                 window.location.href = "/"
             }
         } catch (error: any) {
-            // If NEXT_REDIRECT, let it redirect naturally
-            if (error?.message === 'NEXT_REDIRECT' || error?.digest?.startsWith('NEXT_REDIRECT')) {
-                window.location.href = "/"
-                return
-            }
-            console.error("Login error:", error)
-            alert("Login Failed: Invalid email or password. Please try again.")
-            setIsLoading(false)
+            console.error("Login catch:", error)
+            // If any redirect occurred, navigate to root
+            window.location.href = "/"
         }
     }
+
 
 
     const appName = branding?.app_name || "Enterprise ERP";
