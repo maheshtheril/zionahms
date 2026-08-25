@@ -3,12 +3,33 @@
 import crypto from 'crypto';
 
 import { prisma } from "@/lib/prisma"
-import { signOut } from "@/auth"
+import { signIn, signOut } from "@/auth"
 import { headers } from "next/headers";
 import bcrypt from 'bcryptjs';
 import { initializeTenantMasters } from "@/lib/services/tenant-init";
 import { SYSTEM_DEFAULT_CURRENCY_CODE } from "@/lib/currency-constants";
 import { ensureDefaultAccounts } from "@/lib/account-seeder";
+
+export async function loginWithCredentials(emailInput: string, passwordInput: string) {
+    try {
+        const email = (emailInput || '').trim().toLowerCase();
+        const password = (passwordInput || '').trim();
+
+        await signIn("credentials", {
+            email,
+            password,
+            redirectTo: "/"
+        });
+
+        return { success: true };
+    } catch (err: any) {
+        if (err?.message === 'NEXT_REDIRECT' || err?.digest?.startsWith('NEXT_REDIRECT')) {
+            throw err;
+        }
+        console.error("[Auth Action] Login failed:", err);
+        return { error: "Invalid email or password. Please try again." };
+    }
+}
 
 export async function logout() {
     console.log("[Auth Action] Logging out...");
@@ -23,6 +44,7 @@ export async function logout() {
         throw err;
     }
 }
+
 
 export async function signup(prevState: any, formData: FormData) {
     const rawData = Object.fromEntries(formData.entries());

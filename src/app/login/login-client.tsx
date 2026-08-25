@@ -6,6 +6,8 @@ import { Mail, Lock, ArrowRight, Loader2, Sparkles, Building2, Activity, KeyRoun
 import { motion, AnimatePresence } from "framer-motion"
 import { ZionaLogo } from "@/components/branding/ziona-logo"
 import { requestPasswordReset } from "@/app/actions/password-reset"
+import { loginWithCredentials } from "@/app/actions/auth"
+
 
 interface Branding {
     app_name: string | null;
@@ -58,32 +60,25 @@ export default function LoginClient({ branding, initialMessage }: { branding: Br
         e.preventDefault()
         setIsLoading(true)
         try {
-            const result = await signIn("credentials", {
-                email: formData.email.trim(),
-                password: formData.password.trim(),
-                redirect: false,
-            })
-
-
-            console.log("Login Result:", result);
-
-            if (result?.error) {
-                let errorMessage = "Invalid email or password. Please try again.";
-                if (result.error !== "CredentialsSignin") {
-                    errorMessage = result.error;
-                }
-                alert("Login Failed: " + errorMessage);
+            const res = await loginWithCredentials(formData.email, formData.password)
+            if (res?.error) {
+                alert("Login Failed: " + res.error)
                 setIsLoading(false)
             } else {
-                // Successful login
-                window.location.href = "/";
+                window.location.href = "/"
             }
-        } catch (error) {
-            console.error(error)
-            alert("An unexpected error occurred: " + JSON.stringify(error));
+        } catch (error: any) {
+            // If NEXT_REDIRECT, let it redirect naturally
+            if (error?.message === 'NEXT_REDIRECT' || error?.digest?.startsWith('NEXT_REDIRECT')) {
+                window.location.href = "/"
+                return
+            }
+            console.error("Login error:", error)
+            alert("Login Failed: Invalid email or password. Please try again.")
             setIsLoading(false)
         }
     }
+
 
     const appName = branding?.app_name || "Enterprise ERP";
     const isCRM = appName.toLowerCase().includes('crm');
