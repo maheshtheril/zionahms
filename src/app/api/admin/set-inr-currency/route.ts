@@ -34,13 +34,14 @@ export async function GET() {
         // 2. Fetch Latest Invoices / Bills
         const latestInvoices: any[] = await prisma.$queryRaw`
             SELECT i.id, i.invoice_number, i.patient_id, p.full_name as patient_name, 
-                   i.net_amount, i.status, i.created_at, i.updated_at
+                   i.total, i.currency, i.status, i.created_at, i.updated_at
             FROM hms_invoice i
             LEFT JOIN hms_patient p ON p.id = i.patient_id
             WHERE i.tenant_id = ${tenantId}::uuid
             ORDER BY i.created_at DESC
             LIMIT 10;
         `
+
 
         // 3. Fetch Latest OP Bookings / Appointments
         const latestAppointments: any[] = await prisma.$queryRaw`
