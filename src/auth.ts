@@ -8,8 +8,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     ...authConfig,
     secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "SUPER_SECRET_LOCAL_DEV_KEY_123!",
     trustHost: true,
+    cookies: {
+        sessionToken: {
+            name: process.env.NODE_ENV === 'production' ? '__Secure-authjs.session-token' : 'authjs.session-token',
+            options: {
+                httpOnly: true,
+                sameSite: 'lax',
+                path: '/',
+                secure: process.env.NODE_ENV === 'production',
+                domain: process.env.NODE_ENV === 'production' ? '.zionahms.com' : undefined,
+            },
+        },
+    },
     providers: [
         Credentials({
+
 
             credentials: {
                 email: { label: "Email", type: "email" },
