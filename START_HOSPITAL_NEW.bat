@@ -88,6 +88,16 @@ if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" (
 
 :: START FINAL ENGINE
 if exist ".next\standalone\server.js" (
+    echo [AUTO-FIX] Syncing static assets into standalone...
+    if exist ".next\static" (
+        if not exist ".next\standalone\.next\static" mkdir ".next\standalone\.next\static"
+        xcopy /E /Y /Q ".next\static" ".next\standalone\.next\static\" >nul 2>&1
+    )
+    if exist "public" (
+        if not exist ".next\standalone\public" mkdir ".next\standalone\public"
+        xcopy /E /Y /Q "public" ".next\standalone\public\" >nul 2>&1
+    )
+    echo [AUTO-FIX] Static assets synced.
     echo Starting in HIGH-SPEED Standalone Mode...
     node .next/standalone/server.js
 ) else (
@@ -101,6 +111,17 @@ if exist ".next\standalone\server.js" (
             echo [ERROR] Build failed.
             pause
             exit /b 1
+        )
+        :: Copy static files after fresh build
+        if exist ".next\standalone" (
+            if exist ".next\static" (
+                if not exist ".next\standalone\.next\static" mkdir ".next\standalone\.next\static"
+                xcopy /E /Y /Q ".next\static" ".next\standalone\.next\static\" >nul 2>&1
+            )
+            if exist "public" (
+                if not exist ".next\standalone\public" mkdir ".next\standalone\public"
+                xcopy /E /Y /Q "public" ".next\standalone\public\" >nul 2>&1
+            )
         )
     )
     echo Starting in STANDARD Production Mode...
