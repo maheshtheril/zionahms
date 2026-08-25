@@ -51,8 +51,11 @@ export default async function CompaniesPage() {
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-xs text-gray-400 uppercase tracking-wider">Currency</span>
-                                <span className="font-medium text-gray-900">USD</span>
+                                <span className="font-medium text-gray-900">
+                                    {company.company_settings?.[0]?.currencies?.code || company.company_settings?.currencies?.code || 'INR'}
+                                </span>
                             </div>
+
                         </div>
 
                         <div className="mt-6 pt-4 border-t border-gray-50 flex justify-end">

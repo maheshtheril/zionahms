@@ -27,8 +27,19 @@ export async function getTenantCompanies() {
                 industry: true,
                 enabled: true,
                 logo_url: true,
+                company_settings: {
+                    select: {
+                        currencies: {
+                            select: {
+                                code: true,
+                                symbol: true
+                            }
+                        }
+                    }
+                }
             }
         });
+
 
         return { success: true, data: companies };
     } catch (error) {
