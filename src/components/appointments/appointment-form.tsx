@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { createAppointment, updateAppointmentDetails } from "@/app/actions/appointment"
 import { ArrowLeft, Calendar, Clock, FileText, CheckCircle, MapPin, Video, Phone, AlertCircle, Stethoscope, Banknote, Save, Zap, ChevronRight } from "lucide-react"
@@ -50,7 +50,7 @@ export function AppointmentForm({
     billableItems = [],
     taxConfig = { defaultTax: null, taxRates: [] },
     uoms = [],
-    currency = currencySymbol,
+    currency: customCurrency,
     initialData = {},
     editingAppointment,
     onClose,
@@ -58,9 +58,9 @@ export function AppointmentForm({
     hospitalInfo = null
 }: AppointmentFormProps) {
     const { currencySymbol } = useLocalization();
-    console.log("DEBUG: Appointment Form Component Loaded - VERSION-FIX-APPLIED");
-    const router = useRouter()
-    const { patient_id: initialPatientId, date: initialDate, time: initialTime } = initialData
+    const currency = customCurrency || currencySymbol || '₹';
+    const router = useRouter();
+    const { patient_id: initialPatientId, date: initialDate, time: initialTime } = initialData;
 
     const handleClose = () => {
         if (onClose) {
@@ -71,14 +71,14 @@ export function AppointmentForm({
     };
 
     // State initialized as null to prevent server/client hydration mismatches
-    const [localPatients, setLocalPatients] = useState(patients)
+    const [localPatients, setLocalPatients] = useState(patients);
     useEffect(() => {
         setLocalPatients(patients);
     }, [patients]);
-    const [selectedPatientId, setSelectedPatientId] = useState('')
-    const [selectedPatientData, setSelectedPatientData] = useState<any>(null)
-    const [showNewPatientModal, setShowNewPatientModal] = useState(false)
-    const [selectedClinicianId, setSelectedClinicianId] = useState('')
+    const [selectedPatientId, setSelectedPatientId] = useState('');
+    const [selectedPatientData, setSelectedPatientData] = useState<any>(null);
+    const [showNewPatientModal, setShowNewPatientModal] = useState(false);
+    const [selectedClinicianId, setSelectedClinicianId] = useState('');
     const [selectedDate, setSelectedDate] = useState(() => {
         if (initialDate) return initialDate;
         if (editingAppointment?.starts_at || editingAppointment?.start_time) {
@@ -88,6 +88,7 @@ export function AppointmentForm({
         const now = new Date();
         return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
     })
+
     const [suggestedTime, setSuggestedTime] = useState(() => {
         if (initialTime && initialTime.length >= 5) return initialTime;
         if (editingAppointment?.starts_at || editingAppointment?.start_time) {
