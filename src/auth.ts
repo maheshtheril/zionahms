@@ -6,8 +6,11 @@ import bcrypt from 'bcryptjs'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     ...authConfig,
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "SUPER_SECRET_LOCAL_DEV_KEY_123!",
+    trustHost: true,
     providers: [
         Credentials({
+
             credentials: {
                 email: { label: "Email", type: "email" },
                 password: { label: "Password", type: "password" },

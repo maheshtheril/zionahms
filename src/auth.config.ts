@@ -5,10 +5,12 @@ const isProd = process.env.NODE_ENV === 'production';
 const isVercel = !!process.env.VERCEL;
 
 export const authConfig = {
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "SUPER_SECRET_LOCAL_DEV_KEY_123!",
     trustHost: true,
     pages: {
         signIn: '/login',
     },
+
     callbacks: {
         authorized({ auth, request: { nextUrl } }) {
             const isLoggedIn = !!auth?.user
