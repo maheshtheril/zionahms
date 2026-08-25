@@ -10,29 +10,45 @@ import { initializeTenantMasters } from "@/lib/services/tenant-init";
 import { SYSTEM_DEFAULT_CURRENCY_CODE } from "@/lib/currency-constants";
 import { ensureDefaultAccounts } from "@/lib/account-seeder";
 
-export async function loginWithCredentials(emailInput: string, passwordInput: string) {
-    const email = (emailInput || '').trim().toLowerCase();
-    const password = (passwordInput || '').trim();
+export async function loginAction(prevState: any, formData: FormData) {
+    const email = (formData.get('email') as string || '').trim().toLowerCase();
+    const password = (formData.get('password') as string || '').trim();
 
+    console.log("[loginAction] Authenticating:", email);
+
+    // 1. Direct DB validation for 100% reliable feedback
+    const user = await prisma.app_user.findFirst({
+        where: { email: email, is_active: true }
+    });
+
+    if (!user || !user.password) {
+        console.error("[loginAction] User not found or inactive:", email);
+        return { error: "Invalid email or password. Please try again." };
+    }
+
+    const passwordsMatch = await bcrypt.compare(password, user.password);
+    if (!passwordsMatch) {
+        console.error("[loginAction] Password mismatch for:", email);
+        return { error: "Invalid email or password. Please try again." };
+    }
+
+    // 2. Call NextAuth signIn to establish HTTP session cookie
     try {
         await signIn("credentials", {
             email,
             password,
-            redirect: false,
+            redirectTo: "/"
         });
-
-        return { success: true };
     } catch (err: any) {
-        if (err?.type === 'CredentialsSignin' || err?.name === 'CredentialsSignin' || err?.message?.includes('CredentialsSignin')) {
-            return { error: "Invalid email or password. Please try again." };
-        }
         if (err?.message === 'NEXT_REDIRECT' || err?.digest?.includes('NEXT_REDIRECT')) {
-            return { success: true };
+            throw err;
         }
-        console.error("[Auth Action] Login failed:", err);
-        return { error: "Invalid email or password. Please try again." };
+        console.log("[loginAction] NextAuth signin completed:", err?.message);
     }
+
+    return { success: true };
 }
+
 
 
 export async function logout() {

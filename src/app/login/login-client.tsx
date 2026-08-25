@@ -6,7 +6,7 @@ import { Mail, Lock, ArrowRight, Loader2, Sparkles, Building2, Activity, KeyRoun
 import { motion, AnimatePresence } from "framer-motion"
 import { ZionaLogo } from "@/components/branding/ziona-logo"
 import { requestPasswordReset } from "@/app/actions/password-reset"
-import { loginWithCredentials } from "@/app/actions/auth"
+import { loginAction } from "@/app/actions/auth"
 
 
 interface Branding {
@@ -20,6 +20,7 @@ export default function LoginClient({ branding, initialMessage }: { branding: Br
     const [isLoading, setIsLoading] = useState(false)
     const [focusedField, setFocusedField] = useState<string | null>(null)
     const [bannerMessage, setBannerMessage] = useState<string | null>(initialMessage || null)
+    const [loginError, setLoginError] = useState<string | null>(null)
 
     // Forgot Password Modal State
     const [showForgotModal, setShowForgotModal] = useState(false)
@@ -59,20 +60,25 @@ export default function LoginClient({ branding, initialMessage }: { branding: Br
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault()
         setIsLoading(true)
+        setLoginError(null)
         try {
-            const res = await loginWithCredentials(formData.email, formData.password)
+            const data = new FormData()
+            data.append('email', formData.email)
+            data.append('password', formData.password)
+
+            const res = await loginAction(null, data)
             if (res?.error) {
-                alert("Login Failed: " + res.error)
+                setLoginError(res.error)
                 setIsLoading(false)
             } else {
                 window.location.href = "/"
             }
         } catch (error: any) {
-            console.error("Login catch:", error)
-            // If any redirect occurred, navigate to root
+            // Next.js redirect from server action
             window.location.href = "/"
         }
     }
+
 
 
 
@@ -224,6 +230,26 @@ export default function LoginClient({ branding, initialMessage }: { branding: Br
                                     </button>
                                 </motion.div>
                             )}
+
+                            {/* Error Banner */}
+                            {loginError && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="mb-6 p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-300 text-xs font-medium flex items-center gap-3 backdrop-blur-md"
+                                >
+                                    <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+                                    <div className="flex-1">{loginError}</div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setLoginError(null)}
+                                        className="text-slate-400 hover:text-white transition-colors"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </motion.div>
+                            )}
+
 
                             {/* Login Form */}
                             <form onSubmit={handleLogin} className="space-y-5">
