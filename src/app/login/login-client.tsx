@@ -59,10 +59,11 @@ export default function LoginClient({ branding, initialMessage }: { branding: Br
         setIsLoading(true)
         try {
             const result = await signIn("credentials", {
-                email: formData.email,
-                password: formData.password,
+                email: formData.email.trim(),
+                password: formData.password.trim(),
                 redirect: false,
             })
+
 
             console.log("Login Result:", result);
 

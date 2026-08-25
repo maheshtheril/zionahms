@@ -16,10 +16,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 if (!credentials?.email || !credentials?.password) return null;
 
                 try {
-                    const email = (credentials.email as string || '').toLowerCase()
-
+                    const email = (credentials.email as string || '').trim().toLowerCase()
+                    const password = (credentials.password as string || '').trim()
 
                     console.log("[AUTH] Authorizing user:", email);
+
                     
                     if (!prisma) {
                         console.error("[AUTH] CRITICAL: Prisma client is NULL");
