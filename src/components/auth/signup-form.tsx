@@ -194,7 +194,7 @@ export function SignupForm({
                 {/* Sidebar Progress */}
                 <div className="bg-slate-900 p-8 md:w-1/3 flex flex-col justify-between text-white">
                     <div>
-                        <div className="bg-white w-14 h-14 rounded-xl flex items-center justify-center mb-6 overflow-hidden shadow-2xl shadow-blue-500/10 border border-white/20 shrink-0">
+                        <div className="bg-slate-800/80 backdrop-blur-md border border-slate-700/60 shadow-lg shadow-indigo-500/20 w-14 h-14 rounded-xl flex items-center justify-center mb-6 shrink-0 overflow-hidden">
                             {branding?.logo_url ? (
                                 <img src={branding.logo_url} alt={branding.app_name || 'Logo'} className="h-full w-full object-contain rounded-xl p-1" />
                             ) : (
