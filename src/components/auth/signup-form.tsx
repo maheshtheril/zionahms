@@ -6,7 +6,7 @@ import { signup } from "@/app/actions/auth"
 import countryToCurrency from 'country-to-currency';
 import { getCountries, getCurrencies, getModules } from "@/app/actions/public"
 import { currenciesList, countriesList, modulesList } from "@/lib/static-data"
-import { Check, ChevronRight, Building, Layers } from "lucide-react"
+import { Check, ChevronRight, Building, Layers, Building2, Stethoscope, Home, FlaskConical, Pill, Eye } from "lucide-react"
 import { ZionaLogo } from "@/components/branding/ziona-logo"
 
 const WorkspaceSetupLoader = () => {
@@ -59,6 +59,68 @@ const WorkspaceSetupLoader = () => {
     )
 }
 
+const FACILITY_TYPES = [
+    {
+        key: 'hospital',
+        label: 'Hospital / Multi-specialty',
+        description: 'Full inpatient, outpatient & emergency services',
+        icon: Building2,
+        modules: ['hms', 'finance', 'hr', 'inventory', 'crm'],
+        color: 'blue',
+    },
+    {
+        key: 'clinic',
+        label: 'Clinic / Polyclinic',
+        description: 'Outpatient care & general consultations',
+        icon: Stethoscope,
+        modules: ['hms', 'finance', 'inventory'],
+        color: 'emerald',
+    },
+    {
+        key: 'dental_eye',
+        label: 'Dental / Eye Care',
+        description: 'Specialized dental or ophthalmology practice',
+        icon: Eye,
+        modules: ['hms', 'finance', 'inventory'],
+        color: 'violet',
+    },
+    {
+        key: 'homecare',
+        label: 'Home Care / Telehealth',
+        description: 'Remote & home-based patient care services',
+        icon: Home,
+        modules: ['hms', 'crm', 'finance'],
+        color: 'sky',
+    },
+    {
+        key: 'lab',
+        label: 'Diagnostic / Lab Center',
+        description: 'Laboratory tests, imaging & diagnostics',
+        icon: FlaskConical,
+        modules: ['hms', 'inventory', 'finance'],
+        color: 'amber',
+    },
+    {
+        key: 'pharmacy',
+        label: 'Pharmacy / Medical Store',
+        description: 'Retail pharmacy & medicine dispensary',
+        icon: Pill,
+        modules: ['inventory', 'finance'],
+        color: 'rose',
+    },
+] as const;
+
+type FacilityKey = typeof FACILITY_TYPES[number]['key'];
+
+const colorMap: Record<string, { border: string; bg: string; icon: string; dot: string }> = {
+    blue:    { border: 'border-blue-500',    bg: 'bg-blue-50',    icon: 'text-blue-600',    dot: 'bg-blue-500' },
+    emerald: { border: 'border-emerald-500', bg: 'bg-emerald-50', icon: 'text-emerald-600', dot: 'bg-emerald-500' },
+    violet:  { border: 'border-violet-500',  bg: 'bg-violet-50',  icon: 'text-violet-600',  dot: 'bg-violet-500' },
+    sky:     { border: 'border-sky-500',     bg: 'bg-sky-50',     icon: 'text-sky-600',     dot: 'bg-sky-500' },
+    amber:   { border: 'border-amber-500',   bg: 'bg-amber-50',   icon: 'text-amber-600',   dot: 'bg-amber-500' },
+    rose:    { border: 'border-rose-500',    bg: 'bg-rose-50',    icon: 'text-rose-600',    dot: 'bg-rose-500' },
+};
+
 export function SignupForm({ 
     setIsLogin, 
     branding,
@@ -106,6 +168,7 @@ export function SignupForm({
     }, [initialCountries, initialCurrencies, initialModules])
 
     // Form State
+    const [facilityType, setFacilityType] = useState<FacilityKey>('hospital')
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -114,7 +177,7 @@ export function SignupForm({
         countryId: '',
         currencyId: '',
         industry: 'Healthcare',
-        modules: ['hms', 'inventory', 'finance', 'hr', 'crm'] as string[]
+        modules: ['hms', 'finance', 'hr', 'inventory', 'crm'] as string[]
     })
 
     const nextStep = () => {
@@ -126,15 +189,6 @@ export function SignupForm({
         setStep(s => s + 1)
     }
     const prevStep = () => setStep(s => s - 1)
-
-    const toggleModule = (key: string) => {
-        setFormData(prev => ({
-            ...prev,
-            modules: prev.modules.includes(key)
-                ? prev.modules.filter(m => m !== key)
-                : [...prev.modules, key]
-        }))
-    }
 
     // Auto-login on success
     useEffect(() => {
@@ -216,7 +270,7 @@ export function SignupForm({
                         </div>
                         <div className={`flex item-center gap-3 ${step >= 3 ? 'text-blue-400' : 'text-slate-600'}`}>
                             <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs ${step >= 3 ? 'border-blue-400 bg-blue-400/10' : 'border-slate-600'}`}>3</div>
-                            <span className="text-sm font-medium">Preferences</span>
+                            <span className="text-sm font-medium">Your Facility</span>
                         </div>
                     </div>
 
@@ -339,53 +393,61 @@ export function SignupForm({
                         )}
 
                         {step === 3 && (
-                            <div className="flex-1 space-y-5 animate-in slide-in-from-right-4 fade-in duration-300">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Module Selection</h3>
-                                <p className="text-sm text-gray-500 mb-4">Select the modules relevant to your business.</p>
-
-                                {/* Selected Summary Chips (Always Visible) */}
-                                {formData.modules.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 mb-4 p-3 bg-blue-50/50 rounded-lg border border-blue-100/50">
-                                        {formData.modules.map(key => {
-                                            const mod = modules.find(m => m.module_key === key);
-                                            return (
-                                                <span key={key} className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full border border-blue-200 flex items-center gap-1">
-                                                    <Check className="w-3 h-3" /> {mod?.name || key.toUpperCase()}
-                                                </span>
-                                            )
-                                        })}
-                                    </div>
-                                )}
-
-                                <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-2">
-                                    {modules.filter(m => !['reports', 'system'].includes(m.module_key.toLowerCase())).map(mod => {
-                                        const isAvailable = ['hms', 'inventory', 'finance', 'hr', 'crm'].includes(mod.module_key);
-                                        return (
-                                        <div
-                                            key={mod.module_key}
-                                            onClick={() => isAvailable && toggleModule(mod.module_key)}
-                                            className={`p-4 rounded-xl border transition-all ${!isAvailable ? 'opacity-70 bg-gray-50 border-gray-100 cursor-not-allowed' : formData.modules.includes(mod.module_key) ? 'border-blue-500 bg-blue-50 cursor-pointer' : 'border-gray-200 hover:border-blue-200 cursor-pointer'}`}
-                                        >
-                                            <div className="flex items-center justify-between gap-3">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-5 h-5 rounded border flex items-center justify-center ${!isAvailable ? 'bg-gray-200 border-gray-300' : formData.modules.includes(mod.module_key) ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
-                                                        {formData.modules.includes(mod.module_key) && <Check className="h-3 w-3 text-white" />}
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="font-medium text-gray-900">{mod.name}</h4>
-                                                        <p className="text-xs text-gray-500">{mod.description}</p>
-                                                    </div>
-                                                </div>
-                                                {!isAvailable && (
-                                                    <span className="text-[10px] font-bold tracking-wider uppercase bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full shrink-0">
-                                                        Coming Soon
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )})}
+                            <div className="flex-1 flex flex-col gap-4 animate-in slide-in-from-right-4 fade-in duration-300">
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">What type of facility are you?</h3>
+                                    <p className="text-sm text-gray-400 mt-0.5">We'll configure the right tools automatically.</p>
                                 </div>
 
+                                <div className="grid grid-cols-2 gap-2.5">
+                                    {FACILITY_TYPES.map((facility) => {
+                                        const Icon = facility.icon;
+                                        const isSelected = facilityType === facility.key;
+                                        const c = colorMap[facility.color];
+                                        return (
+                                            <div
+                                                key={facility.key}
+                                                onClick={() => {
+                                                    setFacilityType(facility.key);
+                                                    setFormData(prev => ({ ...prev, modules: [...facility.modules] }));
+                                                }}
+                                                className={`relative p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 select-none ${
+                                                    isSelected
+                                                        ? `${c.border} ${c.bg} shadow-sm`
+                                                        : 'border-gray-200 hover:border-gray-300 bg-white hover:shadow-sm'
+                                                }`}
+                                            >
+                                                {isSelected && (
+                                                    <div className={`absolute top-2.5 right-2.5 w-4 h-4 rounded-full flex items-center justify-center ${c.dot}`}>
+                                                        <Check className="w-2.5 h-2.5 text-white" />
+                                                    </div>
+                                                )}
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2.5 ${isSelected ? 'bg-white/70' : 'bg-gray-100'}`}>
+                                                    <Icon className={`w-4 h-4 ${isSelected ? c.icon : 'text-gray-400'}`} />
+                                                </div>
+                                                <h4 className={`text-xs font-bold leading-tight mb-0.5 ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>
+                                                    {facility.label}
+                                                </h4>
+                                                <p className="text-[10px] text-gray-400 leading-snug">{facility.description}</p>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Modules included summary */}
+                                {facilityType && (
+                                    <div className="mt-auto p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Modules included with your plan</p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {FACILITY_TYPES.find(f => f.key === facilityType)?.modules.map(m => (
+                                                <span key={m} className="bg-white border border-slate-200 text-slate-600 text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                                                    <Check className="w-2.5 h-2.5 text-green-500" />
+                                                    {m.toUpperCase()}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
