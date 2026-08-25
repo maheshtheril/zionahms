@@ -5,47 +5,21 @@ export const dynamic = 'force-dynamic'
 
 export async function GET() {
     try {
-        const tenants = await prisma.tenant.findMany({
-            select: {
-                id: true,
-                name: true,
-                slug: true,
-                created_at: true,
-                companies: {
-                    select: {
-                        id: true,
-                        name: true,
-                    }
-                },
-                _count: {
-                    select: {
-                        hms_patient: true,
-                        hms_appointments: true,
-                        hms_clinicians: true,
-                    }
-                }
-            },
-            orderBy: { created_at: 'desc' }
-        })
+        const tenants: any[] = await prisma.$queryRaw`
+            SELECT t.id, t.name, t.slug, t.created_at,
+                   c.id as company_id, c.name as company_name,
+                   (SELECT count(*)::int FROM hms_patient p WHERE p.tenant_id = t.id) as patient_count,
+                   (SELECT count(*)::int FROM hms_appointments a WHERE a.tenant_id = t.id) as appointment_count
+            FROM tenant t
+            LEFT JOIN company c ON c.tenant_id = t.id
+            ORDER BY patient_count DESC;
+        `
 
-        const users = await prisma.app_user.findMany({
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                role: true,
-                tenant_id: true,
-                company_id: true,
-                current_branch_id: true,
-            }
-        })
-
-        const totalPatients = await prisma.hms_patient.count()
+        const totalPatients: any[] = await prisma.$queryRaw`SELECT count(*)::int as total FROM hms_patient;`
 
         return NextResponse.json({
-            totalPatients,
-            tenants,
-            users
+            totalPatients: totalPatients[0]?.total || 0,
+            tenants
         })
     } catch (e: any) {
         return NextResponse.json({ error: e.message, stack: e.stack }, { status: 500 })

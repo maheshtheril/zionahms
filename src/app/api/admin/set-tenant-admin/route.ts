@@ -11,125 +11,103 @@ export async function GET(request: NextRequest) {
     const password = searchParams.get('password') || 'Admin@12345'
 
     try {
-        // If targetTenantId is not provided, find the tenant with the most patients/data
+        // Find patient counts grouped by tenant using raw SQL
+        const patientCounts: any[] = await prisma.$queryRaw`
+            SELECT tenant_id, count(*)::int as count 
+            FROM hms_patient 
+            GROUP BY tenant_id 
+            ORDER BY count DESC;
+        `
+
         let tenantId = targetTenantId
-        if (!tenantId) {
-            const tenantsWithCounts = await prisma.tenant.findMany({
-                include: {
-                    _count: {
-                        select: { hms_patient: true, hms_appointments: true }
-                    },
-                    companies: true,
-                    hms_branch: true,
-                }
-            })
+        if (!tenantId && patientCounts.length > 0) {
+            tenantId = patientCounts[0].tenant_id
+        }
 
-            // Sort by patient count desc
-            tenantsWithCounts.sort((a, b) => b._count.hms_patient - a._count.hms_patient)
-            const topTenant = tenantsWithCounts[0]
-            if (topTenant) {
-                tenantId = topTenant.id
-            }
+        // If still no tenantId, fetch the first tenant
+        if (!tenantId) {
+            const firstTenant: any[] = await prisma.$queryRaw`SELECT id FROM tenant LIMIT 1;`
+            if (firstTenant.length > 0) tenantId = firstTenant[0].id
         }
 
         if (!tenantId) {
-            return NextResponse.json({ error: "No tenants found" }, { status: 400 })
+            return NextResponse.json({ error: "No tenants found in database" }, { status: 400 })
         }
 
-        // Get tenant details
-        const tenant = await prisma.tenant.findUnique({
-            where: { id: tenantId },
-            include: {
-                companies: true,
-                hms_branch: true,
-            }
-        })
+        // Fetch tenant, company, branch details
+        const tenantRows: any[] = await prisma.$queryRaw`
+            SELECT id, name, slug FROM tenant WHERE id = ${tenantId}::uuid LIMIT 1;
+        `
+        const companyRows: any[] = await prisma.$queryRaw`
+            SELECT id, name FROM company WHERE tenant_id = ${tenantId}::uuid LIMIT 1;
+        `
+        const branchRows: any[] = await prisma.$queryRaw`
+            SELECT id, name FROM hms_branch WHERE tenant_id = ${tenantId}::uuid LIMIT 1;
+        `
 
-        if (!tenant) {
-            return NextResponse.json({ error: "Tenant not found" }, { status: 404 })
-        }
-
-        const company = tenant.companies[0] || null
-        const branch = tenant.hms_branch[0] || null
+        const tenant = tenantRows[0]
+        const company = companyRows[0] || null
+        const branch = branchRows[0] || null
 
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10)
 
         // Find or create user
-        let user = await prisma.app_user.findFirst({
-            where: { email: email.toLowerCase().trim() }
-        })
+        const normalizedEmail = email.toLowerCase().trim()
+        const existingUsers: any[] = await prisma.$queryRaw`
+            SELECT id FROM app_user WHERE email = ${normalizedEmail} LIMIT 1;
+        `
 
-        if (user) {
-            user = await prisma.app_user.update({
-                where: { id: user.id },
-                data: {
-                    tenant_id: tenant.id,
-                    company_id: company?.id || null,
-                    current_branch_id: branch?.id || null,
-                    password: hashedPassword,
-                    is_admin: true,
-                    is_tenant_admin: true,
-                    is_active: true,
-                    role: 'admin'
-                }
-            })
+        let userId = existingUsers[0]?.id
+
+        if (userId) {
+            await prisma.$executeRaw`
+                UPDATE app_user 
+                SET tenant_id = ${tenantId}::uuid,
+                    company_id = ${company ? company.id : null}::uuid,
+                    current_branch_id = ${branch ? branch.id : null}::uuid,
+                    password = ${hashedPassword},
+                    is_admin = true,
+                    is_tenant_admin = true,
+                    is_active = true,
+                    role = 'admin'
+                WHERE id = ${userId}::uuid;
+            `
         } else {
-            user = await prisma.app_user.create({
-                data: {
-                    id: crypto.randomUUID(),
-                    email: email.toLowerCase().trim(),
-                    name: 'Mahesh Theril',
-                    tenant_id: tenant.id,
-                    company_id: company?.id || null,
-                    current_branch_id: branch?.id || null,
-                    password: hashedPassword,
-                    is_admin: true,
-                    is_tenant_admin: true,
-                    is_active: true,
-                    role: 'admin'
-                }
-            })
+            userId = crypto.randomUUID()
+            await prisma.$executeRaw`
+                INSERT INTO app_user (id, email, name, tenant_id, company_id, current_branch_id, password, is_admin, is_tenant_admin, is_active, role, created_at)
+                VALUES (${userId}::uuid, ${normalizedEmail}, 'Mahesh Theril', ${tenantId}::uuid, ${company ? company.id : null}::uuid, ${branch ? branch.id : null}::uuid, ${hashedPassword}, true, true, true, 'admin', now());
+            `
         }
 
         // Ensure user is in user_branch
         if (branch) {
-            const existingUserBranch = await prisma.user_branch.findFirst({
-                where: { user_id: user.id, branch_id: branch.id }
-            })
-            if (!existingUserBranch) {
-                await prisma.user_branch.create({
-                    data: {
-                        user_id: user.id,
-                        branch_id: branch.id,
-                        is_default: true
-                    }
-                })
-            }
+            await prisma.$executeRaw`
+                INSERT INTO user_branch (user_id, branch_id, is_default)
+                VALUES (${userId}::uuid, ${branch.id}::uuid, true)
+                ON CONFLICT DO NOTHING;
+            `
         }
 
-        // Check patient count for this tenant
-        const patientCount = await prisma.hms_patient.count({
-            where: { tenant_id: tenant.id }
-        })
+        const patientCount = patientCounts.find(p => p.tenant_id === tenantId)?.count || 0
 
         return NextResponse.json({
             success: true,
-            message: `User ${email} is now Super Admin of tenant: "${tenant.name}"`,
-            tenant: {
-                id: tenant.id,
-                name: tenant.name,
-                slug: tenant.slug,
-                company: company?.name,
-                branch: branch?.name,
-                patientCount: patientCount
+            message: `User ${normalizedEmail} is now Super Admin of hospital: "${tenant?.name}"`,
+            hospital: {
+                tenantId: tenant?.id,
+                tenantName: tenant?.name,
+                companyName: company?.name,
+                branchName: branch?.name,
+                totalPatients: patientCount
             },
             user: {
-                id: user.id,
-                email: user.email,
-                role: user.role,
-                isAdmin: user.is_admin
-            }
+                id: userId,
+                email: normalizedEmail,
+                passwordSetTo: password
+            },
+            allHospitalPatientCounts: patientCounts
         })
     } catch (e: any) {
         return NextResponse.json({ error: e.message, stack: e.stack }, { status: 500 })
