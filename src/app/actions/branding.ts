@@ -14,7 +14,7 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
 
         if (appBrand === 'ZIONA' || appBrand === 'CLOUD_HMS' || host.toLowerCase().includes('cloud-hms') || host.toLowerCase().includes('ziona')) {
             return {
-                app_name: "Ziona ERP",
+                app_name: "Ziona Healthcare ERP",
                 logo_url: `/ziona.png?v=${Date.now()}_saas`,
                 name: "Ziona Solutions",
                 isPublic: true
@@ -61,7 +61,7 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
             const meta = (tenant.metadata as any) || {};
             const isPublic = meta.registration_enabled !== false;
             return {
-                app_name: tenant.app_name || "Ziona ERP",
+                app_name: tenant.app_name || "Ziona Healthcare ERP",
                 logo_url: tenant.logo_url || (tenant.company_settings?.[0]?.company?.logo_url) || "/logo-ziona.svg",
                 name: tenant.name || "Ziona Solutions",
                 app_url: tenant.app_url || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
@@ -95,7 +95,7 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
         const isPublic = meta.registration_enabled !== false;
 
         return {
-            app_name: tenant?.app_name || "Ziona ERP",
+            app_name: tenant?.app_name || "Ziona Healthcare ERP",
             logo_url: tenant?.logo_url || (tenant?.company_settings?.[0]?.company?.logo_url) || "/logo-ziona.svg",
             name: tenant?.name || "Ziona Solutions",
             app_url: tenant?.app_url || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
@@ -105,7 +105,7 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
     } catch (error) {
         console.error("Failed to fetch tenant branding:", error);
         return {
-            app_name: "Ziona ERP",
+            app_name: "Ziona Healthcare ERP",
             logo_url: "/logo-ziona.svg",
             name: "Ziona Solutions",
             isPublic: true
