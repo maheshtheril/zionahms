@@ -13,7 +13,7 @@ export async function GET() {
         })
 
         if (inrCurrency) {
-            // Find company
+            // Update company settings to INR
             const companies = await prisma.company.findMany({
                 where: { tenant_id: tenantId }
             })
@@ -42,11 +42,10 @@ export async function GET() {
             LIMIT 10;
         `
 
-
         // 3. Fetch Latest OP Bookings / Appointments
         const latestAppointments: any[] = await prisma.$queryRaw`
-            SELECT a.id, a.appointment_number, a.patient_id, p.full_name as patient_name,
-                   a.appointment_date, a.appointment_time, a.status, a.created_at, a.updated_at
+            SELECT a.id, a.token_number, a.patient_id, p.full_name as patient_name,
+                   a.starts_at, a.status, a.created_at, a.updated_at
             FROM hms_appointments a
             LEFT JOIN hms_patient p ON p.id = a.patient_id
             WHERE a.tenant_id = ${tenantId}::uuid
