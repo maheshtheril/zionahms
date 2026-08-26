@@ -555,8 +555,9 @@ export function ReceptionActionCenter({
                         asChild
                         className="bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl px-6"
                     >
-                        <Link href="/hms/billing?status=draft">Process Drafts</Link>
+                        <Link href="/hms/billing?status=draft&from=all">Process Drafts</Link>
                     </Button>
+
                 </motion.div>
             )}
 

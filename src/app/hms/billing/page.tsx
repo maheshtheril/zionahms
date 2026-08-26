@@ -30,32 +30,72 @@ export default async function BillingPage({
     const methodQuery = method || null;
     const currencySymbol = (session.user as any)?.currencySymbol || SYSTEM_DEFAULT_CURRENCY_SYMBOL;
 
-    // World-Standard Date Range Filter Logic: Default to Today unless 'all' is explicitly requested
+    // Date Range Filter Logic: Default to Today unless 'all' is explicitly requested or status is 'draft'
     const todayStr = new Date().toISOString().split('T')[0];
-    const rawFrom = from ?? todayStr;
-    const rawTo = to ?? todayStr;
+    const rawFrom = from !== undefined ? from : (currentStatus === 'draft' ? 'all' : todayStr);
+    const rawTo = to !== undefined ? to : (currentStatus === 'draft' ? 'all' : todayStr);
     const fromQuery = rawFrom === 'all' ? null : rawFrom;
     const toQuery = rawTo === 'all' ? null : rawTo;
 
-    // Status filter logic
-    const statusFilter: any = currentStatus !== 'all' ? { status: currentStatus } : {}
+    const whereConditions: any[] = [
+        { tenant_id: session.user.tenantId },
+        { company_id: session.user.companyId }
+    ];
 
-    // Payment Method Filter Logic: Support for granular financial tracking
-    const methodFilter: any = methodQuery ? {
-        hms_invoice_payments: {
-            some: {
-                method: methodQuery as any
+    if (currentStatus !== 'all') {
+        whereConditions.push({ status: currentStatus });
+    }
+
+    if (methodQuery) {
+        whereConditions.push({
+            hms_invoice_payments: {
+                some: {
+                    method: methodQuery as any
+                }
             }
-        }
-    } : {};
+        });
+    }
 
-    // World-Standard Date Range Filter Logic: Handling From/To Periods
-    const dateFilter: any = (fromQuery || toQuery) ? {
-        invoice_date: {
-            gte: fromQuery ? new Date(`${fromQuery}T00:00:00.000Z`) : undefined,
-            lte: toQuery ? new Date(`${toQuery}T23:59:59.999Z`) : undefined
-        }
-    } : {};
+    if (fromQuery || toQuery) {
+        whereConditions.push({
+            OR: [
+                {
+                    invoice_date: {
+                        gte: fromQuery ? new Date(`${fromQuery}T00:00:00.000Z`) : undefined,
+                        lte: toQuery ? new Date(`${toQuery}T23:59:59.999Z`) : undefined
+                    }
+                },
+                {
+                    created_at: {
+                        gte: fromQuery ? new Date(`${fromQuery}T00:00:00.000Z`) : undefined,
+                        lte: toQuery ? new Date(`${toQuery}T23:59:59.999Z`) : undefined
+                    }
+                },
+                {
+                    issued_at: {
+                        gte: fromQuery ? new Date(`${fromQuery}T00:00:00.000Z`) : undefined,
+                        lte: toQuery ? new Date(`${toQuery}T23:59:59.999Z`) : undefined
+                    }
+                }
+            ]
+        });
+    }
+
+    if (query) {
+        whereConditions.push({
+            OR: [
+                { invoice_number: { contains: query, mode: 'insensitive' } },
+                {
+                    hms_patient: {
+                        OR: [
+                            { first_name: { contains: query, mode: 'insensitive' } },
+                            { last_name: { contains: query, mode: 'insensitive' } }
+                        ]
+                    }
+                }
+            ]
+        });
+    }
 
     const isAdmin = session?.user?.isAdmin || (session?.user as any)?.isTenantAdmin;
 
@@ -63,24 +103,7 @@ export default async function BillingPage({
     const [invoices, stats, draftCount, methodSpecificRevenue] = await Promise.all([
         prisma.hms_invoice.findMany({
             orderBy: { created_at: 'desc' }, // Use created_at to see newest drafts first
-            where: {
-                tenant_id: session.user.tenantId,
-                company_id: session.user.companyId,
-                ...statusFilter,
-                ...dateFilter,
-                ...methodFilter,
-                OR: query ? [
-                    { invoice_number: { contains: query, mode: 'insensitive' } },
-                    {
-                        hms_patient: {
-                            OR: [
-                                { first_name: { contains: query, mode: 'insensitive' } },
-                                { last_name: { contains: query, mode: 'insensitive' } }
-                            ]
-                        }
-                    }
-                ] : undefined
-            },
+            where: { AND: whereConditions },
             include: {
                 hms_patient: true
             },
@@ -88,12 +111,10 @@ export default async function BillingPage({
         }),
         prisma.hms_invoice.aggregate({
             where: {
-                tenant_id: session.user.tenantId,
-                company_id: session.user.companyId,
-                status: { not: 'cancelled' },
-                ...statusFilter,
-                ...dateFilter,
-                ...methodFilter
+                AND: [
+                    ...whereConditions,
+                    { status: { not: 'cancelled' } }
+                ]
             },
             _sum: {
                 total: true, // Total Billed
