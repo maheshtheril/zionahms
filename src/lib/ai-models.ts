@@ -29,24 +29,30 @@ export async function getDynamicAIModels(apiKey: string): Promise<string[]> {
         const data = await response.json();
         if (!data || !Array.isArray(data.models)) return RECOMMENDED_MODELS;
         
-        // Extract plain model names
-        const allModels: string[] = data.models.map((m: any) => m.name.replace('models/', ''));
+        // Extract plain model names for models supporting generateContent
+        const validModels = data.models.filter((m: any) => 
+            Array.isArray(m.supportedGenerationMethods) && 
+            m.supportedGenerationMethods.includes('generateContent')
+        );
+        const allModels: string[] = validModels.map((m: any) => m.name.replace('models/', ''));
         
         // Filter and order based on RECOMMENDED_MODELS
         const prioritized = RECOMMENDED_MODELS.filter(m => allModels.includes(m));
         
-        // Add any other flash/pro models returned by Google
+        // Add any other flash/pro models returned by Google (excluding audio, tts, embedding, realtime)
         const others = allModels.filter(m => 
             (m.includes('flash') || m.includes('pro')) &&
             !RECOMMENDED_MODELS.includes(m) &&
             !m.includes('preview') &&
             !m.includes('embedding') &&
-            !m.includes('tts')
+            !m.includes('audio') &&
+            !m.includes('tts') &&
+            !m.includes('realtime')
         );
 
-        cachedModels = Array.from(new Set([...prioritized, ...RECOMMENDED_MODELS, ...others]));
+        cachedModels = Array.from(new Set([...prioritized, ...others, ...RECOMMENDED_MODELS]));
         
-        console.log(`[AI Models] Model pipeline ready: ${cachedModels.slice(0, 4).join(', ')}`);
+        console.log(`[AI Models] Model pipeline ready: ${cachedModels.slice(0, 5).join(', ')}`);
         lastFetchTime = Date.now();
         return cachedModels;
     } catch (error) {
