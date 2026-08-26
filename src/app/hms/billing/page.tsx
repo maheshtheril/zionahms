@@ -125,14 +125,12 @@ export default async function BillingPage({
                 id: true
             }
         }),
-        // Explicit count for drafts to show badge if needed
+        // Explicit count for drafts (always show all drafts regardless of date)
         prisma.hms_invoice.count({
             where: {
                 tenant_id: session.user.tenantId,
                 company_id: session.user.companyId,
                 status: 'draft' as any,
-                ...dateFilter,
-                ...methodFilter
             }
         }),
         // [WORLD-CLASS] Precision Revenue Calculation: When filtering by method, sum payments directly
@@ -142,7 +140,6 @@ export default async function BillingPage({
                 company_id: session.user.companyId,
                 method: methodQuery as any,
                 hms_invoice: {
-                    ...dateFilter,
                     company_id: session.user.companyId,
                     status: { not: 'cancelled' }
                 }
@@ -150,6 +147,7 @@ export default async function BillingPage({
             _sum: { amount: true }
         }) : Promise.resolve(null)
     ]);
+
 
     // If method is selected, Total Revenue = Sum of payments of that method
     // If NO method selected, Total Revenue = Sum(total_paid) of filtered invoices
