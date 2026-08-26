@@ -1718,14 +1718,33 @@ export function CompactInvoiceEditor({
               <button
                 onClick={async () => {
                   if (!lastSavedId) return;
-                  const res = await shareInvoiceWhatsapp(lastSavedId);
-                  if ((res as any).success) {
-                    toast.success("WhatsApp Sent", { description: "Receipt shared with patient." });
+                  try {
+                    const res = await shareInvoiceWhatsapp(lastSavedId);
+                    if ((res as any).success) {
+                      toast.success("WhatsApp Sent", { description: "Receipt shared with patient." });
+                      return;
+                    }
+                  } catch (_) {}
+
+                  // Direct 100% Free wa.me fallback
+                  let phone = selectedPatientId 
+                    ? (safePatients.find(p => p.id === selectedPatientId)?.phone || '')
+                    : walkInPhone;
+                  phone = (phone || '').toString().replace(/\D/g, '');
+                  if (phone.startsWith('0') && phone.length > 10) phone = phone.substring(1);
+                  if (phone.length === 10) phone = '91' + phone;
+
+                  const patientName = selectedPatientId 
+                    ? (safePatients.find(p => p.id === selectedPatientId)?.name || 'Patient')
+                    : (walkInName || 'Patient');
+
+                  const billText = `Hello *${patientName}*,\n\nHere is your bill for *${safeCurrency} ${grandTotal.toFixed(2)}*.\n\nThank you for visiting!`;
+
+                  if (phone && phone.length >= 10) {
+                    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(billText)}`, '_blank');
+                    toast.success("WhatsApp Opened", { description: `Opened direct chat with ${patientName}` });
                   } else {
-                    const error = (res as any).error || "System error";
-                    const isUltraMsgStopped = error.toLowerCase().includes("instance stopped") || error.toLowerCase().includes("non-payment");
-                    
-                    toast.error("WhatsApp Failed", { description: isUltraMsgStopped ? "Your WhatsApp service (UltraMsg) is stopped. Please check your billing/subscription." : error });
+                    toast.error("No Phone Number", { description: "No patient phone number available for WhatsApp." });
                   }
                 }}
                 className="group p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-emerald-500 transition-all text-center"

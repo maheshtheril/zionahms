@@ -166,9 +166,30 @@ export function InvoiceControlPanel({
         try {
             const res = await shareInvoiceWhatsapp(invoiceId) as any;
             if (res && res.success) {
-                toast.success("WhatsApp", { description: res.message || "Invoice sent to patient.", });
+                toast.success("WhatsApp Sent", { description: res.message || "Invoice sent to patient via WhatsApp." });
+                return;
+            }
+
+            // Direct 100% Free wa.me Fallback
+            const patient = invoiceData?.hms_patient || {};
+            const contact = (patient.contact as any) || {};
+            let phone = contact?.phone || contact?.mobile || contact?.primary_phone || '';
+            phone = phone.toString().replace(/\D/g, '');
+            if (phone.startsWith('0') && phone.length > 10) phone = phone.substring(1);
+            if (phone.length === 10) phone = '91' + phone;
+
+            const companyName = invoiceData?.company?.name || "Hospital";
+            const patientName = `${patient.first_name || ''} ${patient.last_name || ''}`.trim() || 'Patient';
+            const total = Number(invoiceData?.total || 0).toLocaleString('en-IN');
+            const invNumber = invoiceData?.invoice_number || invoiceData?.invoice_no || '';
+
+            const billText = `Hello *${patientName}*,\n\nHere is your invoice *${invNumber}* from *${companyName}* for *${currencySymbol || '₹'} ${total}*.\n\nThank you for choosing *${companyName}*!`;
+
+            if (phone && phone.length >= 10) {
+                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(billText)}`, '_blank');
+                toast.success("WhatsApp Opened", { description: `Opened direct chat with ${patientName}` });
             } else {
-                toast.error("Share Failed", { description: (res && res.error) || "Could not send WhatsApp" });
+                toast.error("Share Failed", { description: (res && res.error) || "Patient has no phone number recorded." });
             }
         } catch (error) {
             console.error(error);
