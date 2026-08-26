@@ -8,8 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { updateGlobalSettings, updateTenantSettings, updateWhatsAppSettings, updatePDFSettings, updateAISettings } from '@/app/actions/settings'
-import { Loader2, Save, Building2, Coins, ShieldCheck, Database, Layout, MessageSquare, FileText, AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, Zap, Sparkles } from 'lucide-react'
-import { toast } from '@/components/ui/use-toast'
+import { Loader2, Save, Building2, Coins, ShieldCheck, Database, Layout, MessageSquare, FileText, AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, Zap, Sparkles, CheckCircle2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { FileUpload } from '@/components/ui/file-upload'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Switch } from '@/components/ui/switch'
@@ -238,16 +238,16 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                 if (isTenantAdmin || isAdmin) {
                     await update({ dbUrl: dbUrl || null });
                 }
-                toast({ title: "Settings Updated", description: "Global, WhatsApp, PDF, and AI settings saved successfully." });
+                toast.success("Settings Updated", { description: "Global, WhatsApp, PDF, and AI settings saved successfully." });
                 if (whatsappToken) { setWhatsappToken(''); setHasExistingWhatsappToken(true); }
                 if (aiApiKey) { setAiApiKey(''); setHasExistingAiKey(true); }
                 router.refresh()
             } else {
                 const errorMsg = result.error || tenantResult.error || whatsappRes.error || pdfRes.error || aiRes.error;
-                toast({ title: "Error", description: errorMsg || "Something went wrong", variant: "destructive" });
+                toast.error("Error", { description: errorMsg || "Something went wrong" });
             }
         } catch (err: any) {
-            toast({ title: "Critical Error", description: err.message, variant: "destructive" });
+            toast.error("Critical Error", { description: err.message });
         } finally {
             setLoading(false)
         }
@@ -255,7 +255,7 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
 
     const handleTestAi = async () => {
         setLoading(true);
-        toast({ title: "Testing AI...", description: "Connecting to Google Gemini..." });
+        toast.info("Testing AI...", { description: "Connecting to Google Gemini..." });
 
         try {
             const res = await fetch('/api/ai-verify', {
@@ -267,26 +267,21 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
             const result = await res.json();
             
             if (result.success) {
-                toast({ 
-                    title: "AI Connection OK! ✓", 
-                    description: "Your key is working perfectly. Don't forget to SAVE all settings.",
-                    variant: "default",
-                    className: "bg-emerald-600 text-white"
+                toast.success("AI Connection OK! ✓", { 
+                    description: "Your key is working perfectly. Don't forget to SAVE all settings."
                 });
                 setHasExistingAiKey(true);
             } else {
                 const isNotEnabled = (result.error || "").toLowerCase().includes("not enabled") || (result.error || "").includes("404");
-                toast({ 
-                    title: isNotEnabled ? "⚠️ FIX REQUIRED: Enable API" : "AI Test FAILED ✗", 
+                toast.error(isNotEnabled ? "⚠️ FIX REQUIRED: Enable API" : "AI Test FAILED ✗", { 
                     description: isNotEnabled 
                         ? "Google says 'API Not Enabled'. Please use a key from https://aistudio.google.com/app/apikey - it works instantly!"
                         : result.error || "Connection error. Please check your key.", 
-                    variant: "destructive",
-                    duration: 10000 // Show longer to allow reading
+                    duration: 10000
                 });
             }
         } catch (err: any) {
-            toast({ title: "Error", description: err.message, variant: "destructive" });
+            toast.error("Error", { description: err.message });
         } finally {
             setLoading(false);
         }
