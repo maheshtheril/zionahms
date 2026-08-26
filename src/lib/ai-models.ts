@@ -11,45 +11,56 @@ export async function getDynamicAIModels(apiKey: string): Promise<string[]> {
         return cachedModels;
     }
     
-    // Ultimate fallbacks in case API fails
-    const fallbacks = ["gemini-2.5-flash", "gemini-pro-latest"];
+// Stable, production-ready models with active quotas for all API keys
+const STABLE_MODELS = [
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-1.5-pro"
+];
+
+/**
+ * Resolves available Gemini models, strictly prioritizing stable, high-quota models.
+ * Filters out internal/restricted preview models (like 3.x) that trigger 403 / 429 quota errors.
+ */
+export async function getDynamicAIModels(apiKey: string): Promise<string[]> {
+    if (cachedModels && Date.now() - lastFetchTime < 1000 * 60 * 60 * 24) {
+        return cachedModels;
+    }
     
     try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
         if (!response.ok) {
-            console.warn(`[AI Models] Failed to fetch live models. Status: ${response.status}. Using fallbacks.`);
-            return fallbacks;
+            console.warn(`[AI Models] Live models endpoint returned ${response.status}. Using stable defaults.`);
+            return STABLE_MODELS;
         }
         
         const data = await response.json();
-        if (!data || !data.models) return fallbacks;
+        if (!data || !Array.isArray(data.models)) return STABLE_MODELS;
         
         // Extract plain model names
-        const allModels = data.models.map((m: any) => m.name.replace('models/', ''));
+        const allModels: string[] = data.models.map((m: any) => m.name.replace('models/', ''));
         
-        // Filter and sort Flash models (e.g., gemini-3.5-flash > gemini-2.5-flash)
-        const flashModels = allModels
-            .filter((m: string) => m.includes('flash') && !m.includes('preview') && !m.includes('lite') && !m.includes('vision') && !m.includes('embedding') && !m.includes('tts') && !m.includes('image'))
-            .sort((a: string, b: string) => b.localeCompare(a));
-            
-        // Filter and sort Pro models
-        const proModels = allModels
-            .filter((m: string) => m.includes('pro') && !m.includes('preview') && !m.includes('lite') && !m.includes('vision') && !m.includes('embedding') && !m.includes('tts') && !m.includes('image'))
-            .sort((a: string, b: string) => b.localeCompare(a));
-            
-        // Combine them, prioritizing flash for speed/cost, then pro
-        cachedModels = [...flashModels, ...proModels];
+        // Find supported stable models that exist in the account's model list
+        const availableStable = STABLE_MODELS.filter(m => allModels.includes(m));
         
-        if (cachedModels.length === 0) {
-            cachedModels = fallbacks;
-        } else {
-            console.log(`[AI Models] Dynamically resolved and cached latest models: ${cachedModels.slice(0, 3).join(', ')}...`);
-        }
+        // Add other valid 2.0/1.5 flash models
+        const additionalFlash = allModels.filter(m => 
+            (m.startsWith('gemini-2.0') || m.startsWith('gemini-1.5')) &&
+            m.includes('flash') &&
+            !STABLE_MODELS.includes(m) &&
+            !m.includes('preview') &&
+            !m.includes('embedding') &&
+            !m.includes('tts')
+        );
+
+        cachedModels = Array.from(new Set([...availableStable, ...additionalFlash, ...STABLE_MODELS]));
         
+        console.log(`[AI Models] Successfully prioritized models: ${cachedModels.slice(0, 3).join(', ')}`);
         lastFetchTime = Date.now();
         return cachedModels;
     } catch (error) {
         console.error("[AI Models] Error fetching live models:", error);
-        return fallbacks;
+        return STABLE_MODELS;
     }
 }
