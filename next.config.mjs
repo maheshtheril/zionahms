@@ -21,11 +21,12 @@ const nextConfig = {
       },
     ]
   },
+  compress: true,
   experimental: {
     serverActions: {
       bodySizeLimit: '50mb',
     },
-    optimizePackageImports: ['lucide-react'],
+    optimizePackageImports: ['lucide-react', 'date-fns', 'recharts', 'framer-motion'],
   },
   typescript: {
     ignoreBuildErrors: true,
