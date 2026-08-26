@@ -911,7 +911,7 @@ export function AppointmentForm({
                                         className={`w-full p-2.5 bg-white dark:bg-slate-950 border ${isLateHours ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-gray-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-medium`}
                                     />
                                     {isLateHours && (
-                                        <p className="text-[10px] font-black text-amber-600 mt-1 uppercase tracking-widest animate-pulse">âš ï¸ Late Hours / Fully Booked (Override possible)</p>
+                                        <p className="text-[10px] font-black text-amber-600 mt-1 uppercase tracking-widest animate-pulse">⚠️ Late Hours / Fully Booked (Override possible)</p>
                                     )}
                                 </div>
                             </div>

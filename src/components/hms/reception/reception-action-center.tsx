@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { cn } from "@/lib/utils"
 // TurboSync: Refreshing module factory
@@ -177,7 +177,7 @@ export function ReceptionActionCenter({
             if (e.key === 'F5' && !activeModal) {
                 e.preventDefault()
                 if (!activeShift) {
-                    toast.error("âš ï¸ Counter Session Closed", { description: "You must start a cash shift session and verify your starting float before logging petty cash expenses." })
+                    toast.error("Warning: Counter Session Closed", { description: "You must start a cash shift session and verify your starting float before logging petty cash expenses." })
                     setActiveModal('shift')
                     return
                 }
@@ -188,7 +188,7 @@ export function ReceptionActionCenter({
             if (e.key === 'F7' && !activeModal) {
                 e.preventDefault()
                 if (!activeShift) {
-                    toast.error("âš ï¸ Counter Session Closed", { description: "You must start a cash shift session and verify your starting float before entering accounting vouchers." })
+                    toast.error("Warning: Counter Session Closed", { description: "You must start a cash shift session and verify your starting float before entering accounting vouchers." })
                     setActiveModal('shift')
                     return
                 }
@@ -221,7 +221,7 @@ export function ReceptionActionCenter({
     const handleAction = (actionId: string) => {
         if (['voucher', 'billing', 'expense', 'journal', 'appointment', 'create-patient'].includes(actionId)) {
             if (!activeShift) {
-                toast.error("âš ï¸ Counter Session Closed", { description: "You must start a cash counter session and verify your starting float before processing registrations, billing, or vouchers." })
+                toast.error("Warning: Counter Session Closed", { description: "You must start a cash counter session and verify your starting float before processing registrations, billing, or vouchers." })
                 setActiveModal('shift')
                 return
             }
@@ -403,7 +403,7 @@ export function ReceptionActionCenter({
                             {activeShift ? (
                                 <><CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> <span className="text-[10px] font-black uppercase tracking-wider font-sans">Counter Open</span></>
                             ) : (
-                                <><AlertTriangle className="h-3.5 w-3.5 text-rose-500" /> <span className="text-[10px] font-black uppercase tracking-wider font-sans">âš ï¸ Counter Closed: Click to Open Float</span></>
+                                <><AlertTriangle className="h-3.5 w-3.5 text-rose-500" /> <span className="text-[10px] font-black uppercase tracking-wider font-sans">Counter Closed: Click to Open Float</span></>
                             )}
                         </div>
                     </div>
