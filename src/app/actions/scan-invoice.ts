@@ -288,9 +288,9 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
 
                 lastError = error;
 
-                // If location is not supported, don't bother retrying this model
-                if (errMsg.includes("User location is not supported")) {
-                    console.log(`[ScanInvoice] Region restriction for ${modelName}. Skipping...`);
+                // If permission denied or project not allowed for this model, skip immediately to next model
+                if (errMsg.includes("403") || errMsg.includes("denied access") || errMsg.includes("User location is not supported")) {
+                    console.log(`[ScanInvoice] Model ${modelName} access denied/restricted. Falling back to next model...`);
                     continue;
                 }
 
@@ -300,8 +300,14 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
                     continue;
                 }
 
-                // SPECIAL HANDLING: If 429 (Rate Limit) or Quota Exceeded, retry with exponential backoff
-                if (errMsg.includes("429") || errMsg.includes("Too Many Requests") || errMsg.includes("Quota exceeded") || errMsg.includes("limit")) {
+                // If quota is 0 on free tier, skip immediately without waiting
+                if (errMsg.includes("limit: 0") || errMsg.includes("limit:0")) {
+                    console.log(`[ScanInvoice] Model ${modelName} has 0 free quota. Skipping to fallback model...`);
+                    continue;
+                }
+
+                // SPECIAL HANDLING: If temporary 429 (Rate Limit), retry with backoff
+                if (errMsg.includes("429") || errMsg.includes("Too Many Requests")) {
                     console.log(`[ScanInvoice] Hit Rate Limit on ${modelName}. Starting retry sequence...`);
 
                     const maxRetries = 2; // Reduced retries to avoid long hangs
