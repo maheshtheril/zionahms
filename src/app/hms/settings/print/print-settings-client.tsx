@@ -194,9 +194,9 @@ export function PrintSettingsClientV2({ templates, allTemplates }: Props) {
                                                         {cfg.automation?.whatsappOnSave && <span className="flex items-center gap-1"><Check className="w-3 h-3 text-emerald-500" />WhatsApp</span>}
                                                         {cfg.automation?.copies > 1 && <span className="flex items-center gap-1"><Printer className="w-3 h-3 text-indigo-500" />{cfg.automation.copies} copies</span>}
                                                     </div>
-                                                    {/* Edit goes to studio */}
+                                                    {/* Edit goes to studio with specific templateId */}
                                                     <a
-                                                        href={`/print-studio/${activeDocType}`}
+                                                        href={`/print-studio/${activeDocType}?templateId=${tpl.id}`}
                                                         className="block w-full py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-center"
                                                         style={{ textDecoration: 'none' }}
                                                     >

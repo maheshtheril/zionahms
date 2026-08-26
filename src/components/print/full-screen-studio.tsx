@@ -464,7 +464,13 @@ function Tog({ on, set }: { on: boolean; set: (v: boolean) => void }) {
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
-interface Props { usage: string; label: string; initialTemplates: any[] }
+interface Props { 
+    usage: string; 
+    label: string; 
+    initialTemplates: any[];
+    initialTemplateId?: string;
+    isExplicitNew?: boolean;
+}
 
 const layoutToConfig = (blocks: Block[], theme: Theme) => ({
     blocks, theme, source: 'print_studio_v2',
@@ -478,17 +484,22 @@ const configToLayout = (config: any): { blocks: Block[]; theme: Theme } => ({
     theme: config?.theme || { ...DEFAULT_THEME, ...(config?.brand || {}), paperSize: config?.pageSizeSettings?.format || 'a4' }
 })
 
-export function FullScreenStudio({ usage, label, initialTemplates }: Props) {
+export function FullScreenStudio({ usage, label, initialTemplates, initialTemplateId, isExplicitNew }: Props) {
+    const initialTarget = (initialTemplateId ? initialTemplates.find(t => t.id === initialTemplateId) : null)
+        || (!isExplicitNew && initialTemplates.length > 0 ? (initialTemplates.find(t => t.is_default) || initialTemplates[0]) : null)
+
+    const initialLayout = initialTarget ? configToLayout(initialTarget.config) : null
+
     const [templates, setTemplates] = useState<any[]>(initialTemplates)
     const [saving, setSaving] = useState(false)
-    const [name, setName] = useState('')
-    const [activeId, setActiveId] = useState<string | null>(null)
-    const [isNew, setIsNew] = useState(true)
+    const [name, setName] = useState(initialTarget?.name || '')
+    const [activeId, setActiveId] = useState<string | null>(initialTarget?.id || null)
+    const [isNew, setIsNew] = useState(initialTarget ? false : true)
 
-    const [blocks, setBlocks] = useState<Block[]>(DEFAULT_BLOCKS.map(b => ({ ...b, fields: { ...b.fields } })))
-    const [theme, setTheme] = useState<Theme>({ ...DEFAULT_THEME })
+    const [blocks, setBlocks] = useState<Block[]>(initialLayout ? initialLayout.blocks : DEFAULT_BLOCKS.map(b => ({ ...b, fields: { ...b.fields } })))
+    const [theme, setTheme] = useState<Theme>(initialLayout ? initialLayout.theme : { ...DEFAULT_THEME })
     const [selectedBlockId, setSelectedBlockId] = useState<BlockType | null>('header')
-    const [roles, setRoles] = useState<string[]>([])
+    const [roles, setRoles] = useState<string[]>((initialTarget?.metadata as any)?.defaultForRoles || [])
 
     // Drag state
     const dragIdx = useRef<number | null>(null)
@@ -498,8 +509,6 @@ export function FullScreenStudio({ usage, label, initialTemplates }: Props) {
         if (r.success && r.data) setTemplates((r.data as any)[usage] || [])
     }
 
-    useEffect(() => { refresh() }, [])
-
     const loadTpl = (t: any) => {
         setActiveId(t.id); setIsNew(false); setName(t.name || '')
         const { blocks: b, theme: th } = configToLayout(t.config)
@@ -507,6 +516,28 @@ export function FullScreenStudio({ usage, label, initialTemplates }: Props) {
         setRoles((t.metadata as any)?.defaultForRoles || [])
         setSelectedBlockId('header')
     }
+
+    useEffect(() => {
+        const init = async () => {
+            const r = await getPrintTemplates()
+            if (r.success && r.data) {
+                const list = (r.data as any)[usage] || []
+                setTemplates(list)
+
+                const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+                const reqId = initialTemplateId || urlParams?.get('templateId')
+
+                if (reqId) {
+                    const match = list.find((t: any) => t.id === reqId)
+                    if (match) loadTpl(match)
+                } else if (!isExplicitNew && list.length > 0) {
+                    const def = list.find((t: any) => t.is_default) || list[0]
+                    if (def) loadTpl(def)
+                }
+            }
+        }
+        init()
+    }, [usage, initialTemplateId, isExplicitNew])
 
     const startNew = () => {
         setActiveId(null); setIsNew(true); setName('')

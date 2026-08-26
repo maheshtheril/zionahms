@@ -10,8 +10,15 @@ const LABELS: Record<string, string> = {
     sales_return: 'Sales Return', purchase_return: 'Purchase Return',
 }
 
-export default async function PrintStudioPage({ params }: { params: Promise<{ type: string }> }) {
+export default async function PrintStudioPage({ 
+    params, 
+    searchParams 
+}: { 
+    params: Promise<{ type: string }>, 
+    searchParams?: Promise<{ templateId?: string, new?: string }> 
+}) {
     const { type } = await params  // Next.js 15/16: params must be awaited
+    const sp = searchParams ? await searchParams : {}
     if (!VALID.includes(type)) notFound()
 
     let initialTemplates: any[] = []
@@ -24,5 +31,13 @@ export default async function PrintStudioPage({ params }: { params: Promise<{ ty
         console.error('[PrintStudio] Failed to load templates:', e)
     }
 
-    return <FullScreenStudio usage={type} label={LABELS[type] || type} initialTemplates={initialTemplates} />
+    return (
+        <FullScreenStudio 
+            usage={type} 
+            label={LABELS[type] || type} 
+            initialTemplates={initialTemplates} 
+            initialTemplateId={sp.templateId}
+            isExplicitNew={sp.new === 'true'}
+        />
+    )
 }
