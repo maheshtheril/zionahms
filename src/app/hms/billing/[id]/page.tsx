@@ -206,32 +206,68 @@ export default async function InvoiceDetailsPage({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {invoice.hms_invoice_lines.map((line) => (
-                            <tr key={line.id}>
-                                <td className="px-6 py-4">
-                                    <div className="font-medium text-slate-900">{(line as any).hms_product?.name || line.description || 'Item'}</div>
-                                    {line.description && line.description !== 'Auto-created from invoice scan' && line.description !== (line as any).hms_product?.name && (
-                                        <div className="text-xs text-slate-500">{line.description}</div>
-                                    )}
-                                </td>
-                                <td className="px-6 py-4 text-right text-slate-600">{Number(line.quantity)}</td>
-                                <td className="px-6 py-4 text-right text-slate-600">{"$"}{Number(line.unit_price).toFixed(2)}</td>
-                                <td className="px-6 py-4 text-right font-medium text-slate-900">{"$"}{Number(line.net_amount).toFixed(2)}</td>
-                            </tr>
-                        ))}
+                        {(() => {
+                            let displayLines: any[] = [];
+                            if (invoice.hms_invoice_lines && invoice.hms_invoice_lines.length > 0) {
+                                displayLines = invoice.hms_invoice_lines;
+                            } else {
+                                let rawJson = invoice.line_items;
+                                if (typeof rawJson === 'string') {
+                                    try { rawJson = JSON.parse(rawJson); } catch (_) { rawJson = []; }
+                                }
+                                if (Array.isArray(rawJson) && rawJson.length > 0) {
+                                    displayLines = rawJson;
+                                } else {
+                                    const bMeta = typeof invoice.billing_metadata === 'string' ? JSON.parse(invoice.billing_metadata || '{}') : (invoice.billing_metadata || {});
+                                    if (Array.isArray(bMeta.items)) displayLines = bMeta.items;
+                                    else if (Array.isArray(bMeta.line_items)) displayLines = bMeta.line_items;
+                                    else if (Array.isArray((invoice.metadata as any)?.items)) displayLines = (invoice.metadata as any).items;
+                                }
+                            }
+
+                            if (displayLines.length === 0) {
+                                return (
+                                    <tr>
+                                        <td colSpan={4} className="px-6 py-8 text-center text-slate-400">
+                                            No line items recorded for this invoice
+                                        </td>
+                                    </tr>
+                                );
+                            }
+
+                            return displayLines.map((line: any, idx: number) => {
+                                const name = line.hms_product?.name || line.description || line.name || line.item_name || line.item || 'Item';
+                                const qty = Number(line.quantity || line.qty || 1);
+                                const price = Number(line.unit_price || line.price || line.rate || 0);
+                                const total = Number(line.net_amount || line.total || line.amount || (qty * price) || 0);
+                                return (
+                                    <tr key={line.id || idx}>
+                                        <td className="px-6 py-4">
+                                            <div className="font-medium text-slate-900">{name}</div>
+                                            {line.description && line.description !== 'Auto-created from invoice scan' && line.description !== name && (
+                                                <div className="text-xs text-slate-500">{line.description}</div>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-right text-slate-600">{qty}</td>
+                                        <td className="px-6 py-4 text-right text-slate-600">₹{price.toFixed(2)}</td>
+                                        <td className="px-6 py-4 text-right font-medium text-slate-900">₹{total.toFixed(2)}</td>
+                                    </tr>
+                                );
+                            });
+                        })()}
                     </tbody>
                     <tfoot className="bg-slate-50 border-t border-slate-200">
                         <tr>
                             <td colSpan={3} className="px-6 py-3 text-right font-medium text-slate-500">Subtotal</td>
-                            <td className="px-6 py-3 text-right font-medium text-slate-900">{"$"}{Number(invoice.subtotal).toFixed(2)}</td>
+                            <td className="px-6 py-3 text-right font-medium text-slate-900">₹{Number(invoice.subtotal).toFixed(2)}</td>
                         </tr>
                         <tr>
                             <td colSpan={3} className="px-6 py-3 text-right font-medium text-slate-500">Tax</td>
-                            <td className="px-6 py-3 text-right font-medium text-slate-900">{"$"}{Number(invoice.total_tax).toFixed(2)}</td>
+                            <td className="px-6 py-3 text-right font-medium text-slate-900">₹{Number(invoice.total_tax).toFixed(2)}</td>
                         </tr>
                         <tr>
                             <td colSpan={3} className="px-6 py-3 text-right font-bold text-slate-900 text-lg">Total</td>
-                            <td className="px-6 py-3 text-right font-bold text-slate-900 text-lg">{"$"}{Number(invoice.total).toFixed(2)}</td>
+                            <td className="px-6 py-3 text-right font-bold text-slate-900 text-lg">₹{Number(invoice.total).toFixed(2)}</td>
                         </tr>
                     </tfoot>
                 </table>

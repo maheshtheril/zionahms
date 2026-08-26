@@ -1,4 +1,91 @@
-﻿"use client"
+"use client"
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import {
+  MessageSquare, Plus, Trash2, Search, Save, User, DollarSign, Receipt, X,
+  Loader2, CreditCard, Banknote, Smartphone, Maximize2,
+  Minimize2, Check, QrCode, Clock, ArrowRight, Activity, Package, Landmark,
+  Copy, AlertTriangle, Info, SidebarOpen, SidebarClose, FlaskConical, Zap,
+  ShieldCheck, CheckCircle2, PlusCircle, RefreshCcw, RotateCcw, Hash, Printer
+} from 'lucide-react'
+import { cn } from "@/lib/utils"
+import { QRCodeSVG } from 'qrcode.react'
+import { createInvoice, updateInvoice, cancelInvoice, restoreInvoice, createQuickPatient, getNextVoucherNumber, shareInvoiceWhatsapp, getPatientBalance, getPatientLedger } from '@/app/actions/billing'
+import { PrintFormatSelector } from "@/components/print/print-format-selector";
+import { getInitialInvoiceData, getPatientActiveAppointmentForBilling } from "@/app/actions/clinical"
+import { getActiveGeneralBillingConfig } from "@/app/actions/print-settings";
+import { getBestBatch, getProductBatches, getProductsPremium, getProduct } from '@/app/actions/inventory'
+import { createProductQuick } from '@/app/actions/purchase'
+import { createSalesReturn, updateSalesReturn } from '@/app/actions/returns'
+import { SearchableSelect } from '@/components/ui/searchable-select'
+import { searchPatients } from '@/app/actions/patient-search'
+import { toast } from "sonner"
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
+import { format } from "date-fns"
+import { useRouter, useSearchParams } from 'next/navigation'
+import { BatchSelectorDialog } from "./batch-selector-dialog"
+import { REG_FEE_SKU } from "@/lib/hms-constants"
+
+// ------------------------------------------------------------------------------------------------
+// POS DEVICE SERVICE (INLINED TO RESOLVE CIRCULAR/EVALUATION ERRORS)
+// ------------------------------------------------------------------------------------------------
+type POSStatus = 'connected' | 'offline' | 'searching' | 'unsupported';
+let posServiceInstance: any = null;
+class POSDeviceService {
+    private activeUrl: string | null = null;
+    private status: POSStatus = 'searching';
+    constructor() {}
+    public async autoDiscover() {
+        if (typeof window === 'undefined') return false;
+        const ports = [8080, 8082, 12345];
+        for (const port of ports) {
+            try {
+                const url = `http://localhost:${port}`;
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 800);
+                const res = await fetch(`${url}/web/status`, { method: 'GET', signal: controller.signal }).catch(() => null);
+                clearTimeout(timeoutId);
+                if (res && res.ok) { this.activeUrl = url; this.status = 'connected'; return true; }
+            } catch (e) {}
+        }
+        this.status = 'offline'; return false;
+    }
+    public getStatus(): POSStatus { return this.status; }
+    public async initiatePayment(req: any): Promise<any> {
+        if (!this.activeUrl) { await this.autoDiscover(); if (!this.activeUrl) return { success: false, error: 'POS Controller not found' }; }
+        try {
+            const payload = { transaction_type: 4001, amount: Math.round(req.amount * 100), billing_ref_no: req.invoiceId, payment_mode: req.method === 'CARD' ? 1 : 14 };
+            const response = await fetch(`${this.activeUrl}/web/doTransaction`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const data = await response.json();
+            if (data.status === 'success' || data.response_code === '00') return { success: true, reference: data.approval_code || data.retrieval_ref_no, amount: req.amount };
+            return { success: false, error: data.message || 'Transaction Failed' };
+        } catch (err: any) { return { success: false, error: 'Communication error' }; }
+    }
+}
+
+function getPOSService(): any {
+    if (typeof window === 'undefined') return { getStatus: () => 'offline', autoDiscover: () => Promise.resolve(false) };
+    if (!posServiceInstance) posServiceInstance = new POSDeviceService();
+    return posServiceInstance;
+}
+
+export function CompactInvoiceEditor({ 
+  patients = [], 
+  billableItems = [], 
+  uoms = [], 
+  taxConfig = { defaultTax: null, taxRates: [] }, 
+  initialPatientId = '', 
+  initialMedicines = [], 
+  appointmentId = '', 
+  initialInvoice = null, 
+  onClose, 
+  onPaymentSuccess, 
+  currency = '\u20B9',
+  isRegistrationFee = false,
+"use client"
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   MessageSquare, Plus, Trash2, Search, Save, User, DollarSign, Receipt, X,
@@ -118,7 +205,7 @@ export function CompactInvoiceEditor({
   const safeUoms = Array.isArray(uoms) ? uoms : [];
   const safeTaxConfig = taxConfig || { defaultTax: null, taxRates: [] };
   const safeTaxRates = Array.isArray(safeTaxConfig.taxRates) ? safeTaxConfig.taxRates : [];
-  const defaultTaxId = (safeTaxConfig.defaultTax as any)?.id || '';
+  const defaultTaxId = (safeTaxConfig.defaultTax as any)?.id || (safeTaxRates[0]?.id) || '';
 
   // [CURRENCY-SHIELD] Sanitize corrupted currency symbols from DB or Props
   const [safeCurrency, setSafeCurrency] = useState(currency || '\u20B9');
@@ -130,12 +217,12 @@ export function CompactInvoiceEditor({
     setSafeCurrency(clean);
   }, [currency]);
 
-  const [isMounted, setIsMounted] = useState(false)
-  const [time, setTime] = useState('')
+  const [isMounted, setIsMounted] = useState(false);
+  const [time, setTime] = useState('');
   useEffect(() => { 
     setIsMounted(true);
     setTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
-  }, [])
+  }, []);
 
   // [TERMINAL-SYNC] Local Registry for Quick-Created Items
   const [localBillableItems, setLocalBillableItems] = useState(safeBillableItems);
@@ -143,129 +230,142 @@ export function CompactInvoiceEditor({
     setLocalBillableItems(safeBillableItems);
   }, [billableItems]);
 
-    // Robust Line Item State (PRE-INITIALIZED FOR DEPENDENCY REASONS)
-    const [lines, setLines] = useState<any[]>(() => {
-        try {
-            let combinedLines: any[] = []
+  // Robust Line Item State (PRE-INITIALIZED FOR DEPENDENCY REASONS)
+  const [lines, setLines] = useState<any[]>(() => {
+      try {
+          let combinedLines: any[] = [];
 
-            // [RETURN-EDIT-LOGIC] If we are editing an existing return, load its lines first
-      if (initialReturn?.lines) {
-          return initialReturn.lines.map((l: any, idx: number) => ({
-              id: l.id || `ret-${idx}-${Date.now()}`,
-              product_id: l.product_id || '',
-              description: l.hms_product?.name || l.description || 'Returned Item',
-              quantity: Number(l.qty || l.quantity || 1),
-              uom: l.uom || l.hms_product?.uom || 'PCS',
-              unit_price: Number(l.unit_price || 0),
-              tax_rate_id: l.tax_rate_id || '',
-              tax_amount: Number(l.tax_amount || 0),
-              discount_amount: 0,
-              base_price: Number(l.unit_price || 0),
-              item_type: 'item',
-              isFromReturn: true,
-              invoice_line_id: l.invoice_line_id
-          }));
+          // [RETURN-EDIT-LOGIC] If we are editing an existing return, load its lines first
+          if (initialReturn?.lines) {
+              return initialReturn.lines.map((l: any, idx: number) => ({
+                  id: l.id || `ret-${idx}-${Date.now()}`,
+                  product_id: l.product_id || '',
+                  description: l.hms_product?.name || l.description || 'Returned Item',
+                  quantity: Number(l.qty || l.quantity || 1),
+                  uom: l.uom || l.hms_product?.uom || 'PCS',
+                  unit_price: Number(l.unit_price || 0),
+                  tax_rate_id: l.tax_rate_id || '',
+                  tax_amount: Number(l.tax_amount || 0),
+                  discount_amount: 0,
+                  base_price: Number(l.unit_price || 0),
+                  item_type: 'item',
+                  isFromReturn: true,
+                  invoice_line_id: l.invoice_line_id
+              }));
+          }
+
+          // 1. Load existing invoice lines (supports relational, JSONB line_items, and billing_metadata)
+          if (initialInvoice) {
+              let sourceLines = initialInvoice.hms_invoice_lines;
+              if (!sourceLines || sourceLines.length === 0) {
+                  let rawJson = initialInvoice.line_items;
+                  if (typeof rawJson === 'string') {
+                      try { rawJson = JSON.parse(rawJson); } catch (_) { rawJson = []; }
+                  }
+                  if (Array.isArray(rawJson) && rawJson.length > 0) {
+                      sourceLines = rawJson;
+                  } else {
+                      const bMeta = typeof initialInvoice.billing_metadata === 'string' ? JSON.parse(initialInvoice.billing_metadata || '{}') : (initialInvoice.billing_metadata || {});
+                      if (Array.isArray(bMeta.items)) sourceLines = bMeta.items;
+                      else if (Array.isArray(bMeta.line_items)) sourceLines = bMeta.line_items;
+                      else if (Array.isArray((initialInvoice.metadata as any)?.items)) sourceLines = (initialInvoice.metadata as any).items;
+                  }
+              }
+
+              if (Array.isArray(sourceLines) && sourceLines.length > 0) {
+                  combinedLines = sourceLines
+                      .filter((l: any) => {
+                          const desc = (l.description || l.name || l.item_name || '').toLowerCase();
+                          const isMarker = (desc.includes('(nursing)') || desc.includes('(doctor)') || desc.includes('(prescription)')) && (Number(l.unit_price || l.price || 0) === 0);
+                          return !isMarker;
+                      })
+                      .map((l: any, idx: number) => ({
+                          id: l.id || `line-${idx}-${Date.now()}`,
+                          product_id: l.product_id || '',
+                          description: l.description || l.name || l.item_name || l.item || 'Untitled Item',
+                          quantity: Number(l.quantity || l.qty || 1),
+                          uom: l.uom || 'PCS',
+                          unit_price: Number(l.unit_price || l.price || l.rate || 0),
+                          tax_rate_id: l.tax_rate_id || '',
+                          tax_amount: Number(l.tax_amount || l.tax || 0),
+                          discount_amount: Number(l.discount_amount || l.discount || 0),
+                          base_price: Number(l.unit_price || l.price || l.rate || 0),
+                          item_type: l.product_id ? (safeBillableItems.find(bi => bi.id === l.product_id)?.type || 'item') : 'item',
+                          isFromInvoice: true
+                      }));
+              }
+          }
+
+          // 2. Integration: Merge initialMedicines from props (Consultations/Prescriptions)
+          if (initialMedicines && initialMedicines.length > 0) {
+              const medLines = initialMedicines
+                  .filter((m: any) => {
+                      return !combinedLines.some(cl => 
+                          (m.id && cl.product_id === m.id) || 
+                          (m.name?.toLowerCase().includes('registration') && cl.description?.toLowerCase().includes('registration'))
+                      );
+                  })
+                  .map((m: any, idx: number) => ({
+                      id: `med-${idx}-${Date.now()}`,
+                      product_id: m.id || m.product_id || '',
+                      description: m.name || m.description || 'Unknown Medicine',
+                      quantity: Number(m.quantity || 1),
+                      unit_price: Number(m.price || m.unit_price || 0),
+                      uom: m.uom || 'PCS',
+                      tax_rate_id: m.tax_rate_id || '',
+                      tax_amount: 0,
+                      discount_amount: 0,
+                      item_type: m.type || 'item',
+                      sourceId: m.sourceId || '',
+                      fromSource: true
+                  }));
+              
+              combinedLines = [...combinedLines, ...medLines];
+          }
+
+          if (combinedLines.length > 0) return combinedLines;
+
+          // 3. Absolute Default: Single empty line
+          return [
+              { id: `default-line-${Date.now()}`, product_id: '', description: '', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0, item_type: 'item' }
+          ];
+      } catch (e) {
+          console.log("[BILLING-EDITOR] Critical Failure in lines initializer:", e);
+          return [{ id: 'emergency-line', product_id: '', description: 'Error Loading Items', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: '', tax_amount: 0, discount_amount: 0, item_type: 'item' }];
       }
+  });
 
-      // [CLEAN-UI] Filter out legacy clinical markers that were auto-injected by previous systems.
-            // These usually have prefixes like (Nursing) and 0 price. 
-            // We ignore them during grid load so the cashier has a clean start.
-            if (initialInvoice?.hms_invoice_lines) {
-                combinedLines = initialInvoice.hms_invoice_lines
-                    .filter((l: any) => {
-                        const desc = l.description?.toLowerCase() || '';
-                        const isMarker = (desc.includes('(nursing)') || desc.includes('(doctor)') || desc.includes('(prescription)')) && (Number(l.unit_price) === 0);
-                        return !isMarker;
-                    })
-                    .map((l: any, idx: number) => ({
-                        id: l.id || `line-${idx}-${Date.now()}`,
-                        product_id: l.product_id || '',
-                        description: l.description || 'Untitled Item',
-                        quantity: Number(l.quantity || 1),
-                        uom: l.uom || 'PCS',
-                        unit_price: Number(l.unit_price || 0),
-                        tax_rate_id: l.tax_rate_id,
-                        tax_amount: Number(l.tax_amount || 0),
-                        discount_amount: Number(l.discount_amount || 0),
-                        base_price: Number(l.unit_price || 0),
-                        item_type: l.product_id ? (safeBillableItems.find(bi => bi.id === l.product_id)?.type || 'item') : 'item',
-                        isFromInvoice: true
-                    }))
-            }
+  const getUomOptions = (itemType: string, currentUom: string, productId?: string) => {
+      try {
+          const safeUomsList = Array.isArray(uoms) ? uoms : [];
+          
+          // For services or items without a master product link, show standard defaults
+          if (itemType === 'service' || !productId) {
+              const defaults = itemType === 'service' ? ['SVC', 'VISIT', 'HOUR', 'PROC'] : ['PCS', 'UNIT', 'EACH'];
+              return Array.from(new Set([...defaults, (currentUom || '').toUpperCase()])).filter(Boolean);
+          }
 
-            // 2. Integration: Merge initialMedicines from props (Consultations/Prescriptions)
-            if (initialMedicines && initialMedicines.length > 0) {
-                const medLines = initialMedicines
-                    .filter((m: any) => {
-                        // Hard deduplication against already merged lines
-                        return !combinedLines.some(cl => 
-                            (m.id && cl.product_id === m.id) || 
-                            (m.name?.toLowerCase().includes('registration') && cl.description?.toLowerCase().includes('registration'))
-                        );
-                    })
-                    .map((m: any, idx: number) => ({
-                    id: `med-${idx}-${Date.now()}`,
-                    product_id: m.id || m.product_id || '',
-                    description: m.name || m.description || 'Unknown Medicine',
-                    quantity: Number(m.quantity || 1),
-                    unit_price: Number(m.price || m.unit_price || 0),
-                    uom: m.uom || 'PCS',
-                    tax_rate_id: m.tax_rate_id || '',
-                    tax_amount: 0,
-                    discount_amount: 0,
-                    item_type: m.type || 'item',
-                    sourceId: m.sourceId || '',
-                    fromSource: true
-                }));
-                
-                combinedLines = [...combinedLines, ...medLines];
-            }
+          // [SERIOUS-UOM] Find the master product to identify its UOM Category
+          const product = localBillableItems.find(i => i.id === productId);
+          const baseUomId = product?.uom_id;
+          const baseUom = safeUomsList.find(u => u.id === baseUomId);
+          
+          if (baseUom?.category_id) {
+              // Return all UOMs in the same category (e.g. Mass, Quantity, Time)
+              const relevant = safeUomsList
+                  .filter(u => u.category_id === baseUom.category_id)
+                  .map(u => (u.name || '').toUpperCase());
+              
+              return Array.from(new Set([...relevant, (currentUom || '').toUpperCase()])).filter(Boolean);
+          }
 
-            if (combinedLines.length > 0) return combinedLines;
+          // Fallback to legacy defaults if no category link exists (Deduplicated)
+          return Array.from(new Set(['PCS', 'UNIT', 'EACH', (currentUom || '').toUpperCase()])).filter(Boolean);
 
-            // 3. Absolute Default: Single empty line
-            return [
-                { id: `default-line-${Date.now()}`, product_id: '', description: '', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0, item_type: 'item' }
-            ]
-        } catch (e) {
-            console.log("[BILLING-EDITOR] Critical Failure in lines initializer:", e);
-            return [{ id: 'emergency-line', product_id: '', description: 'Error Loading Items', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: '', tax_amount: 0, discount_amount: 0, item_type: 'item' }];
-        }
-    })
-
-
-    const getUomOptions = (itemType: string, currentUom: string, productId?: string) => {
-        try {
-            const safeUomsList = Array.isArray(uoms) ? uoms : [];
-            
-            // For services or items without a master product link, show standard defaults
-            if (itemType === 'service' || !productId) {
-                const defaults = itemType === 'service' ? ['SVC', 'VISIT', 'HOUR', 'PROC'] : ['PCS', 'UNIT', 'EACH'];
-                return Array.from(new Set([...defaults, (currentUom || '').toUpperCase()])).filter(Boolean);
-            }
-
-            // [SERIOUS-UOM] Find the master product to identify its UOM Category
-            const product = localBillableItems.find(i => i.id === productId);
-            const baseUomId = product?.uom_id;
-            const baseUom = safeUomsList.find(u => u.id === baseUomId);
-            
-            if (baseUom?.category_id) {
-                // Return all UOMs in the same category (e.g. Mass, Quantity, Time)
-                const relevant = safeUomsList
-                    .filter(u => u.category_id === baseUom.category_id)
-                    .map(u => (u.name || '').toUpperCase());
-                
-                return Array.from(new Set([...relevant, (currentUom || '').toUpperCase()])).filter(Boolean);
-            }
-
-            // Fallback to legacy defaults if no category link exists (Deduplicated)
-            return Array.from(new Set(['PCS', 'UNIT', 'EACH', (currentUom || '').toUpperCase()])).filter(Boolean);
-
-        } catch (e) {
-            return ['PCS', 'UNIT'];
-        }
-    }
-
+      } catch (e) {
+          return ['PCS', 'UNIT'];
+      }
+  };
 
   interface Payment {
     method: 'cash' | 'card' | 'upi' | 'bank_transfer' | 'advance';
@@ -275,7 +375,6 @@ export function CompactInvoiceEditor({
 
   const router = useRouter()
   const searchParams = useSearchParams()
-
   const isAdmin = currentUser?.isAdmin || (initialInvoice as any)?.isAdmin || false;
   const tenantId = currentUser?.tenantId || (initialInvoice as any)?.tenant_id;
   const companyId = currentUser?.companyId || (initialInvoice as any)?.company_id;

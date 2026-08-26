@@ -1015,12 +1015,25 @@ async function renderTable(doc: jsPDF, usage: string, data: any, tableConfig: an
     const rowHeight = 22 * scale;
     const fontSize = (tableConfig.fontSize || 9) * scale;
 
-    let rawItems = ((usage as any) === 'prescription')
+    let rawItems: any[] = ((usage as any) === 'prescription')
         ? (data.medicines || data.prescription?.[0]?.medicines || [])
         : (data.hms_invoice_lines || data.items || data.hms_lab_order_lines || data.hms_lab_order_line || []);
 
+    if ((!rawItems || rawItems.length === 0) && data?.line_items) {
+        let jsonLines = data.line_items;
+        if (typeof jsonLines === 'string') {
+            try { jsonLines = JSON.parse(jsonLines); } catch (_) { jsonLines = []; }
+        }
+        if (Array.isArray(jsonLines) && jsonLines.length > 0) rawItems = jsonLines;
+    }
+    if ((!rawItems || rawItems.length === 0) && data?.billing_metadata) {
+        const bMeta = typeof data.billing_metadata === 'string' ? JSON.parse(data.billing_metadata || '{}') : (data.billing_metadata || {});
+        if (Array.isArray(bMeta.items)) rawItems = bMeta.items;
+        else if (Array.isArray(bMeta.line_items)) rawItems = bMeta.line_items;
+    }
+
     // Filter out ghost rows/empty inputs saved by older versions
-    const items = rawItems.filter((i: any) => i.hms_product_id || i.product_id || i.description || i.metadata?.account_id || i.medicine_id || i.test_id || (i.name && i.name !== '') || i.category || i.memo);
+    const items = (rawItems || []).filter((i: any) => i.hms_product_id || i.product_id || i.description || i.metadata?.account_id || i.medicine_id || i.test_id || (i.name && i.name !== '') || i.category || i.memo);
 
     const configCols = context.config?.columns || { showTax: true, showDiscount: true, showUOM: true, showHsn: false };
     

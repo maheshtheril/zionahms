@@ -43,13 +43,19 @@ function extractBillData(data: any) {
 
     let rawLines = data?.hms_invoice_lines || data?.items || []
     if (!rawLines || rawLines.length === 0) {
-        if (Array.isArray(data?.metadata?.items)) rawLines = data.metadata.items
+        let jsonLines = data?.line_items
+        if (typeof jsonLines === 'string') {
+            try { jsonLines = JSON.parse(jsonLines) } catch (_) { jsonLines = [] }
+        }
+        if (Array.isArray(jsonLines) && jsonLines.length > 0) rawLines = jsonLines
+        else if (Array.isArray(data?.metadata?.items)) rawLines = data.metadata.items
         else if (Array.isArray(data?.metadata?.lines)) rawLines = data.metadata.lines
         else if (Array.isArray(data?.billing_metadata?.items)) rawLines = data.billing_metadata.items
         else if (typeof data?.billing_metadata === 'string') {
             try {
                 const parsed = JSON.parse(data.billing_metadata)
                 if (Array.isArray(parsed?.items)) rawLines = parsed.items
+                else if (Array.isArray(parsed?.line_items)) rawLines = parsed.line_items
             } catch (_) {}
         }
     }
