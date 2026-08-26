@@ -63,6 +63,11 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
 
     // WhatsApp Settings Mirror
     const [whatsappEnabled, setWhatsappEnabled] = useState(whatsappSettings?.enabled ?? false)
+    const [whatsappProvider, setWhatsappProvider] = useState<'wa_direct' | 'ultramsg' | 'evolution'>(
+        !whatsappSettings?.enabled || whatsappSettings?.instanceId === 'instanceziona' || !whatsappSettings?.instanceId 
+            ? 'wa_direct' 
+            : (whatsappSettings?.provider || 'wa_direct')
+    )
     const [whatsappInstanceId, setWhatsappInstanceId] = useState(whatsappSettings?.instanceId ?? '')
     const [whatsappToken, setWhatsappToken] = useState('')
     const [whatsappAutoSendBill, setWhatsappAutoSendBill] = useState(whatsappSettings?.autoSendBill ?? false)
@@ -185,9 +190,9 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                     invoiceStartNumber: Number(invoiceStartNumber)
                 }),
                 updateWhatsAppSettings({
-                    enabled: whatsappEnabled,
+                    enabled: whatsappProvider !== 'wa_direct' && whatsappEnabled,
                     instanceId: whatsappInstanceId,
-                    provider: 'ultramsg',
+                    provider: (whatsappProvider === 'wa_direct' ? 'ultramsg' : whatsappProvider) as any,
                     token: whatsappToken || undefined,
                     autoSendBill: whatsappAutoSendBill,
                     companyId: company.id
@@ -519,65 +524,151 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                 <CardHeader className="bg-emerald-50/30 dark:bg-emerald-950/20">
                     <CardTitle className="flex items-center gap-3 text-emerald-900 dark:text-emerald-100 italic font-black">
                         <MessageSquare className="h-5 w-5 text-emerald-600" />
-                        WHATSAPP CLOUD SETTINGS
+                        WHATSAPP NOTIFICATION SETTINGS
                     </CardTitle>
-                    <CardDescription className="text-xs font-bold text-emerald-600/70 uppercase tracking-widest">Connect UltraMsg for automated notifications</CardDescription>
+                    <CardDescription className="text-xs font-bold text-emerald-600/70 uppercase tracking-widest">
+                        Choose how patient invoices and receipts are sent via WhatsApp
+                    </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-6">
-                    <div className="flex items-center justify-between p-4 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-900/20">
-                        <div className="flex items-center gap-3">
-                            <Zap className="h-5 w-5 text-emerald-500" />
-                            <div>
-                                <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 italic">WhatsApp Gateway Status</h4>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Enable automated outgoing messages</p>
+                    {/* Delivery Method Cards */}
+                    <div className="space-y-3">
+                        <Label className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                            Select WhatsApp Delivery Mode
+                        </Label>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div 
+                                onClick={() => {
+                                    setWhatsappProvider('wa_direct');
+                                    setWhatsappEnabled(false);
+                                }}
+                                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                                    whatsappProvider === 'wa_direct' 
+                                        ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-sm' 
+                                        : 'border-slate-200 dark:border-slate-800 bg-slate-50/40 hover:border-slate-300'
+                                }`}
+                            >
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <span className="font-bold text-sm text-slate-900 dark:text-white">1-Click Direct Chat</span>
+                                    <span className="text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">100% Free</span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 leading-snug">Opens WhatsApp Web / Desktop in 1 click. Zero setup & zero cost.</p>
+                            </div>
+
+                            <div 
+                                onClick={() => {
+                                    setWhatsappProvider('ultramsg');
+                                    setWhatsappEnabled(true);
+                                }}
+                                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                                    whatsappProvider === 'ultramsg' 
+                                        ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-sm' 
+                                        : 'border-slate-200 dark:border-slate-800 bg-slate-50/40 hover:border-slate-300'
+                                }`}
+                            >
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <span className="font-bold text-sm text-slate-900 dark:text-white">UltraMsg Cloud</span>
+                                    <span className="text-[9px] font-bold text-slate-500 uppercase bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-full">Paid API</span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 leading-snug">Automated background sending via your UltraMsg.com account.</p>
+                            </div>
+
+                            <div 
+                                onClick={() => {
+                                    setWhatsappProvider('evolution');
+                                    setWhatsappEnabled(true);
+                                }}
+                                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                                    whatsappProvider === 'evolution' 
+                                        ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-sm' 
+                                        : 'border-slate-200 dark:border-slate-800 bg-slate-50/40 hover:border-slate-300'
+                                }`}
+                            >
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <span className="font-bold text-sm text-slate-900 dark:text-white">Evolution API</span>
+                                    <span className="text-[9px] font-black uppercase bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">Self-Hosted</span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 leading-snug">Free automated open-source gateway hosted on Railway or VPS.</p>
                             </div>
                         </div>
-                        <Switch checked={whatsappEnabled} onCheckedChange={setWhatsappEnabled} />
                     </div>
 
-                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${!whatsappEnabled ? 'opacity-40' : ''}`}>
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Instance ID</Label>
-                            <Input value={whatsappInstanceId} onChange={e => setWhatsappInstanceId(e.target.value)} placeholder="e.g. instance12345" className="font-mono text-sm rounded-xl" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">API Token {hasExistingWhatsappToken && !whatsappToken && "✓"}</Label>
-                            <div className="relative">
-                                <Input 
-                                    type={showWhatsappToken ? 'text' : 'password'} 
-                                    value={whatsappToken} 
-                                    onChange={e => setWhatsappToken(e.target.value)} 
-                                    placeholder={
-                                        whatsappToken 
-                                            ? 'Entering new token...' 
-                                            : hasExistingWhatsappToken 
-                                                ? (showWhatsappToken ? '[TOKEN SAVED & HIDDEN]' : '✓ SAVED & PROTECTED')
-                                                : 'Enter UltraMsg API Token'
-                                    } 
-                                    className={`font-mono text-sm rounded-xl pr-10 ${hasExistingWhatsappToken && !whatsappToken ? 'bg-emerald-50/10' : ''}`} 
-                                />
-                                <button 
-                                    type="button" 
-                                    onClick={() => setShowWhatsappToken(!showWhatsappToken)} 
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
-                                    title={showWhatsappToken ? "Hide Token" : "Show Token"}
-                                >
-                                    {showWhatsappToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
+                    {/* Mode Specific Configuration */}
+                    {whatsappProvider === 'wa_direct' ? (
+                        <div className="p-4 bg-emerald-50/60 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200 dark:border-emerald-900 flex items-start gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                            <div className="text-xs text-slate-700 dark:text-slate-300 space-y-1">
+                                <p className="font-bold text-emerald-900 dark:text-emerald-200">1-Click Direct WhatsApp is Active</p>
+                                <p className="text-slate-600 dark:text-slate-400">
+                                    When you bill a patient, clicking the WhatsApp button opens their chat with the bill summary pre-filled. No third-party API or token is needed.
+                                </p>
                             </div>
-                            {hasExistingWhatsappToken && !whatsappToken && !showWhatsappToken && (
-                                <p className="text-[9px] text-slate-400 italic">Saved token is hidden for security. Type to overwrite.</p>
-                            )}
                         </div>
-                    </div>
+                    ) : (
+                        <>
+                            <div className="flex items-center justify-between p-4 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-900/20">
+                                <div className="flex items-center gap-3">
+                                    <Zap className="h-5 w-5 text-emerald-500" />
+                                    <div>
+                                        <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 italic">Automated Cloud Gateway</h4>
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Enable automated background message dispatch</p>
+                                    </div>
+                                </div>
+                                <Switch checked={whatsappEnabled} onCheckedChange={setWhatsappEnabled} />
+                            </div>
 
-                    <label className={`flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer ${!whatsappEnabled ? 'opacity-40' : ''}`}>
-                        <input type="checkbox" checked={whatsappAutoSendBill} onChange={(e) => setWhatsappAutoSendBill(e.target.checked)} className="h-4 w-4 accent-emerald-500" />
-                        <div className="flex flex-col">
-                            <span className="text-xs font-black uppercase text-slate-700 dark:text-slate-300 italic">Auto-send Bill PDFs</span>
-                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Automatically notify patients on payment</span>
-                        </div>
-                    </label>
+                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${!whatsappEnabled ? 'opacity-40' : ''}`}>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        {whatsappProvider === 'evolution' ? 'Instance Name' : 'UltraMsg Instance ID'}
+                                    </Label>
+                                    <Input 
+                                        value={whatsappInstanceId} 
+                                        onChange={e => setWhatsappInstanceId(e.target.value)} 
+                                        placeholder={whatsappProvider === 'evolution' ? 'e.g. MyClinic' : 'e.g. instance104823 (numeric)'} 
+                                        className="font-mono text-sm rounded-xl" 
+                                    />
+                                    {whatsappProvider === 'ultramsg' && (
+                                        <p className="text-[10px] text-amber-600">Enter your numeric instance ID from UltraMsg (e.g. 104823).</p>
+                                    )}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">API Token {hasExistingWhatsappToken && !whatsappToken && "✓"}</Label>
+                                    <div className="relative">
+                                        <Input 
+                                            type={showWhatsappToken ? 'text' : 'password'} 
+                                            value={whatsappToken} 
+                                            onChange={e => setWhatsappToken(e.target.value)} 
+                                            placeholder={
+                                                whatsappToken 
+                                                    ? 'Entering new token...' 
+                                                    : hasExistingWhatsappToken 
+                                                        ? (showWhatsappToken ? '[TOKEN SAVED & HIDDEN]' : '✓ SAVED & PROTECTED')
+                                                        : 'Enter API Token'
+                                            } 
+                                            className={`font-mono text-sm rounded-xl pr-10 ${hasExistingWhatsappToken && !whatsappToken ? 'bg-emerald-50/10' : ''}`} 
+                                        />
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setShowWhatsappToken(!showWhatsappToken)} 
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                                            title={showWhatsappToken ? "Hide Token" : "Show Token"}
+                                        >
+                                            {showWhatsappToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <label className={`flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer ${!whatsappEnabled ? 'opacity-40' : ''}`}>
+                                <input type="checkbox" checked={whatsappAutoSendBill} onChange={(e) => setWhatsappAutoSendBill(e.target.checked)} className="h-4 w-4 accent-emerald-500" />
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-black uppercase text-slate-700 dark:text-slate-300 italic">Auto-send Bill PDFs</span>
+                                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Automatically notify patients on payment</span>
+                                </div>
+                            </label>
+                        </>
+                    )}
                 </CardContent>
             </Card>
 
