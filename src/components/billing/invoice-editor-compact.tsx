@@ -66,6 +66,12 @@ class POSDeviceService {
     }
 }
 
+function getPOSService(): any {
+    if (typeof window === 'undefined') return { getStatus: () => 'offline', autoDiscover: () => Promise.resolve(false) };
+    if (!posServiceInstance) posServiceInstance = new POSDeviceService();
+    return posServiceInstance;
+}
+
 export function CompactInvoiceEditor({ 
   patients = [], 
   billableItems = [], 
