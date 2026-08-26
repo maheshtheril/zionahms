@@ -91,6 +91,11 @@ function extractBillData(data: any) {
         subtotal: subtotal || (grandTotal - taxTotal + discountTotal),
         discountTotal,
         taxTotal,
+        roundOff: data?.round_off_amount !== undefined && data?.round_off_amount !== null
+            ? Number(data.round_off_amount)
+            : (data?.round_off !== undefined && data?.round_off !== null 
+                ? Number(data.round_off) 
+                : Number((grandTotal - ((subtotal || (grandTotal - taxTotal + discountTotal)) - discountTotal + taxTotal)).toFixed(2))),
         grandTotal,
     }
 }
@@ -246,11 +251,12 @@ function summaryBlock(block: any, bill: ReturnType<typeof extractBillData>, pc: 
     const v = block.variant || 'A'
 
     const subtotalCalc = bill.subtotal || (bill.grandTotal - bill.taxTotal + bill.discountTotal)
+    const roundOffVal = (bill.roundOff >= 0 ? `+ ` : `− `) + fmt(Math.abs(bill.roundOff))
     const rows = [
         { key: 'subtotal', label: 'Subtotal', val: fmt(subtotalCalc), show: f.subtotal !== false },
         { key: 'discount', label: 'Discount', val: `− ${fmt(bill.discountTotal)}`, show: f.discount !== false && bill.discountTotal > 0, color: '#16a34a' },
         { key: 'taxBreakdown', label: 'GST / Tax', val: fmt(bill.taxTotal), show: f.taxBreakdown !== false && bill.taxTotal > 0 },
-        { key: 'roundOff', label: 'Round Off', val: '₹ 0.00', show: f.roundOff === true },
+        { key: 'roundOff', label: 'Round Off', val: roundOffVal, show: f.roundOff !== false && Math.abs(bill.roundOff) > 0.001 },
     ].filter(r => r.show)
 
     if (v === 'A') return `<div style="padding:${pad}px;display:flex;justify-content:flex-end;">
