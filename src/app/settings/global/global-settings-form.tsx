@@ -63,10 +63,12 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
 
     // WhatsApp Settings Mirror
     const [whatsappEnabled, setWhatsappEnabled] = useState(whatsappSettings?.enabled ?? false)
-    const [whatsappProvider, setWhatsappProvider] = useState<'wa_direct' | 'ultramsg' | 'evolution'>(
-        !whatsappSettings?.enabled || whatsappSettings?.instanceId === 'instanceziona' || !whatsappSettings?.instanceId 
-            ? 'wa_direct' 
-            : (whatsappSettings?.provider || 'wa_direct')
+    const [whatsappProvider, setWhatsappProvider] = useState<'wa_direct' | 'local-bridge' | 'ultramsg' | 'evolution'>(
+        whatsappSettings?.provider === 'local-bridge' 
+            ? 'local-bridge' 
+            : (!whatsappSettings?.enabled || whatsappSettings?.instanceId === 'instanceziona' || !whatsappSettings?.instanceId 
+                ? 'wa_direct' 
+                : (whatsappSettings?.provider || 'wa_direct'))
     )
     const [whatsappInstanceId, setWhatsappInstanceId] = useState(whatsappSettings?.instanceId ?? '')
     const [whatsappToken, setWhatsappToken] = useState('')
@@ -531,7 +533,7 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                         <Label className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
                             Select WhatsApp Delivery Mode
                         </Label>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                             <div 
                                 onClick={() => {
                                     setWhatsappProvider('wa_direct');
@@ -544,28 +546,31 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                                 }`}
                             >
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <span className="font-bold text-sm text-slate-900 dark:text-white">1-Click Direct Chat</span>
-                                    <span className="text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">100% Free</span>
+                                    <span className="font-bold text-xs text-slate-900 dark:text-white">1-Click Direct</span>
+                                    <span className="text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">Free</span>
                                 </div>
-                                <p className="text-[11px] text-slate-500 leading-snug">Opens WhatsApp Web / Desktop in 1 click. Zero setup & zero cost.</p>
+                                <p className="text-[11px] text-slate-500 leading-snug">Opens WhatsApp Web in 1 click. Zero server setup.</p>
                             </div>
 
                             <div 
                                 onClick={() => {
-                                    setWhatsappProvider('ultramsg');
+                                    setWhatsappProvider('local-bridge');
                                     setWhatsappEnabled(true);
+                                    if (!whatsappInstanceId || whatsappInstanceId.startsWith('instance')) {
+                                        setWhatsappInstanceId('http://localhost:8081');
+                                    }
                                 }}
                                 className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                                    whatsappProvider === 'ultramsg' 
+                                    whatsappProvider === 'local-bridge' 
                                         ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-sm' 
                                         : 'border-slate-200 dark:border-slate-800 bg-slate-50/40 hover:border-slate-300'
                                 }`}
                             >
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <span className="font-bold text-sm text-slate-900 dark:text-white">UltraMsg Cloud</span>
-                                    <span className="text-[9px] font-bold text-slate-500 uppercase bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-full">Paid API</span>
+                                    <span className="font-bold text-xs text-slate-900 dark:text-white">Local LAN Bridge</span>
+                                    <span className="text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">LAN Server</span>
                                 </div>
-                                <p className="text-[11px] text-slate-500 leading-snug">Automated background sending via your UltraMsg.com account.</p>
+                                <p className="text-[11px] text-slate-500 leading-snug">Sends automated PDFs via your local PC/server bridge (Port 8081).</p>
                             </div>
 
                             <div 
@@ -580,10 +585,28 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                                 }`}
                             >
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <span className="font-bold text-sm text-slate-900 dark:text-white">Evolution API</span>
+                                    <span className="font-bold text-xs text-slate-900 dark:text-white">Evolution API</span>
                                     <span className="text-[9px] font-black uppercase bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">Self-Hosted</span>
                                 </div>
-                                <p className="text-[11px] text-slate-500 leading-snug">Free automated open-source gateway hosted on Railway or VPS.</p>
+                                <p className="text-[11px] text-slate-500 leading-snug">Automated gateway hosted on Railway or VPS.</p>
+                            </div>
+
+                            <div 
+                                onClick={() => {
+                                    setWhatsappProvider('ultramsg');
+                                    setWhatsappEnabled(true);
+                                }}
+                                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                                    whatsappProvider === 'ultramsg' 
+                                        ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-sm' 
+                                        : 'border-slate-200 dark:border-slate-800 bg-slate-50/40 hover:border-slate-300'
+                                }`}
+                            >
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <span className="font-bold text-xs text-slate-900 dark:text-white">UltraMsg Cloud</span>
+                                    <span className="text-[9px] font-bold text-slate-500 uppercase bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-full">Paid API</span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 leading-snug">Automated sending via your UltraMsg account.</p>
                             </div>
                         </div>
                     </div>
@@ -605,8 +628,8 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                                 <div className="flex items-center gap-3">
                                     <Zap className="h-5 w-5 text-emerald-500" />
                                     <div>
-                                        <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 italic">Automated Cloud Gateway</h4>
-                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Enable automated background message dispatch</p>
+                                        <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 italic">Automated PDF Gateway</h4>
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Enable automated PDF bill dispatch in background</p>
                                     </div>
                                 </div>
                                 <Switch checked={whatsappEnabled} onCheckedChange={setWhatsappEnabled} />
@@ -615,51 +638,66 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                             <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${!whatsappEnabled ? 'opacity-40' : ''}`}>
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                        {whatsappProvider === 'evolution' ? 'Instance Name' : 'UltraMsg Instance ID'}
+                                        {whatsappProvider === 'local-bridge' 
+                                            ? 'LAN Bridge URL / IP' 
+                                            : whatsappProvider === 'evolution' 
+                                                ? 'Instance Name' 
+                                                : 'UltraMsg Instance ID'}
                                     </Label>
                                     <Input 
                                         value={whatsappInstanceId} 
                                         onChange={e => setWhatsappInstanceId(e.target.value)} 
-                                        placeholder={whatsappProvider === 'evolution' ? 'e.g. MyClinic' : 'e.g. instance104823 (numeric)'} 
+                                        placeholder={
+                                            whatsappProvider === 'local-bridge' 
+                                                ? 'http://localhost:8081 or http://192.168.1.100:8081' 
+                                                : whatsappProvider === 'evolution' 
+                                                    ? 'e.g. MyClinic' 
+                                                    : 'e.g. instance104823 (numeric)'
+                                        } 
                                         className="font-mono text-sm rounded-xl" 
                                     />
+                                    {whatsappProvider === 'local-bridge' && (
+                                        <p className="text-[10px] text-emerald-600 font-medium">Connects to your local Node.js WhatsApp daemon on your hospital server PC.</p>
+                                    )}
                                     {whatsappProvider === 'ultramsg' && (
                                         <p className="text-[10px] text-amber-600">Enter your numeric instance ID from UltraMsg (e.g. 104823).</p>
                                     )}
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">API Token {hasExistingWhatsappToken && !whatsappToken && "✓"}</Label>
-                                    <div className="relative">
-                                        <Input 
-                                            type={showWhatsappToken ? 'text' : 'password'} 
-                                            value={whatsappToken} 
-                                            onChange={e => setWhatsappToken(e.target.value)} 
-                                            placeholder={
-                                                whatsappToken 
-                                                    ? 'Entering new token...' 
-                                                    : hasExistingWhatsappToken 
-                                                        ? (showWhatsappToken ? '[TOKEN SAVED & HIDDEN]' : '✓ SAVED & PROTECTED')
-                                                        : 'Enter API Token'
-                                            } 
-                                            className={`font-mono text-sm rounded-xl pr-10 ${hasExistingWhatsappToken && !whatsappToken ? 'bg-emerald-50/10' : ''}`} 
-                                        />
-                                        <button 
-                                            type="button" 
-                                            onClick={() => setShowWhatsappToken(!showWhatsappToken)} 
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
-                                            title={showWhatsappToken ? "Hide Token" : "Show Token"}
-                                        >
-                                            {showWhatsappToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                        </button>
+                                {whatsappProvider !== 'local-bridge' && (
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">API Token {hasExistingWhatsappToken && !whatsappToken && "✓"}</Label>
+                                        <div className="relative">
+                                            <Input 
+                                                type={showWhatsappToken ? 'text' : 'password'} 
+                                                value={whatsappToken} 
+                                                onChange={e => setWhatsappToken(e.target.value)} 
+                                                placeholder={
+                                                    whatsappToken 
+                                                        ? 'Entering new token...' 
+                                                        : hasExistingWhatsappToken 
+                                                            ? (showWhatsappToken ? '[TOKEN SAVED & HIDDEN]' : '✓ SAVED & PROTECTED')
+                                                            : 'Enter API Token'
+                                                } 
+                                                className={`font-mono text-sm rounded-xl pr-10 ${hasExistingWhatsappToken && !whatsappToken ? 'bg-emerald-50/10' : ''}`} 
+                                            />
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setShowWhatsappToken(!showWhatsappToken)} 
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                                                title={showWhatsappToken ? "Hide Token" : "Show Token"}
+                                            >
+                                                {showWhatsappToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
 
                             <label className={`flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer ${!whatsappEnabled ? 'opacity-40' : ''}`}>
                                 <input type="checkbox" checked={whatsappAutoSendBill} onChange={(e) => setWhatsappAutoSendBill(e.target.checked)} className="h-4 w-4 accent-emerald-500" />
                                 <div className="flex flex-col">
                                     <span className="text-xs font-black uppercase text-slate-700 dark:text-slate-300 italic">Auto-send Bill PDFs</span>
-                                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Automatically notify patients on payment</span>
+                                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Automatically deliver official PDF receipt on payment</span>
                                 </div>
                             </label>
                         </>

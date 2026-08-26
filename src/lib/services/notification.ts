@@ -142,30 +142,41 @@ export class NotificationService {
         options: { endpoint: 'chat' | 'document', pdfBase64?: string, filename?: string, provider?: 'ultramsg' | 'evolution' }
     ) {
         // Detect API Type (Priority: Explicit Provider > Token/ID naming convention)
-        const apiType = options.provider || (token.startsWith('evo_') || instanceId.includes('-') ? 'evolution' : 'ultramsg');
+        const apiType = options.provider || (token === 'local' || instanceId.includes('8081') ? 'local-bridge' : (token.startsWith('evo_') || instanceId.includes('-') ? 'evolution' : 'ultramsg'));
 
         let cleanId = instanceId.toString().trim();
         if (cleanId.toLowerCase().startsWith('instance')) {
             cleanId = cleanId.substring(8);
         }
 
-        // Only try local bridge if explicitly configured in development environment
-        if (process.env.LOCAL_WHATSAPP_BRIDGE_URL && process.env.NODE_ENV === 'development') {
-            const url = `${process.env.LOCAL_WHATSAPP_BRIDGE_URL}/send-message`;
+        // 1. LOCAL LAN BAILEYS BRIDGE (For LAN / Local Hospital Server installations)
+        if (apiType === 'local-bridge' || apiType === 'local') {
+            const bridgeUrl = (instanceId && instanceId.startsWith('http'))
+                ? instanceId.replace(/\/$/, '')
+                : (process.env.LOCAL_WHATSAPP_BRIDGE_URL || 'http://localhost:8081');
+            const url = `${bridgeUrl}/send-message`;
+
+            const payload: any = {
+                number: phone,
+                message: message,
+                pdfBase64: options.pdfBase64,
+                filename: options.filename
+            };
+
+            console.log(`[WhatsApp-LAN-Bridge] Dispatching PDF to: ${url} for Phone: ${phone}`);
             try {
-                console.log(`[WhatsApp-Bridge] Attempting: ${url} to JID: ${phone}`);
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ number: phone, message, pdfBase64: options.pdfBase64, filename: options.filename }),
-                    signal: AbortSignal.timeout(3000)
+                    body: JSON.stringify(payload)
                 });
                 const result = await response.json();
-                if (response.ok && result.success) {
-                    return { success: true, message: 'Sent via Local Bridge' };
+                if (response.ok && (result.success || result.status === 'success' || result.id)) {
+                    return { success: true, message: 'Sent via Local LAN WhatsApp Bridge' };
                 }
-            } catch (prefErr: any) {
-                console.warn("[WhatsApp-Bridge] Local bridge unreachable, continuing to cloud provider...");
+                return { success: false, error: result.error || 'LAN Bridge returned error' };
+            } catch (err: any) {
+                return { success: false, error: `Could not connect to Local Bridge at ${url}. Ensure the bridge is running on your LAN server.` };
             }
         }
 
