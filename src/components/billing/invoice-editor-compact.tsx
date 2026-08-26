@@ -1265,8 +1265,7 @@ export function CompactInvoiceEditor({
           successTitle = status === 'draft' ? "Draft Invoice Saved" : "Invoice Posted";
         }
 
-        toast({ 
-          title: successTitle, 
+        toast.success(successTitle, { 
           description: tallyMsg,
           className: mode === 'return' ? "bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800" : ""
         });
