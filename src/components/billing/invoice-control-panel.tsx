@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -58,7 +58,6 @@ export function InvoiceControlPanel({
     const [paymentAmount, setPaymentAmount] = useState(outstandingAmount);
 
     const router = useRouter();
-    const { toast } = useToast();
 
     // Reset payment form when modal opens
     const openPaymentModal = () => {
@@ -73,10 +72,8 @@ export function InvoiceControlPanel({
         try {
             const res = await updateInvoiceStatus(invoiceId, newStatus);
             if (res.success) {
-                toast({
-                    title: "Status Updated",
-                    description: `Invoice marked as ${newStatus}`,
-                    variant: "default"
+                toast.success("Status Updated", {
+                    description: `Invoice marked as ${newStatus}`
                 });
                 router.refresh();
             } else {
@@ -100,10 +97,8 @@ export function InvoiceControlPanel({
             }, 'posted');
 
             if (res.success) {
-                toast({
-                    title: "Payment Recorded",
-                    description: `Received {currencySymbol}${paymentAmount} via ${paymentMethod.toUpperCase()}`,
-                    variant: "default"
+                toast.success("Payment Recorded", {
+                    description: `Received ${currencySymbol}${paymentAmount} via ${paymentMethod.toUpperCase()}`
                 });
                 router.refresh();
                 setIsPaymentModalOpen(false);

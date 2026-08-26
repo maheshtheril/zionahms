@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -13,7 +13,6 @@ import { useLocalization } from "@/contexts/localization-context";
 export default function NewPurchaseOrderPage() {
     const { currencySymbol } = useLocalization();
     const router = useRouter();
-    const { toast } = useToast();
     const [isScanning, setIsScanning] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
