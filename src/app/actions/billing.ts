@@ -921,7 +921,7 @@ export async function createInvoice(data: {
         if ((currentStatus === 'paid' || currentStatus === 'posted') && invoiceId) {
             try {
                 const config = await getWhatsAppConfig(companyId, tenantId);
-                if (config?.autoSendBill) {
+                if (config?.enabled && config?.autoSendBill) {
                     const wsRes = await NotificationService.sendInvoiceWhatsapp(invoiceId, tenantId);
                     whatsappFeedback = {
                         whatsapp_sent: wsRes.success,
@@ -1674,7 +1674,7 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
             if (result.status === 'paid' || result.status === 'posted') {
                 try {
                     const config = await getWhatsAppConfig(companyId, session.user.tenantId!);
-                    if (config?.autoSendBill) {
+                    if (config?.enabled && config?.autoSendBill) {
                         const wsRes = await NotificationService.sendInvoiceWhatsapp(result.id, session.user.tenantId!);
                         if (!wsRes.success) console.warn("Auto-WhatsApp Send Failed:", wsRes.error);
                     }
@@ -2065,7 +2065,7 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
             // Check for Auto-send setting before firing
             try {
                 const wsConfig = await getWhatsAppConfig(session.user.companyId!, session.user.tenantId!);
-                if (wsConfig?.autoSendBill) {
+                if (wsConfig?.enabled && wsConfig?.autoSendBill) {
                     const wsRes = await NotificationService.sendInvoiceWhatsapp(invoiceId, session.user.tenantId!);
                     if (!wsRes.success) console.warn("[Billing-AutoSend] WhatsApp Send Failed:", wsRes.error);
                 }

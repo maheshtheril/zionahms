@@ -1717,16 +1717,6 @@ export function CompactInvoiceEditor({
               {/* WHATSAPP RECEIPT */}
               <button
                 onClick={async () => {
-                  if (!lastSavedId) return;
-                  try {
-                    const res = await shareInvoiceWhatsapp(lastSavedId);
-                    if ((res as any).success) {
-                      toast.success("WhatsApp Sent", { description: "Receipt shared with patient." });
-                      return;
-                    }
-                  } catch (_) {}
-
-                  // Direct 100% Free wa.me - Fetch patient contact directly from DB
                   let resolvedPhone = '';
                   let patientName = 'Patient';
 
