@@ -2331,6 +2331,33 @@ export async function voidPayment(paymentId: string, reason: string = "Payment F
 }
 
 
+export async function getPatientContact(patientId: string) {
+    const session = await auth();
+    if (!session?.user?.tenantId) return { phone: '', name: '' };
+
+    try {
+        const patient = await prisma.hms_patient.findUnique({
+            where: { id: patientId },
+            select: {
+                first_name: true,
+                last_name: true,
+                full_name: true,
+                contact: true
+            }
+        });
+
+        if (!patient) return { phone: '', name: '' };
+
+        const c = (patient.contact as any) || {};
+        const phone = c.phone || c.mobile || c.primary_phone || c.whatsapp || '';
+        const name = patient.full_name || `${patient.first_name || ''} ${patient.last_name || ''}`.trim();
+
+        return { phone: String(phone), name };
+    } catch (e) {
+        return { phone: '', name: '' };
+    }
+}
+
 export async function shareInvoiceWhatsapp(invoiceId: string, pdfBase64?: string) {
     const session = await auth();
     if (!session?.user?.tenantId) return { error: "Unauthorized" };

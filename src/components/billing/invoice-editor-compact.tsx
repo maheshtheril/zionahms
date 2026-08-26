@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import { QRCodeSVG } from 'qrcode.react'
-import { createInvoice, updateInvoice, cancelInvoice, restoreInvoice, createQuickPatient, getNextVoucherNumber, shareInvoiceWhatsapp, getPatientBalance, getPatientLedger } from '@/app/actions/billing'
+import { createInvoice, updateInvoice, cancelInvoice, restoreInvoice, createQuickPatient, getNextVoucherNumber, shareInvoiceWhatsapp, getPatientBalance, getPatientLedger, getPatientContact } from '@/app/actions/billing'
 import { PrintFormatSelector } from "@/components/print/print-format-selector";
 import { getInitialInvoiceData, getPatientActiveAppointmentForBilling } from "@/app/actions/clinical"
 import { getActiveGeneralBillingConfig } from "@/app/actions/print-settings";
@@ -1726,39 +1726,30 @@ export function CompactInvoiceEditor({
                     }
                   } catch (_) {}
 
-                  // Direct 100% Free wa.me fallback with full phone resolution
+                  // Direct 100% Free wa.me - Fetch patient contact directly from DB
                   let resolvedPhone = '';
+                  let patientName = 'Patient';
+
                   if (selectedPatientId) {
-                    const p = safePatients.find(p => p.id === selectedPatientId);
-                    if (p) {
-                      resolvedPhone = p.phone || p.mobile || (p.contact as any)?.phone || (p.contact as any)?.mobile || (p.contact as any)?.primary_phone || '';
+                    const dbContact = await getPatientContact(selectedPatientId);
+                    if (dbContact.phone) {
+                      resolvedPhone = dbContact.phone;
+                    }
+                    if (dbContact.name) {
+                      patientName = dbContact.name;
                     }
                   }
+
+                  // Fallback to walk-in data if not found
                   if (!resolvedPhone) {
                     resolvedPhone = walkInPhone || '';
+                    if (walkInName) patientName = walkInName;
                   }
 
-                  // Format Clean Phone
+                  // Format Clean Phone (Ensure India 91 prefix)
                   let phone = (resolvedPhone || '').toString().replace(/\D/g, '');
                   if (phone.startsWith('0') && phone.length > 10) phone = phone.substring(1);
                   if (phone.length === 10) phone = '91' + phone;
-
-                  // If phone is still missing, prompt cashier on the fly
-                  if (!phone || phone.length < 10) {
-                    const manualPhone = window.prompt("Enter Patient WhatsApp Mobile Number (10 digits):", "");
-                    if (manualPhone) {
-                      let cleanManual = manualPhone.replace(/\D/g, '');
-                      if (cleanManual.startsWith('0') && cleanManual.length > 10) cleanManual = cleanManual.substring(1);
-                      if (cleanManual.length === 10) cleanManual = '91' + cleanManual;
-                      if (cleanManual.length >= 10) {
-                        phone = cleanManual;
-                      }
-                    }
-                  }
-
-                  const patientName = selectedPatientId 
-                    ? (safePatients.find(p => p.id === selectedPatientId)?.name || 'Patient')
-                    : (walkInName || 'Patient');
 
                   const billText = `Hello *${patientName}*,\n\nHere is your bill for *${safeCurrency} ${grandTotal.toFixed(2)}*.\n\nThank you for visiting!`;
 
@@ -1766,7 +1757,7 @@ export function CompactInvoiceEditor({
                     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(billText)}`, '_blank');
                     toast.success("WhatsApp Opened", { description: `Opened direct chat with ${patientName}` });
                   } else {
-                    toast.error("Cancelled", { description: "WhatsApp share cancelled or invalid phone." });
+                    toast.error("No Phone Saved", { description: "This patient has no phone number recorded in their profile." });
                   }
                 }}
                 className="group p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-emerald-500 transition-all text-center"
