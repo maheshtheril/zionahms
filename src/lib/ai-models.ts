@@ -60,3 +60,51 @@ export async function getDynamicAIModels(apiKey: string): Promise<string[]> {
         return RECOMMENDED_MODELS;
     }
 }
+
+/**
+ * Translates low-level technical AI errors / SDK exceptions into clean, enterprise-grade,
+ * customer-friendly messages without exposing internal URLs, stack traces, or technical jargon.
+ */
+export function formatFriendlyAiError(error: any, fallbackSubject = "invoice"): string {
+    if (!error) return `Unable to process ${fallbackSubject}. Please try again or enter details manually.`;
+    
+    const msg = typeof error === 'string' ? error : (error.message || String(error));
+
+    // Quota exhausted (Free tier limit: 0 or quota exceeded)
+    if (msg.includes("limit: 0") || msg.includes("limit:0") || msg.includes("RESOURCE_EXHAUSTED") || (msg.includes("429") && msg.includes("Quota"))) {
+        return "AI scanning quota reached for this account. Please check your Gemini API plan in Settings > AI Configuration or try again later.";
+    }
+
+    // Rate limit (Too Many Requests - temporary)
+    if (msg.includes("429") || msg.includes("Too Many Requests") || msg.includes("rate limit")) {
+        return "AI service is currently busy handling requests. Please wait a few moments and try again.";
+    }
+
+    // Permission denied / Invalid Key
+    if (msg.includes("403") || msg.includes("denied access") || msg.includes("PERMISSION_DENIED") || msg.includes("API_KEY_INVALID") || msg.includes("API key not valid")) {
+        return "AI authentication failed. Please verify your Gemini API key in Settings > AI Configuration.";
+    }
+
+    // Server unavailable / Overloaded
+    if (msg.includes("503") || msg.includes("500") || msg.includes("Overloaded") || msg.includes("UNAVAILABLE") || msg.includes("Internal Server Error")) {
+        return "AI processing service is temporarily unavailable. Please try again in 1-2 minutes.";
+    }
+
+    // Content extraction / clarity issues
+    if (msg.includes("0 items") || msg.includes("invalid JSON") || msg.includes("JSON Parse Failed")) {
+        return `Unable to clearly read details from this ${fallbackSubject}. Please ensure the image is bright, focused, and upright, then try again.`;
+    }
+
+    // If all models failed or 404
+    if (msg.includes("404") || msg.includes("not found") || msg.includes("All configured AI models failed") || msg.includes("GoogleGenerativeAI")) {
+        return `Unable to process ${fallbackSubject} with the current AI configuration. Please verify your API key in Settings or try again.`;
+    }
+
+    // If message is already clean/friendly (no technical tokens)
+    if (!msg.includes("http") && !msg.includes("GoogleGenerativeAI") && !msg.includes("v1beta") && !msg.includes("{") && !msg.includes("[")) {
+        return msg;
+    }
+
+    return `Unable to process ${fallbackSubject} at this time. Please try again or enter details manually.`;
+}
+

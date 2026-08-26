@@ -21,6 +21,7 @@ import { getPendingPurchaseOrders, createPurchaseReceipt, getPurchaseOrder, getP
 import { motion } from "framer-motion";
 import { getCompanyDetails } from "@/app/actions/purchase";
 import { scanInvoiceFromUrl as scanInvoiceAction } from "@/app/actions/scan-invoice";
+import { formatFriendlyAiError } from "@/lib/ai-models";
 import { ProductCreationDialog } from "@/components/inventory/product-creation-dialog";
 import { SupplierDialog } from "@/components/hms/purchasing/supplier-dialog";
 import {
@@ -599,7 +600,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                 toast.success("Scan Success", { description: "Details extracted from invoice." });
             }
         } catch (e: any) {
-            toast.error("Scan Failed", { description: e.message || "Failed to read invoice" });
+            toast.error("Scan Failed", { description: formatFriendlyAiError(e, "invoice") });
         } finally {
             setIsScanning(false);
         }

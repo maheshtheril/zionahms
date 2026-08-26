@@ -5,7 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { uploadFile } from "@/app/actions/upload-file";
 import { getAIConfig } from "./settings";
-import { getDynamicAIModels } from "@/lib/ai-models";
+import { getDynamicAIModels, formatFriendlyAiError } from "@/lib/ai-models";
 
 async function getGenAIClient(companyId: string, tenantId: string) {
     const config = await getAIConfig(companyId, tenantId);
@@ -109,12 +109,7 @@ export async function scanProductListAction(formData: FormData): Promise<{ succe
 
     } catch (error: any) {
         console.error("Product Scan Error:", error);
-        let msg = error.message || String(error);
-        if (msg.includes("403") || msg.includes("denied access")) return { error: "API Key Permission Denied. Please ensure your Google AI Studio API Key is valid and has billing enabled for newer models." };
-        if (msg.includes("429") && msg.includes("limit: 0")) return { error: "API Key Quota Exhausted. Your Google Cloud Free Tier limits have been reached. Please enable billing or use a new key." };
-        if (msg.includes("429") || msg.includes("Too Many Requests") || msg.includes("Quota exceeded")) return { error: "AI Rate Limit Reached. Your API Key has sent too many requests. Please wait 1-2 minutes or check your quota." };
-        if (msg.includes("503") || msg.includes("Overloaded")) return { error: "AI Server Overloaded. Google's servers are currently busy. Please try again in 1 minute." };
-        return { error: `Scan Failed: ${msg}` };
+        return { error: formatFriendlyAiError(error, "product list") };
     }
 }
 
@@ -176,12 +171,7 @@ export async function scanPurchaseReceiptAction(formData: FormData): Promise<{ s
 
     } catch (error: any) {
         console.error("Receipt Scan Error:", error);
-        let msg = error.message || String(error);
-        if (msg.includes("403") || msg.includes("denied access")) return { error: "API Key Permission Denied. Please ensure your Google AI Studio API Key is valid and has billing enabled for newer models." };
-        if (msg.includes("429") && msg.includes("limit: 0")) return { error: "API Key Quota Exhausted. Your Google Cloud Free Tier limits have been reached. Please enable billing or use a new key." };
-        if (msg.includes("429") || msg.includes("Too Many Requests") || msg.includes("Quota exceeded")) return { error: "AI Rate Limit Reached. Your API Key has sent too many requests. Please wait 1-2 minutes or check your quota." };
-        if (msg.includes("503") || msg.includes("Overloaded")) return { error: "AI Server Overloaded. Google's servers are currently busy. Please try again in 1 minute." };
-        return { error: `Receipt Scan Failed: ${msg}` };
+        return { error: formatFriendlyAiError(error, "receipt") };
     }
 }
 
