@@ -261,6 +261,7 @@ export class NotificationService {
             });
 
             const result = await response.json();
+            console.log(`[WhatsApp-UltraMsg] Response:`, JSON.stringify(result));
             return (result.sent === "true" || result.success === true || result.id)
                 ? { success: true, message: 'Sent via UltraMsg' }
                 : { success: false, error: JSON.stringify(result) };
