@@ -40,6 +40,36 @@ function extractBillData(data: any) {
     const patient = data?.hms_patient || {}
     const apt = data?.hms_appointment || {}
     const doctor = apt?.hms_clinician || {}
+
+    let rawLines = data?.hms_invoice_lines || data?.items || []
+    if (!rawLines || rawLines.length === 0) {
+        if (Array.isArray(data?.metadata?.items)) rawLines = data.metadata.items
+        else if (Array.isArray(data?.metadata?.lines)) rawLines = data.metadata.lines
+        else if (Array.isArray(data?.billing_metadata?.items)) rawLines = data.billing_metadata.items
+        else if (typeof data?.billing_metadata === 'string') {
+            try {
+                const parsed = JSON.parse(data.billing_metadata)
+                if (Array.isArray(parsed?.items)) rawLines = parsed.items
+            } catch (_) {}
+        }
+    }
+
+    const grandTotal = Number(data?.total || data?.total_amount || 0)
+    const subtotal = Number(data?.subtotal || 0)
+    const taxTotal = Number(data?.tax_amount || data?.tax || 0)
+    const discountTotal = Number(data?.discount_amount || data?.discount || 0)
+
+    // Fallback: If no line items exist in DB but total > 0, generate a single line item
+    if ((!rawLines || rawLines.length === 0) && grandTotal > 0) {
+        rawLines = [{
+            description: 'Hospital / Medical Services',
+            quantity: 1,
+            unit_price: grandTotal,
+            net_amount: grandTotal,
+            total: grandTotal
+        }]
+    }
+
     return {
         patientName: patient.name || [patient.first_name, patient.last_name].filter(Boolean).join(' ') || 'Patient',
         patientId: data?.patient_id || patient.patient_id || patient.op_number || '',
@@ -51,11 +81,11 @@ function extractBillData(data: any) {
         paymentMode: data?.payment_mode || (data?.metadata as any)?.paymentMode || '',
         received: Number(data?.paid_amount || data?.received_amount || data?.total || 0),
         balance: Number(data?.balance_due || 0),
-        lines: data?.hms_invoice_lines || data?.items || [],
-        subtotal: Number(data?.subtotal || 0),
-        discountTotal: Number(data?.discount_amount || data?.discount || 0),
-        taxTotal: Number(data?.tax_amount || data?.tax || 0),
-        grandTotal: Number(data?.total || data?.total_amount || 0),
+        lines: rawLines,
+        subtotal: subtotal || (grandTotal - taxTotal + discountTotal),
+        discountTotal,
+        taxTotal,
+        grandTotal,
     }
 }
 
@@ -92,11 +122,14 @@ function headerBlock(block: any, co: ReturnType<typeof extractCompanyData>, pc: 
             ${f.phone && co.phone ? `<div style="margin-top:3px;">📞 ${esc(co.phone)}</div>` : ''}
         </div>
     </div>`
-    // D — minimal
-    return `<div style="padding:${pad}px;border-bottom:3px solid ${pc};">
-        ${f.hospitalName ? `<div style="font-weight:900;font-size:${nameSz}px;color:${pc};">${esc(co.name)}</div>` : ''}
-        ${f.address && co.address ? `<div style="font-size:10px;color:#64748b;margin-top:3px;">${esc(co.address)}${f.phone && co.phone ? ` | ${esc(co.phone)}` : ''}</div>` : ''}
-        ${f.gstin && co.gstin ? `<div style="font-size:9px;color:#94a3b8;margin-top:1px;">GSTIN: ${esc(co.gstin)}</div>` : ''}
+    // D — minimal (now supports logo alongside text)
+    return `<div style="padding:${pad}px;border-bottom:3px solid ${pc};display:flex;align-items:center;gap:16px;">
+        ${logoHtml}
+        <div style="flex:1;">
+            ${f.hospitalName ? `<div style="font-weight:900;font-size:${nameSz}px;color:${pc};">${esc(co.name)}</div>` : ''}
+            ${f.address && co.address ? `<div style="font-size:10px;color:#64748b;margin-top:3px;">${esc(co.address)}${f.phone && co.phone ? ` | ${esc(co.phone)}` : ''}</div>` : ''}
+            ${f.gstin && co.gstin ? `<div style="font-size:9px;color:#94a3b8;margin-top:1px;">GSTIN: ${esc(co.gstin)}</div>` : ''}
+        </div>
     </div>`
 }
 

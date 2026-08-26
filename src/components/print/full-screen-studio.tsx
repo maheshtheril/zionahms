@@ -242,10 +242,13 @@ function BillCanvas({ blocks, theme, selectedId, onSelect }: {
                         </div>
                     )
                     if (block.variant === 'D') return blockWrap(block,
-                        <div style={{ ...headerStyle, borderBottom: `3px solid ${pc}`, background: '#fff', color: '#0f172a' }}>
-                            {f.hospitalName && <div style={{ fontWeight: 900, fontSize: s.fontSize + 6, color: pc }}>ELITE MEDICAL CENTER</div>}
-                            {f.address && <div style={{ fontSize: 10, color: '#64748b', marginTop: 3 }}>123 Hospital Road, Thrissur, Kerala – 680001  {f.phone ? '| +91 98765 43210' : ''}</div>}
-                            {f.gstin && <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 1 }}>GSTIN: 32AABCE1234F1Z5</div>}
+                        <div style={{ ...headerStyle, borderBottom: `3px solid ${pc}`, background: '#fff', color: '#0f172a', display: 'flex', alignItems: 'center', gap: 16 }}>
+                            {f.logo && <div style={{ width: narrow ? 36 : 48, height: narrow ? 36 : 48, borderRadius: 8, background: `${pc}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }}>🏥</div>}
+                            <div style={{ flex: 1 }}>
+                                {f.hospitalName && <div style={{ fontWeight: 900, fontSize: s.fontSize + 6, color: pc }}>ELITE MEDICAL CENTER</div>}
+                                {f.address && <div style={{ fontSize: 10, color: '#64748b', marginTop: 3 }}>123 Hospital Road, Thrissur, Kerala – 680001  {f.phone ? '| +91 98765 43210' : ''}</div>}
+                                {f.gstin && <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 1 }}>GSTIN: 32AABCE1234F1Z5</div>}
+                            </div>
                         </div>
                     )
                 }
