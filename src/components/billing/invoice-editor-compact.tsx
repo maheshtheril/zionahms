@@ -1726,13 +1726,35 @@ export function CompactInvoiceEditor({
                     }
                   } catch (_) {}
 
-                  // Direct 100% Free wa.me fallback
-                  let phone = selectedPatientId 
-                    ? (safePatients.find(p => p.id === selectedPatientId)?.phone || '')
-                    : walkInPhone;
-                  phone = (phone || '').toString().replace(/\D/g, '');
+                  // Direct 100% Free wa.me fallback with full phone resolution
+                  let resolvedPhone = '';
+                  if (selectedPatientId) {
+                    const p = safePatients.find(p => p.id === selectedPatientId);
+                    if (p) {
+                      resolvedPhone = p.phone || p.mobile || (p.contact as any)?.phone || (p.contact as any)?.mobile || (p.contact as any)?.primary_phone || '';
+                    }
+                  }
+                  if (!resolvedPhone) {
+                    resolvedPhone = walkInPhone || '';
+                  }
+
+                  // Format Clean Phone
+                  let phone = (resolvedPhone || '').toString().replace(/\D/g, '');
                   if (phone.startsWith('0') && phone.length > 10) phone = phone.substring(1);
                   if (phone.length === 10) phone = '91' + phone;
+
+                  // If phone is still missing, prompt cashier on the fly
+                  if (!phone || phone.length < 10) {
+                    const manualPhone = window.prompt("Enter Patient WhatsApp Mobile Number (10 digits):", "");
+                    if (manualPhone) {
+                      let cleanManual = manualPhone.replace(/\D/g, '');
+                      if (cleanManual.startsWith('0') && cleanManual.length > 10) cleanManual = cleanManual.substring(1);
+                      if (cleanManual.length === 10) cleanManual = '91' + cleanManual;
+                      if (cleanManual.length >= 10) {
+                        phone = cleanManual;
+                      }
+                    }
+                  }
 
                   const patientName = selectedPatientId 
                     ? (safePatients.find(p => p.id === selectedPatientId)?.name || 'Patient')
@@ -1744,7 +1766,7 @@ export function CompactInvoiceEditor({
                     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(billText)}`, '_blank');
                     toast.success("WhatsApp Opened", { description: `Opened direct chat with ${patientName}` });
                   } else {
-                    toast.error("No Phone Number", { description: "No patient phone number available for WhatsApp." });
+                    toast.error("Cancelled", { description: "WhatsApp share cancelled or invalid phone." });
                   }
                 }}
                 className="group p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-emerald-500 transition-all text-center"
