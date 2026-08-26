@@ -142,63 +142,30 @@ export class NotificationService {
         options: { endpoint: 'chat' | 'document', pdfBase64?: string, filename?: string, provider?: 'ultramsg' | 'evolution' }
     ) {
         // Detect API Type (Priority: Explicit Provider > Token/ID naming convention)
-        const apiType = options.provider || (token === 'local' ? 'local-bridge' : (token.startsWith('evo_') || instanceId.includes('-') ? 'evolution' : 'ultramsg'));
-        const baseUrl = process.env.WHATSAPP_BASE_URL || 'http://localhost:8081';
-        const isLocalHost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1');
+        const apiType = options.provider || (token.startsWith('evo_') || instanceId.includes('-') ? 'evolution' : 'ultramsg');
 
         let cleanId = instanceId.toString().trim();
         if (cleanId.toLowerCase().startsWith('instance')) {
             cleanId = cleanId.substring(8);
         }
 
-        // HEALER: If we are on localhost, always try the Direct Bridge first since it's the 90% use case for free users
-        if (isLocalHost || apiType === 'local-bridge') {
-            const url = `${baseUrl}/send-message`;
-
-            const payload: any = {
-                number: phone,
-                message: message,
-                pdfBase64: options.pdfBase64,
-                filename: options.filename
-            };
-
-            console.log(`[WhatsApp-Bridge] Attempting: ${url} to JID: ${phone}`);
+        // Only try local bridge if explicitly configured in development environment
+        if (process.env.LOCAL_WHATSAPP_BRIDGE_URL && process.env.NODE_ENV === 'development') {
+            const url = `${process.env.LOCAL_WHATSAPP_BRIDGE_URL}/send-message`;
             try {
+                console.log(`[WhatsApp-Bridge] Attempting: ${url} to JID: ${phone}`);
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ number: phone, message, pdfBase64: options.pdfBase64, filename: options.filename }),
+                    signal: AbortSignal.timeout(3000)
                 });
-
-                const text = await response.text();
-                let result;
-                try {
-                    result = JSON.parse(text);
-                } catch (e) {
-                    // If bridge is alive but returns HTML, it's likely a 404 or something else MISCONFIGURED. Stop here if it's local-bridge.
-                    if (apiType === 'local-bridge') return { success: false, error: `Bridge error: ${text.slice(0, 50)}...` };
-
-                    // Otherwise, maybe it's actually an Evolution API instance on 8080, continue to fallback
-                    console.warn("[WhatsApp-Bridge] Bridge returned non-JSON. Continuing to fallback...");
-                    throw new Error("NOT_THE_BRIDGE");
-                }
-
-                if (response.ok) {
-                    return result.success
-                        ? { success: true, message: 'Sent via Local Bridge' }
-                        : { success: false, error: result.error || 'Failed' };
-                } else {
-                    // If the bridge is ALIVE but report an error (like WA disconnected), STOP HERE. 
-                    // No point in trying the /message/... endpoint if the bridge itself is failing.
-                    return { success: false, error: `WhatsApp Bridge Error: ${result.error || 'Unknown failure'}` };
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    return { success: true, message: 'Sent via Local Bridge' };
                 }
             } catch (prefErr: any) {
-                if (prefErr.message === "NOT_THE_BRIDGE") {
-                    // Continue to evolution block
-                } else if (apiType === 'local-bridge' || !isLocalHost) {
-                    return { success: false, error: `Could not connect to WhatsApp Bridge at ${url}` };
-                }
-                console.warn("[WhatsApp-Bridge] Connection failed. Trying Evolution API fallback...");
+                console.warn("[WhatsApp-Bridge] Local bridge unreachable, continuing to cloud provider...");
             }
         }
 
