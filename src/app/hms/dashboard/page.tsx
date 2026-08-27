@@ -18,60 +18,42 @@ export default async function DashboardPage() {
     }
 
     const perms = await getUserPermissions(session.user.id);
-
-    // 1. DOCTOR DASHBOARD (High Priority)
-    if (perms.includes('hms:dashboard:doctor')) {
-        redirect('/hms/doctor/dashboard');
-    }
-
-    // 2. NURSING DASHBOARD
-    if (perms.includes('hms:dashboard:nurse')) {
-        redirect('/hms/nursing/dashboard');
-    }
-
-    // 3. RECEPTION DASHBOARD
-    if (perms.includes('hms:dashboard:reception')) {
-        redirect('/hms/reception/dashboard');
-    }
-
-    // 4. LAB DASHBOARD
-    if (perms.includes('hms:dashboard:lab')) {
-        redirect('/hms/lab/dashboard');
-    }
-
-    // 5. ACCOUNTING DASHBOARD
-    if (perms.includes('hms:dashboard:accounting')) {
-        redirect('/hms/accounting');
-    }
-
-    // 6. PHARMACY DASHBOARD
-    if (perms.includes('hms:dashboard:pharmacy')) {
-        redirect('/hms/pharmacy/dashboard');
-    }
-
-    // --- LEGACY FAIL-SAFE: Redirect based on role name/string (Compatibility Mode) ---
     const role = session?.user?.role?.toLowerCase() || '';
-    const name = session?.user?.name?.toLowerCase() || '';
-    const email = session?.user?.email?.toLowerCase() || '';
+    const isAdmin = session?.user?.isAdmin || (session?.user as any)?.isTenantAdmin || role === 'admin' || role === 'super_admin' || perms.includes('*') || perms.includes('hms:dashboard:admin');
 
-    if (role === 'receptionist' || name.includes('reception')) {
-        redirect('/hms/reception/dashboard');
+    // ONLY redirect non-admin functional staff (Doctors, Nurses, Receptionists, Pharmacists, Lab Techs)
+    if (!isAdmin) {
+        // 1. DOCTOR DASHBOARD
+        if (perms.includes('hms:dashboard:doctor') || role === 'doctor') {
+            redirect('/hms/doctor/dashboard');
+        }
+
+        // 2. NURSING DASHBOARD
+        if (perms.includes('hms:dashboard:nurse') || role === 'nurse') {
+            redirect('/hms/nursing/dashboard');
+        }
+
+        // 3. RECEPTION DASHBOARD
+        if (perms.includes('hms:dashboard:reception') || role === 'receptionist') {
+            redirect('/hms/reception/dashboard');
+        }
+
+        // 4. LAB DASHBOARD
+        if (perms.includes('hms:dashboard:lab') || role.includes('lab')) {
+            redirect('/hms/lab/dashboard');
+        }
+
+        // 5. ACCOUNTING DASHBOARD
+        if (perms.includes('hms:dashboard:accounting') || role === 'accountant' || role === 'finance') {
+            redirect('/hms/accounting');
+        }
+
+        // 6. PHARMACY DASHBOARD
+        if (perms.includes('hms:dashboard:pharmacy') || role.includes('pharmac')) {
+            redirect('/hms/pharmacy/dashboard');
+        }
     }
 
-    if (role.includes('lab') || name.includes('lab') || email.includes('laab')) {
-        redirect('/hms/lab/dashboard');
-    }
-
-    if (role === 'accountant' || role === 'finance' || name.includes('account')) {
-        redirect('/hms/accounting');
-    }
-
-    // --- STRICT ADMIN LOCK ---
-    // If a user falls through all the specific redirects above, they MUST be an admin to see this dashboard.
-    // Otherwise, block them to prevent unauthorized data access.
-    // @ts-ignore
-    const isAdmin = session?.user?.isAdmin || role === 'admin' || role === 'super_admin' || perms.includes('*') || perms.includes('hms:dashboard:admin');
-    
     if (!isAdmin) {
         return (
             <div className="flex flex-col items-center justify-center h-[70vh] text-slate-500 bg-slate-50/50 rounded-xl m-4 border border-slate-100 shadow-sm">
