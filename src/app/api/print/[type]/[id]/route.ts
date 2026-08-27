@@ -121,13 +121,10 @@ export async function GET(
                 // Fetch actual user name properly mapping Prisma schema fields
                 let userName = "CASHIER / STAFF";
                 try {
-                    // Try to find in app_user using the raw uuid if it has a hyphen, or as is.
-                    // If supabase auth is used, user name might be in metadata, but we'll try the fields we have
                     const userRecord = await prisma.app_user.findUnique({ where: { id: shift.user_id } });
                     if (userRecord) {
                         userName = userRecord.name || [userRecord.first_name, userRecord.last_name].filter(Boolean).join(" ") || userRecord.email?.split('@')[0] || "CASHIER / STAFF";
                     } else {
-                        // Fallback to displaying the short ID if not found
                         userName = "STAFF-" + shift.user_id.split('-')[0].toUpperCase();
                     }
                 } catch(e) {
@@ -136,64 +133,65 @@ export async function GET(
                 }
 
                 const summary = shiftRes.summary;
-                const ledger = shiftRes.ledger;
+                const ledger = shiftRes.ledger || [];
+                const invoices = shiftRes.invoices || [];
+                const expenses = shiftRes.expenses || [];
                 
-                // Calculate Dynamic Variance if not closed or if database value is 0 but there is a real difference
-                const expectedCash = Number(shift.opening_balance) + summary.netCash;
+                // Calculate Dynamic Variance
+                const expectedCash = Number(shift.opening_balance || 0) + summary.netCash;
                 const actualCash = Number(shift.closing_balance || 0);
                 const isClosed = !!shift.end_time;
                 
-                // If closed, use DB difference. If open, use dynamic calculation to show what the variance *would* be if they declared 0.
                 let variance = isClosed && shift.difference ? Number(shift.difference) : (actualCash - expectedCash);
-                
-                // Ensure Variance is not NaN
                 if (isNaN(variance)) variance = 0;
+
+                const rawDenom = (shift.denominations as any)?.closing || (shift.denominations as any)?.opening || (typeof shift.denominations === 'object' ? shift.denominations : {});
 
                 data = {
                     ...shift,
                     hms_patient: { name: userName, first_name: userName },
-                    invoice_number: shift.id.split('-')[0],
+                    invoice_number: shift.id.split('-')[0].toUpperCase(),
                     // World-Standard Z-Report Metrics passed explicitly
                     shift_summary: {
-                        revenue: summary.totalRevenue,
-                        pending: summary.pendingBillsTotal,
-                        cashCollected: summary.cashCollected,
-                        upi: summary.upi,
-                        card: summary.card,
+                        openingFloat: Number(shift.opening_balance || 0),
+                        revenue: Number(summary.totalRevenue || 0),
+                        pending: Number(summary.pendingBillsTotal || 0),
+                        cashCollected: Number(summary.cashCollected || 0),
+                        cashExpenses: Number(summary.cashExpenses || 0),
+                        upi: Number(summary.upi || 0),
+                        card: Number(summary.card || 0),
+                        other: Number(summary.other || 0),
+                        totalCollections: Number(summary.totalIn || 0),
                         expectedCash: expectedCash,
                         actualCash: actualCash,
                         variance: variance,
-                        startedAt: shift.start_time ? new Date(shift.start_time).toLocaleString() : 'N/A',
-                        endedAt: isClosed ? new Date(shift.end_time).toLocaleString() : 'Active (Not Closed)'
+                        startedAt: shift.start_time ? new Date(shift.start_time).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A',
+                        endedAt: isClosed ? new Date(shift.end_time).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : 'Active (Open)',
+                        denominations: rawDenom
                     },
-                    // We will map the major totals as lines so they render nicely
+                    ledger: ledger,
+                    invoices: invoices,
+                    expenses: expenses,
+                    // Detailed transactions mapping for the table
                     items: [
-                        // INBOUND (CREDIT) - Source of Funds
-                        { category: { name: "OPENING FLOAT" }, amount: Number(shift.opening_balance).toFixed(2), type: 'INBOUND', memo: "Starting cash" },
-                        // Only add actual collections and expenses to the balancing ledger. Pending is NOT cash!
-                        ...(ledger || []).filter((l: any) => l.type !== 'PENDING').map((l: any) => ({
-                            category: { name: `[${l.type}] ${l.category || l.method.toUpperCase()}` },
-                            amount: l.amount,
-                            type: l.type === 'IN' ? 'INBOUND' : 'OUTBOUND',
-                            memo: `${l.description || 'N/A'}`
-                        })),
-                        
-                        // OUTBOUND (DEBIT) - Application of Funds
-                        { category: { name: "DIGITAL / BANK TRANSFER" }, amount: (summary.upi + summary.card + summary.other).toFixed(2), type: 'OUTBOUND', memo: "Auto-Deposited Non-Cash" },
-                        { category: { name: "ACTUAL CLOSING FLOAT" }, amount: actualCash.toFixed(2), type: 'OUTBOUND', memo: "Declared Cash" },
-                        
-                        ...(variance < 0 
-                            ? [{ category: { name: "CASH SHORTAGE (VARIANCE)" }, amount: Math.abs(variance).toFixed(2), type: 'OUTBOUND', memo: "Missing Cash" }]
-                            : variance > 0 
-                                ? [{ category: { name: "CASH SURPLUS (VARIANCE)" }, amount: variance.toFixed(2), type: 'INBOUND', memo: "Extra Cash" }]
-                                : []
-                        )
+                        { 
+                            category: { name: "OPENING FLOAT (CASH)" }, 
+                            amount: Number(shift.opening_balance || 0).toFixed(2), 
+                            type: 'INBOUND', 
+                            memo: "Starting cash in drawer at shift start" 
+                        },
+                        ...ledger.map((l: any) => ({
+                            category: { name: `[${l.type === 'IN' ? 'RECEIPT' : (l.type === 'OUT' ? 'EXPENSE' : 'PENDING')}] ${l.category || String(l.method || 'CASH').toUpperCase()}` },
+                            amount: Number(l.amount || 0).toFixed(2),
+                            type: l.type === 'IN' ? 'INBOUND' : (l.type === 'OUT' ? 'OUTBOUND' : 'PENDING'),
+                            memo: `${l.description || 'Transaction'}`
+                        }))
                     ],
-                    total_amount: actualCash.toFixed(2)
+                    total_amount: actualCash.toFixed(2),
+                    expectedCash: expectedCash.toFixed(2),
+                    actualCash: actualCash.toFixed(2),
+                    variance: variance.toFixed(2)
                 };
-                data.expectedCash = expectedCash.toFixed(2);
-                data.actualCash = actualCash.toFixed(2);
-                data.variance = (actualCash - expectedCash).toFixed(2);
             }
         } else if (usage === 'lab_catalog') {
             const companyId = session.user.companyId;

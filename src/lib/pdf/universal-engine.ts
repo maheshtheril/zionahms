@@ -704,11 +704,11 @@ export async function generateUniversalPDF(
                 else if (key === 'table' || val.type === 'table') {
                     let yOffsetForTable = val.y * scale;
 
-                    // --- SHIFT REPORT CUSTOM SUMMARY BLOCK (Z-REPORT STANDARD) ---
+                    // --- SHIFT REPORT CUSTOM SUMMARY BLOCK (Z-REPORT STANDARD)                    // --- SHIFT REPORT CUSTOM SUMMARY BLOCK (WORLD-STANDARD Z-REPORT) ---
                     if ((usage as any) === 'shift_close' && data.shift_summary) {
                         const s = data.shift_summary;
                         
-                        // Draw Section Header Background
+                        // Draw Main Header Background Box
                         doc.setFillColor(241, 245, 249); // slate-100
                         doc.setDrawColor(203, 213, 225); // slate-200
                         doc.setLineWidth(0.5 * scale);
@@ -717,9 +717,9 @@ export async function generateUniversalPDF(
                         doc.setFont("Helvetica", "bold");
                         doc.setFontSize(11 * scale);
                         doc.setTextColor(15, 23, 42); // slate-900
-                        doc.text("END OF SHIFT Z-REPORT & AUDIT", 45 * scale, yOffsetForTable + (4 * scale));
+                        doc.text("END OF SHIFT Z-REPORT & CASH RECONCILIATION", 45 * scale, yOffsetForTable + (4 * scale));
                         
-                        // Add Start and End times explicitly to the right of the header box
+                        // Start & End Timestamps
                         doc.setFont("Helvetica", "normal");
                         doc.setFontSize(8 * scale);
                         doc.setTextColor(100, 116, 139);
@@ -727,87 +727,114 @@ export async function generateUniversalPDF(
                         
                         yOffsetForTable += 26 * scale;
                         
-                        doc.setFont("Helvetica", "normal");
-                        doc.setFontSize(9 * scale);
-                        
-                        // Column 1: Sales / Revenue
-                        doc.setTextColor(100, 116, 139); doc.text("Total Revenue", 45 * scale, yOffsetForTable);
-                        doc.setFont("Helvetica", "bold"); doc.setTextColor(15, 23, 42); doc.text(`${context.currency_symbol} ${Number(s.revenue).toFixed(2)}`, 155 * scale, yOffsetForTable, { align: 'right' });
-                        doc.setFont("Helvetica", "normal");
-                        
-                        doc.setTextColor(100, 116, 139); doc.text("Pending Bills", 45 * scale, yOffsetForTable + (14 * scale));
-                        doc.setFont("Helvetica", "bold"); doc.setTextColor(15, 23, 42); doc.text(`${context.currency_symbol} ${Number(s.pending).toFixed(2)}`, 155 * scale, yOffsetForTable + (14 * scale), { align: 'right' });
-                        doc.setFont("Helvetica", "normal");
-                        
-                        // Column 2: Collections
-                        doc.setTextColor(100, 116, 139); doc.text("Cash Collected", 175 * scale, yOffsetForTable);
-                        doc.setFont("Helvetica", "bold"); doc.setTextColor(15, 23, 42); doc.text(`${context.currency_symbol} ${Number(s.cashCollected).toFixed(2)}`, 295 * scale, yOffsetForTable, { align: 'right' });
-                        doc.setFont("Helvetica", "normal");
-                        
-                        doc.setTextColor(100, 116, 139); doc.text("UPI / Digital", 175 * scale, yOffsetForTable + (14 * scale));
-                        doc.setFont("Helvetica", "bold"); doc.setTextColor(15, 23, 42); doc.text(`${context.currency_symbol} ${Number(s.upi).toFixed(2)}`, 295 * scale, yOffsetForTable + (14 * scale), { align: 'right' });
-                        doc.setFont("Helvetica", "normal");
-                        
-                        doc.setTextColor(100, 116, 139); doc.text("Card (POS)", 175 * scale, yOffsetForTable + (28 * scale));
-                        doc.setFont("Helvetica", "bold"); doc.setTextColor(15, 23, 42); doc.text(`${context.currency_symbol} ${Number(s.card).toFixed(2)}`, 295 * scale, yOffsetForTable + (28 * scale), { align: 'right' });
-                        doc.setFont("Helvetica", "normal");
-                        
-                        // Column 3: Drawer Audit
-                        doc.setFont("Helvetica", "bold");
-                        doc.setTextColor(15, 23, 42); doc.text("Expected Cash", 315 * scale, yOffsetForTable);
-                        doc.text(`${context.currency_symbol} ${Number(s.expectedCash).toFixed(2)}`, 500 * scale, yOffsetForTable, { align: 'right' });
-                        
-                        doc.text("Actual Declared", 315 * scale, yOffsetForTable + (14 * scale));
-                        doc.text(`${context.currency_symbol} ${Number(s.actualCash).toFixed(2)}`, 500 * scale, yOffsetForTable + (14 * scale), { align: 'right' });
-                        
-                        const vNum = Number(s.variance);
-                        doc.setTextColor(vNum < 0 ? 220 : (vNum > 0 ? 22 : 100), vNum < 0 ? 38 : (vNum > 0 ? 163 : 116), vNum < 0 ? 38 : (vNum > 0 ? 74 : 139));
-                        doc.text(vNum < 0 ? "SHORTAGE" : (vNum > 0 ? "SURPLUS" : "VARIANCE"), 315 * scale, yOffsetForTable + (28 * scale));
-                        doc.text(`${context.currency_symbol} ${Math.abs(vNum).toFixed(2)}`, 500 * scale, yOffsetForTable + (28 * scale), { align: 'right' });
-                        
-                        // Vertical Dividers
+                        // 3 Balanced Executive Summary Cards
+                        // Card 1: Shift Billed Sales (40 to 200)
+                        doc.setFillColor(248, 250, 252);
                         doc.setDrawColor(226, 232, 240);
-                        doc.setLineWidth(0.5 * scale);
-                        doc.line(165 * scale, yOffsetForTable - (8 * scale), 165 * scale, yOffsetForTable + (30 * scale));
-                        doc.line(305 * scale, yOffsetForTable - (8 * scale), 305 * scale, yOffsetForTable + (30 * scale));
+                        doc.rect(40 * scale, yOffsetForTable - (6 * scale), 165 * scale, 48 * scale, 'FD');
+                        doc.setFont("Helvetica", "bold"); doc.setFontSize(8.5 * scale); doc.setTextColor(71, 85, 105);
+                        doc.text("1. SHIFT BILLED SALES", 46 * scale, yOffsetForTable + (2 * scale));
+                        doc.setFont("Helvetica", "normal"); doc.setFontSize(8 * scale); doc.setTextColor(100, 116, 139);
+                        doc.text("Gross Billed Sales", 46 * scale, yOffsetForTable + (14 * scale));
+                        doc.setFont("Helvetica", "bold"); doc.setTextColor(15, 23, 42);
+                        doc.text(`${context.currency_symbol} ${Number(s.revenue).toFixed(2)}`, 198 * scale, yOffsetForTable + (14 * scale), { align: 'right' });
+                        doc.setFont("Helvetica", "normal"); doc.setTextColor(100, 116, 139);
+                        doc.text("Paid Sales", 46 * scale, yOffsetForTable + (25 * scale));
+                        doc.setFont("Helvetica", "bold"); doc.setTextColor(22, 101, 52);
+                        doc.text(`${context.currency_symbol} ${(Number(s.revenue) - Number(s.pending)).toFixed(2)}`, 198 * scale, yOffsetForTable + (25 * scale), { align: 'right' });
+                        doc.setFont("Helvetica", "normal"); doc.setTextColor(100, 116, 139);
+                        doc.text("Pending / Credit Bills", 46 * scale, yOffsetForTable + (36 * scale));
+                        doc.setFont("Helvetica", "bold"); doc.setTextColor(185, 28, 28);
+                        doc.text(`${context.currency_symbol} ${Number(s.pending).toFixed(2)}`, 198 * scale, yOffsetForTable + (36 * scale), { align: 'right' });
+
+                        // Card 2: Collections by Mode (215 to 375)
+                        doc.setFillColor(248, 250, 252);
+                        doc.setDrawColor(226, 232, 240);
+                        doc.rect(215 * scale, yOffsetForTable - (6 * scale), 165 * scale, 48 * scale, 'FD');
+                        doc.setFont("Helvetica", "bold"); doc.setFontSize(8.5 * scale); doc.setTextColor(71, 85, 105);
+                        doc.text("2. PAYMENT COLLECTIONS", 221 * scale, yOffsetForTable + (2 * scale));
+                        doc.setFont("Helvetica", "normal"); doc.setFontSize(8 * scale); doc.setTextColor(100, 116, 139);
+                        doc.text("Cash Collected", 221 * scale, yOffsetForTable + (14 * scale));
+                        doc.setFont("Helvetica", "bold"); doc.setTextColor(15, 23, 42);
+                        doc.text(`${context.currency_symbol} ${Number(s.cashCollected).toFixed(2)}`, 373 * scale, yOffsetForTable + (14 * scale), { align: 'right' });
+                        doc.setFont("Helvetica", "normal"); doc.setTextColor(100, 116, 139);
+                        doc.text("UPI / Digital", 221 * scale, yOffsetForTable + (25 * scale));
+                        doc.setFont("Helvetica", "bold"); doc.setTextColor(15, 23, 42);
+                        doc.text(`${context.currency_symbol} ${Number(s.upi).toFixed(2)}`, 373 * scale, yOffsetForTable + (25 * scale), { align: 'right' });
+                        doc.setFont("Helvetica", "normal"); doc.setTextColor(100, 116, 139);
+                        doc.text("Card / POS", 221 * scale, yOffsetForTable + (36 * scale));
+                        doc.setFont("Helvetica", "bold"); doc.setTextColor(15, 23, 42);
+                        doc.text(`${context.currency_symbol} ${Number(s.card).toFixed(2)}`, 373 * scale, yOffsetForTable + (36 * scale), { align: 'right' });
+
+                        // Card 3: Drawer Cash Audit & Reconciliation (390 to 555)
+                        doc.setFillColor(248, 250, 252);
+                        doc.setDrawColor(226, 232, 240);
+                        doc.rect(390 * scale, yOffsetForTable - (6 * scale), 165 * scale, 48 * scale, 'FD');
+                        doc.setFont("Helvetica", "bold"); doc.setFontSize(8.5 * scale); doc.setTextColor(71, 85, 105);
+                        doc.text("3. DRAWER CASH RECONCILIATION", 396 * scale, yOffsetForTable + (2 * scale));
+                        doc.setFont("Helvetica", "normal"); doc.setFontSize(7.5 * scale); doc.setTextColor(100, 116, 139);
+                        doc.text("(+) Opening Float", 396 * scale, yOffsetForTable + (13 * scale));
+                        doc.setFont("Helvetica", "bold"); doc.setTextColor(15, 23, 42);
+                        doc.text(`${context.currency_symbol} ${Number(s.openingFloat || 0).toFixed(2)}`, 548 * scale, yOffsetForTable + (13 * scale), { align: 'right' });
+                        doc.setFont("Helvetica", "normal"); doc.setTextColor(100, 116, 139);
+                        doc.text("(+) Cash Inflow", 396 * scale, yOffsetForTable + (22 * scale));
+                        doc.setFont("Helvetica", "bold"); doc.setTextColor(22, 101, 52);
+                        doc.text(`+ ${Number(s.cashCollected).toFixed(2)}`, 548 * scale, yOffsetForTable + (22 * scale), { align: 'right' });
+                        doc.setFont("Helvetica", "normal"); doc.setTextColor(100, 116, 139);
+                        doc.text("(-) Cash Expenses", 396 * scale, yOffsetForTable + (31 * scale));
+                        doc.setFont("Helvetica", "bold"); doc.setTextColor(185, 28, 28);
+                        doc.text(`- ${Number(s.cashExpenses || 0).toFixed(2)}`, 548 * scale, yOffsetForTable + (31 * scale), { align: 'right' });
+                        doc.setFont("Helvetica", "bold"); doc.setTextColor(15, 23, 42);
+                        doc.text("(=) Expected In Drawer", 396 * scale, yOffsetForTable + (40 * scale));
+                        doc.text(`${context.currency_symbol} ${Number(s.expectedCash).toFixed(2)}`, 548 * scale, yOffsetForTable + (40 * scale), { align: 'right' });
+
+                        yOffsetForTable += 54 * scale;
+
+                        // Reconciliation Result Bar (Expected vs Declared vs Variance)
+                        const vNum = Number(s.variance || 0);
+                        const isBalanced = Math.abs(vNum) < 0.01;
+                        doc.setFillColor(isBalanced ? 240 : (vNum < 0 ? 254 : 240), isBalanced ? 253 : (vNum < 0 ? 242 : 253), isBalanced ? 244 : (vNum < 0 ? 242 : 250));
+                        doc.setDrawColor(isBalanced ? 187 : (vNum < 0 ? 254 : 187), isBalanced ? 247 : (vNum < 0 ? 202 : 247), isBalanced ? 208 : (vNum < 0 ? 202 : 208));
+                        doc.rect(40 * scale, yOffsetForTable - (6 * scale), 515 * scale, 20 * scale, 'FD');
+
+                        doc.setFont("Helvetica", "bold"); doc.setFontSize(8.5 * scale); doc.setTextColor(15, 23, 42);
+                        doc.text(`EXPECTED: ${context.currency_symbol} ${Number(s.expectedCash).toFixed(2)}`, 48 * scale, yOffsetForTable + (6 * scale));
+                        doc.text(`ACTUAL DECLARED: ${context.currency_symbol} ${Number(s.actualCash).toFixed(2)}`, 215 * scale, yOffsetForTable + (6 * scale));
                         
-                        doc.setTextColor(0, 0, 0);
-                        yOffsetForTable += 48 * scale;
-                        
-                        // Setup the table to start lower!
-                        let dynamicTableConfig = { ...val, y: yOffsetForTable / scale };
-                        
-                        // Add Ledger Header
+                        doc.setTextColor(isBalanced ? 22 : (vNum < 0 ? 220 : 37), isBalanced ? 101 : (vNum < 0 ? 38 : 99), isBalanced ? 52 : (vNum < 0 ? 38 : 235));
+                        const varLabel = isBalanced ? "AUDIT: PERFECTLY BALANCED (0.00)" : (vNum < 0 ? `AUDIT: SHORTAGE (- ${context.currency_symbol}${Math.abs(vNum).toFixed(2)})` : `AUDIT: SURPLUS (+ ${context.currency_symbol}${vNum.toFixed(2)})`);
+                        doc.text(varLabel, 545 * scale, yOffsetForTable + (6 * scale), { align: 'right' });
+
+                        yOffsetForTable += 22 * scale;
+
+                        // Physical Denomination Count Grid (if available)
+                        const denoms = s.denominations || {};
+                        const denomEntries = Object.entries(denoms).filter(([val, qty]) => Number(qty) > 0);
+                        if (denomEntries.length > 0) {
+                            doc.setFillColor(248, 250, 252);
+                            doc.setDrawColor(226, 232, 240);
+                            doc.rect(40 * scale, yOffsetForTable - (4 * scale), 515 * scale, 18 * scale, 'FD');
+                            doc.setFont("Helvetica", "bold"); doc.setFontSize(7.5 * scale); doc.setTextColor(71, 85, 105);
+                            doc.text("PHYSICAL CASH COUNT BREAKDOWN:", 46 * scale, yOffsetForTable + (6 * scale));
+                            doc.setFont("Helvetica", "normal"); doc.setFontSize(7.5 * scale); doc.setTextColor(15, 23, 42);
+                            const denomStr = denomEntries.map(([v, q]) => `₹${v} × ${q} = ₹${Number(v) * Number(q)}`).join("   |   ");
+                            doc.text(denomStr.length > 85 ? denomStr.substring(0, 82) + '...' : denomStr, 205 * scale, yOffsetForTable + (6 * scale));
+                            yOffsetForTable += 22 * scale;
+                        }
+
+                        // Detailed Ledger Header
                         doc.setFillColor(241, 245, 249);
                         doc.setDrawColor(203, 213, 225);
-                        doc.rect(40 * scale, yOffsetForTable - (10 * scale), 515 * scale, 22 * scale, 'FD');
+                        doc.rect(40 * scale, yOffsetForTable - (6 * scale), 515 * scale, 18 * scale, 'FD');
                         doc.setFont("Helvetica", "bold");
-                        doc.setFontSize(11 * scale);
+                        doc.setFontSize(9.5 * scale);
                         doc.setTextColor(15, 23, 42);
-                        doc.text("DETAILED LEDGER & CASH TRANSACTIONS", 45 * scale, yOffsetForTable + (4 * scale));
-                        
-                        yOffsetForTable += 16 * scale;
-                        dynamicTableConfig.y = yOffsetForTable / scale;
+                        doc.text("DETAILED LEDGER & SHIFT TRANSACTIONS AUDIT", 45 * scale, yOffsetForTable + (5 * scale));
 
-                        // Table of transactions
-                        const ledger = data.ledger || [];
-                        const tConfig = {
-                            columns: [
-                                { key: 'time', title: 'TIME', width: 60, align: 'left' },
-                                { key: 'invoice', title: 'REF NO', width: 80, align: 'left' },
-                                { key: 'patient', title: 'PATIENT / PAYEE', width: 140, align: 'left' },
-                                { key: 'method', title: 'METHOD', width: 60, align: 'center' },
-                                { key: 'amount', title: 'AMOUNT', width: 80, align: 'right' }
-                            ]
-                        };
-                        const formattedLedger = ledger.map((l: any) => ({
-                            time: new Date(l.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                            invoice: l.reference || 'N/A',
-                            patient: l.patient_name || '-',
-                            method: String(l.method).toUpperCase(),
-                            amount: Number(l.amount).toFixed(2)
-                        }));
-                        tableEndOfTableY = await renderTable(doc, usage, formattedLedger, tConfig, scale, pageWidth, pageHeight, context);
+                        yOffsetForTable += 14 * scale;
+                        let dynamicTableConfig = { ...val, y: yOffsetForTable / scale };
+
+                        tableEndOfTableY = await renderTable(doc, usage, data, dynamicTableConfig, scale, pageWidth, pageHeight, context);
                     } else if ((usage as any) === 'lab_catalog') {
                         const tConfig = {
                             columns: [
@@ -1285,13 +1312,34 @@ async function renderTable(doc: jsPDF, usage: string, data: any, tableConfig: an
         currentY += 15 * scale;
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(fontSize);
-        doc.text("LEDGER TALLY / BALANCE:", margin + (35 * scale), currentY);
+        doc.text("TOTAL TRANSACTIONS TALLY:", margin + (35 * scale), currentY);
         doc.text(totalDebit.toFixed(2), rateX, currentY, { align: 'right' });
         doc.text(totalCredit.toFixed(2), totalX, currentY, { align: 'right' });
         
         currentY += 5 * scale;
         doc.line(margin + (35 * scale), currentY, totalX, currentY); // Bottom line
         doc.line(margin + (35 * scale), currentY + (2 * scale), totalX, currentY + (2 * scale)); // Double bottom line (Accountant Standard)
+
+        // Dual Verification Signatures Block
+        currentY += 45 * scale;
+        if (currentY + (35 * scale) > pageHeight - bottomMargin) {
+            doc.addPage();
+            currentY = margin + (40 * scale);
+        }
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8 * scale);
+        doc.setTextColor(71, 85, 105);
+
+        // Cashier Line
+        doc.line(margin + (40 * scale), currentY, margin + (190 * scale), currentY);
+        doc.text(`Cashier / Operator Signature (${data.hms_patient?.name || 'Staff'})`, margin + (40 * scale), currentY + (12 * scale));
+
+        // Supervisor Line
+        doc.line(totalX - (150 * scale), currentY, totalX, currentY);
+        doc.text("Verified by (Supervisor / Auditor)", totalX - (150 * scale), currentY + (12 * scale));
+
+        currentY += 25 * scale;
     }
 
     return currentY;
