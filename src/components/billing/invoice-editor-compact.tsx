@@ -1319,25 +1319,24 @@ export function CompactInvoiceEditor({
           }
         }
 
-        const actionAfterSave = printProfile?.automation?.actionAfterSave || 'success_screen';
+        // Default enterprise behavior: navigate directly to Bills List (/hms/billing)
+        const actionAfterSave = printProfile?.automation?.actionAfterSave || 'list';
 
         if (!onClose) {
-          if (actionAfterSave === 'list') {
-            window.location.href = '/hms/billing';
-            return;
-          } else if (actionAfterSave === 'new_bill') {
+          if (actionAfterSave === 'new_bill') {
             window.location.href = '/hms/billing/new';
             return;
           }
-          // if 'success_screen', fall through to setIsSuccess(true)
+          window.location.href = '/hms/billing';
+          return;
         }
 
-        setIsSuccess(true);
-
         if (onPaymentSuccess) {
-          setTimeout(() => {
-            onPaymentSuccess((res as any).data);
-          }, 500);
+          onPaymentSuccess((res as any).data);
+        }
+        if (onClose) {
+          onClose();
+          return;
         }
       } else {
         setLoading(false)
