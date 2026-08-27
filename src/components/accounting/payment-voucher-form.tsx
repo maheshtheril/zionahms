@@ -466,12 +466,12 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                                                                             field.onChange(val || "");
                                                                             if (val) {
                                                                                 setTimeout(() => {
-                                                                                    const amtInput = document.getElementById(`voucher-amount-${index}`);
+                                                                                    const amtInput = document.getElementById(`voucher-amount-${index}`) as HTMLInputElement | null;
                                                                                     if (amtInput) {
                                                                                         amtInput.focus();
-                                                                                        (amtInput as HTMLInputElement).select();
+                                                                                        amtInput.select();
                                                                                     }
-                                                                                }, 50);
+                                                                                }, 80);
                                                                             }
                                                                         }}
                                                                         options={accounts.map(a => ({
@@ -495,7 +495,7 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                                                                         if (!defaultGroup) {
                                                                             defaultGroup = accounts.find((a: any) => 
                                                                                 a.is_group && a.name.toLowerCase().includes('expense')
-                                                                            );
+                                                                        );
                                                                         }
                                                                         setNewLedger({ 
                                                                             name: '', 
@@ -521,8 +521,19 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                                                         <Input
                                                             id={`voucher-amount-${index}`}
                                                             type="number"
+                                                            step="any"
                                                             {...field}
-                                                            value={(field.value as number) || ''}
+                                                            value={field.value !== undefined && field.value !== null && field.value !== 0 ? field.value : (field.value === 0 ? '0.00' : '')}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                field.onChange(val === '' ? '' : parseFloat(val) || 0);
+                                                            }}
+                                                            onFocus={(e) => {
+                                                                e.currentTarget.select();
+                                                            }}
+                                                            onClick={(e) => {
+                                                                e.currentTarget.select();
+                                                            }}
                                                             onKeyDown={(e) => {
                                                                 if (e.key === 'Enter') {
                                                                     e.preventDefault();
@@ -637,8 +648,11 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                                                         <td className="p-3 px-6 text-right bg-amber-50/30 dark:bg-amber-950/10">
                                                             <Input
                                                                 type="number"
+                                                                step="any"
                                                                 value={allocations[bill.id] || ''}
                                                                 onChange={(e) => handleAllocationChange(bill.id, e.target.value)}
+                                                                onFocus={(e) => e.currentTarget.select()}
+                                                                onClick={(e) => e.currentTarget.select()}
                                                                 className="text-right h-10 w-36 ml-auto bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 font-black font-mono rounded-xl focus-visible:ring-1 focus-visible:ring-amber-500 text-sm"
                                                                 placeholder="0.00"
                                                             />
