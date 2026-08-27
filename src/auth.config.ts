@@ -9,13 +9,15 @@ export const authConfig = {
     trustHost: true,
     cookies: {
         sessionToken: {
-            name: process.env.NODE_ENV === 'production' ? '__Secure-authjs.session-token' : 'authjs.session-token',
+            name: (process.env.NODE_ENV === 'production' && (process.env.NEXTAUTH_URL?.startsWith('https://') || process.env.AUTH_URL?.startsWith('https://'))) 
+                ? '__Secure-authjs.session-token' 
+                : 'authjs.session-token',
             options: {
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
-                secure: process.env.NODE_ENV === 'production',
-                domain: process.env.NODE_ENV === 'production' ? '.zionahms.com' : undefined,
+                secure: (process.env.NODE_ENV === 'production' && (process.env.NEXTAUTH_URL?.startsWith('https://') || process.env.AUTH_URL?.startsWith('https://'))),
+                domain: undefined,
             },
         },
     },

@@ -116,15 +116,28 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
     };
 
     const loadSummary = async () => {
-        if (!shift) return;
         setSummaryLoading(true);
-        const res = await getShiftSummary(shift.id);
-        if (res.success) {
-            setSummary(res.summary);
-        } else {
-            toast.error("Failed to load shift summary");
+        try {
+            let activeShiftId = shift?.id;
+            if (!activeShiftId) {
+                const fresh = await getCurrentShift();
+                if (fresh) {
+                    setShift(fresh);
+                    activeShiftId = fresh.id;
+                }
+            }
+            const res = await getShiftSummary(activeShiftId);
+            if (res.success) {
+                setSummary(res.summary);
+            } else {
+                toast.error(res.error || "Failed to load shift summary");
+            }
+        } catch (err: any) {
+            console.error("Error loading shift summary:", err);
+            toast.error("Error calculating shift totals");
+        } finally {
+            setSummaryLoading(false);
         }
-        setSummaryLoading(false);
     };
 
     const loadHistory = async () => {

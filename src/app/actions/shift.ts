@@ -75,159 +75,212 @@ export async function startShift(openingBalance: number, denominations?: any) {
     }
 }
 
-export async function getShiftSummary(shiftId: string) {
-    const session = await auth();
-    if (!session?.user?.id) return { error: "Unauthorized" };
+export async function getShiftSummary(shiftId?: string | null) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
-    const shift = await prisma.hms_cash_shift.findUnique({ where: { id: shiftId } });
-    if (!shift) return { error: "Shift not found" };
+        let shift: any = null;
 
-    // 1. Fetch Collections (Inbound)
-    const collections = await prisma.hms_invoice_payments.findMany({
-        where: {
-            tenant_id: shift.tenant_id,
-            created_at: { 
-                gte: shift.start_time,
-                ...(shift.end_time && { lte: shift.end_time })
-            },
-            hms_invoice: { status: { not: 'cancelled' } }
-        },
-        include: {
-            hms_invoice: { select: { status: true, invoice_number: true, hms_patient: { select: { first_name: true, last_name: true, full_name: true } } } }
-        },
-        orderBy: { created_at: 'desc' }
-    });
-
-    // 1.5 Fetch Invoices (Revenue generated during shift)
-    const invoices = await prisma.hms_invoice.findMany({
-        where: {
-            tenant_id: shift.tenant_id,
-            created_at: { 
-                gte: shift.start_time,
-                ...(shift.end_time && { lte: shift.end_time })
-            },
-            status: { not: 'cancelled' }
-        },
-        include: {
-            hms_patient: { select: { first_name: true, last_name: true, full_name: true } },
-            hms_invoice_lines: true
-        },
-        orderBy: { created_at: 'desc' }
-    });
-
-    // 2. Fetch Expenses (Outbound)
-    const expenses = await prisma.payments.findMany({
-        where: {
-            tenant_id: shift.tenant_id,
-            ...(shift.company_id ? { company_id: shift.company_id } : {}),
-            metadata: { path: ['type'], equals: 'outbound' },
-            created_at: { 
-                gte: shift.start_time,
-                ...(shift.end_time && { lte: shift.end_time })
-            }
-        },
-        orderBy: { created_at: 'desc' }
-    });
-
-    // 3. Calculate Summaries
-    const summary = {
-        cashCollected: 0,
-        cashExpenses: 0,
-        card: 0,
-        upi: 0,
-        other: 0,
-        totalIn: 0,
-        totalOut: 0,
-        totalRevenue: 0,
-        pendingBillsTotal: 0,
-        netCash: 0 // (Opening + CashIn) - CashOut
-    };
-
-    // Process Collections
-    collections.forEach(p => {
-        const amt = Number(p.amount || 0);
-        summary.totalIn += amt;
-        if (p.method === 'cash') summary.cashCollected += amt;
-        else if (p.method === 'card') summary.card += amt;
-        else if (p.method === 'upi') summary.upi += amt;
-        else summary.other += amt;
-    });
-
-    // Process Invoices
-    invoices.forEach(i => {
-        const total = Number(i.total || 0);
-        summary.totalRevenue += total;
-        const status = (i.status || '').toLowerCase();
-        if (status === 'draft' || status === 'pending') {
-            const outst = Number(i.outstanding_amount || i.outstanding || 0);
-            const pendingAmount = outst > 0 ? outst : total;
-            summary.pendingBillsTotal += pendingAmount;
+        // 1. Look up by provided ID if valid
+        if (shiftId && typeof shiftId === 'string' && shiftId.trim() !== '' && shiftId !== 'undefined' && shiftId !== 'null') {
+            shift = await prisma.hms_cash_shift.findUnique({ where: { id: shiftId } }).catch(() => null);
         }
-    });
 
-    // Process Expenses
-    expenses.forEach(e => {
-        const amt = Number(e.amount || 0);
-        summary.totalOut += amt;
-        summary.cashExpenses += amt;
-    });
+        // 2. Fallback: Find user's active open shift
+        if (!shift) {
+            shift = await prisma.hms_cash_shift.findFirst({
+                where: {
+                    user_id: session.user.id,
+                    status: 'open'
+                },
+                orderBy: { start_time: 'desc' }
+            }).catch(() => null);
+        }
 
-    // Net Cash in Drawer = Cash Collected - Cash Expenses
-    summary.netCash = summary.cashCollected - summary.cashExpenses;
+        // 3. Fallback: Find latest shift in tenant
+        if (!shift && session.user.tenantId) {
+            shift = await prisma.hms_cash_shift.findFirst({
+                where: {
+                    tenant_id: session.user.tenantId,
+                    status: 'open'
+                },
+                orderBy: { start_time: 'desc' }
+            }).catch(() => null);
+        }
 
-    // 4. Generate Unified Ledger
-    const ledger = [
-        ...collections.map(c => ({
-            id: c.id,
-            time: c.created_at,
-            type: 'IN', // INCOME
-            method: c.method,
-            amount: Number(c.amount),
-            description: `Inv #${c.hms_invoice?.invoice_number} - ${c.hms_invoice?.hms_patient?.full_name || c.hms_invoice?.hms_patient?.first_name || 'Patient'}`,
-            category: 'Sales Receipt / Collection'
-        })),
-        ...expenses.map(e => ({
-            id: e.id,
-            time: e.created_at,
-            type: 'OUT', // EXPENSE
-            method: 'cash',
-            amount: Number(e.amount),
-            description: (e.metadata as any)?.payee_name ? `${(e.metadata as any)?.category_name || 'Expense'} (${(e.metadata as any)?.payee_name})` : ((e.metadata as any)?.description || (e.metadata as any)?.memo || (e.metadata as any)?.notes || 'Petty Cash Expense'),
-            category: (e.metadata as any)?.category_name || (e.metadata as any)?.category || 'Petty Cash'
-        })),
-        ...invoices.filter(i => {
+        if (!shift) {
+            return { success: false, error: "No active shift found. Please start a shift first." };
+        }
+
+        // 1. Fetch Collections (Inbound) - with null safety
+        let collections: any[] = [];
+        try {
+            collections = await prisma.hms_invoice_payments.findMany({
+                where: {
+                    tenant_id: shift.tenant_id,
+                    created_at: { 
+                        gte: shift.start_time,
+                        ...(shift.end_time && { lte: shift.end_time })
+                    },
+                    hms_invoice: { status: { not: 'cancelled' } }
+                },
+                include: {
+                    hms_invoice: { select: { status: true, invoice_number: true, hms_patient: { select: { first_name: true, last_name: true, full_name: true } } } }
+                },
+                orderBy: { created_at: 'desc' }
+            });
+        } catch (e) {
+            console.warn("[ShiftSummary] Warning fetching collections:", (e as Error).message);
+        }
+
+        // 1.5 Fetch Invoices (Revenue generated during shift)
+        let invoices: any[] = [];
+        try {
+            invoices = await prisma.hms_invoice.findMany({
+                where: {
+                    tenant_id: shift.tenant_id,
+                    created_at: { 
+                        gte: shift.start_time,
+                        ...(shift.end_time && { lte: shift.end_time })
+                    },
+                    status: { not: 'cancelled' }
+                },
+                include: {
+                    hms_patient: { select: { first_name: true, last_name: true, full_name: true } },
+                    hms_invoice_lines: true
+                },
+                orderBy: { created_at: 'desc' }
+            });
+        } catch (e) {
+            console.warn("[ShiftSummary] Warning fetching invoices:", (e as Error).message);
+        }
+
+        // 2. Fetch Expenses (Outbound)
+        let expenses: any[] = [];
+        try {
+            expenses = await prisma.payments.findMany({
+                where: {
+                    tenant_id: shift.tenant_id,
+                    ...(shift.company_id ? { company_id: shift.company_id } : {}),
+                    metadata: { path: ['type'], equals: 'outbound' },
+                    created_at: { 
+                        gte: shift.start_time,
+                        ...(shift.end_time && { lte: shift.end_time })
+                    }
+                },
+                orderBy: { created_at: 'desc' }
+            });
+        } catch (e) {
+            console.warn("[ShiftSummary] Warning fetching expenses:", (e as Error).message);
+        }
+
+        // 3. Calculate Summaries
+        const summary = {
+            cashCollected: 0,
+            cashExpenses: 0,
+            card: 0,
+            upi: 0,
+            other: 0,
+            totalIn: 0,
+            totalOut: 0,
+            totalRevenue: 0,
+            pendingBillsTotal: 0,
+            netCash: 0 // (Opening + CashIn) - CashOut
+        };
+
+        // Process Collections
+        collections.forEach(p => {
+            const amt = Number(p.amount || 0);
+            summary.totalIn += amt;
+            if (p.method === 'cash') summary.cashCollected += amt;
+            else if (p.method === 'card') summary.card += amt;
+            else if (p.method === 'upi') summary.upi += amt;
+            else summary.other += amt;
+        });
+
+        // Process Invoices
+        invoices.forEach(i => {
+            const total = Number(i.total || 0);
+            summary.totalRevenue += total;
             const status = (i.status || '').toLowerCase();
-            return status === 'draft' || status === 'pending';
-        }).map(i => {
-            const tot = Number(i.total || 0);
-            const outst = Number(i.outstanding_amount || i.outstanding || 0);
-            const pendingAmt = outst > 0 ? outst : tot;
-            return {
-                id: i.id,
-                time: i.created_at,
-                type: 'PENDING',
-                method: '-',
-                amount: pendingAmt,
-                description: `Unpaid Inv #${i.invoice_number} - ${i.hms_patient?.full_name || i.hms_patient?.first_name || 'Walk-in'}`,
-                category: 'Draft / Pending Bill'
-            };
-        })
-    ].sort((a, b) => new Date(b.time || 0).getTime() - new Date(a.time || 0).getTime());
+            if (status === 'draft' || status === 'pending') {
+                const outst = Number(i.outstanding_amount || i.outstanding || 0);
+                const pendingAmount = outst > 0 ? outst : total;
+                summary.pendingBillsTotal += pendingAmount;
+            }
+        });
 
-    const user = await prisma.app_user.findUnique({
-        where: { id: shift.user_id },
-        select: { name: true, full_name: true, email: true }
-    }).catch(() => null);
+        // Process Expenses
+        expenses.forEach(e => {
+            const amt = Number(e.amount || 0);
+            summary.totalOut += amt;
+            summary.cashExpenses += amt;
+        });
 
-    return { 
-        success: true, 
-        summary, 
-        shift: cleanShift(shift, user), 
-        ledger,
-        invoices,
-        collections,
-        expenses
-    };
+        // Net Cash in Drawer = Cash Collected - Cash Expenses
+        summary.netCash = summary.cashCollected - summary.cashExpenses;
+
+        // 4. Generate Unified Ledger
+        const ledger = [
+            ...collections.map(c => ({
+                id: c.id,
+                time: c.created_at,
+                type: 'IN', // INCOME
+                method: c.method,
+                amount: Number(c.amount),
+                description: `Inv #${c.hms_invoice?.invoice_number} - ${c.hms_invoice?.hms_patient?.full_name || c.hms_invoice?.hms_patient?.first_name || 'Patient'}`,
+                category: 'Sales Receipt / Collection'
+            })),
+            ...expenses.map(e => ({
+                id: e.id,
+                time: e.created_at,
+                type: 'OUT', // EXPENSE
+                method: 'cash',
+                amount: Number(e.amount),
+                description: (e.metadata as any)?.payee_name ? `${(e.metadata as any)?.category_name || 'Expense'} (${(e.metadata as any)?.payee_name})` : ((e.metadata as any)?.description || (e.metadata as any)?.memo || (e.metadata as any)?.notes || 'Petty Cash Expense'),
+                category: (e.metadata as any)?.category_name || (e.metadata as any)?.category || 'Petty Cash'
+            })),
+            ...invoices.filter(i => {
+                const status = (i.status || '').toLowerCase();
+                return status === 'draft' || status === 'pending';
+            }).map(i => {
+                const tot = Number(i.total || 0);
+                const outst = Number(i.outstanding_amount || i.outstanding || 0);
+                const pendingAmt = outst > 0 ? outst : tot;
+                return {
+                    id: i.id,
+                    time: i.created_at,
+                    type: 'PENDING',
+                    method: '-',
+                    amount: pendingAmt,
+                    description: `Unpaid Inv #${i.invoice_number} - ${i.hms_patient?.full_name || i.hms_patient?.first_name || 'Walk-in'}`,
+                    category: 'Draft / Pending Bill'
+                };
+            })
+        ].sort((a, b) => new Date(b.time || 0).getTime() - new Date(a.time || 0).getTime());
+
+        const user = await prisma.app_user.findUnique({
+            where: { id: shift.user_id },
+            select: { name: true, full_name: true, email: true }
+        }).catch(() => null);
+
+        return { 
+            success: true, 
+            summary, 
+            shift: cleanShift(shift, user), 
+            ledger,
+            invoices,
+            collections,
+            expenses
+        };
+    } catch (error) {
+        console.error("[getShiftSummary Error]:", error);
+        return { 
+            success: false, 
+            error: (error as Error).message || "Failed to calculate shift totals" 
+        };
+    }
 }
 
 export async function closeShift(shiftId: string, closingCash: number, denominations: any) {
