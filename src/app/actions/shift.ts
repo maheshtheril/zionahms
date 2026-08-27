@@ -119,8 +119,12 @@ export async function getShiftSummary(shiftId: string) {
     // 2. Fetch Expenses (Outbound)
     const expenses = await prisma.payments.findMany({
         where: {
-            created_by: shift.user_id,
             tenant_id: shift.tenant_id,
+            ...(shift.company_id ? { company_id: shift.company_id } : {}),
+            OR: [
+                { created_by: shift.user_id },
+                { created_by: null }
+            ],
             metadata: { path: ['type'], equals: 'outbound' },
             created_at: { 
                 gte: shift.start_time,

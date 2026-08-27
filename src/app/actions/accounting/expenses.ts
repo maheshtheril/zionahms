@@ -105,6 +105,7 @@ export async function recordExpense(data: {
                         amount: data.amount,
                         method: data.method || 'cash',
                         reference: data.reference,
+                        created_by: session.user.id,
                         created_at: data.date, // Update date
                         metadata: {
                             type: 'outbound',
@@ -153,6 +154,7 @@ export async function recordExpense(data: {
                         payment_number: paymentNumber,
                         payment_number_normalized: paymentNumber,
                         posted: true, // Auto-post expenses
+                        created_by: session.user.id,
                         metadata: {
                             type: 'outbound',
                             date: data.date.toISOString(),
@@ -161,7 +163,7 @@ export async function recordExpense(data: {
                             category_name: categoryName,
                             category_code: account.code
                         },
-                        created_at: data.date,
+                        created_at: new Date(),
                         journal_id: data.journalId,
                     }
                 });
