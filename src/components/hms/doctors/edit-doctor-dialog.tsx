@@ -4,6 +4,7 @@ import { seedStandardDepartments, quickAddDepartment } from '@/app/actions/hms-s
 import { WORLD_CLASS_DESIGNATIONS, WORLD_CLASS_QUALIFICATIONS } from '@/app/hms/doctors/constants'
 import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2, Clock, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle, Hash, CreditCard, UserCheck, UserCog, Image, FileText, Fingerprint, Camera, FileCheck } from 'lucide-react'
 import { FileUpload } from '@/components/ui/file-upload'
+import { toast } from 'sonner'
 
 interface Department {
     id: string
@@ -94,6 +95,7 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
     const [signatureUrl, setSignatureUrl] = useState(doctor.signature_url || '')
     const [documentUrls, setDocumentUrls] = useState<any>(doctor.document_urls || [])
     const [notes, setNotes] = useState(doctor.notes || '')
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -133,6 +135,35 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
         setIsAddingDept(false)
     }
 
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        setIsSubmitting(true)
+        setMessage(null)
+        try {
+            const formData = new FormData(e.currentTarget)
+            const firstName = formData.get("first_name") as string
+            if (!firstName?.trim()) {
+                setActiveTab('general')
+                setMessage({ type: 'error', text: "Please provide a First Name." })
+                setIsSubmitting(false)
+                return
+            }
+
+            const res = await updateDoctor(formData)
+            if (res?.success) {
+                toast.success("Profile Updated", { description: "Doctor credentials and print footer have been updated." })
+                onClose()
+                window.location.reload()
+            } else {
+                setMessage({ type: 'error', text: res?.error || "Failed to update profile. Please ensure professional credentials are valid." })
+            }
+        } catch (err: any) {
+            setMessage({ type: 'error', text: err?.message || "An unexpected error occurred." })
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-slate-900/60 backdrop-blur-md">
             <div className="relative w-full max-w-[95vw] lg:max-w-7xl bg-white rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.3)] max-h-[92vh] flex flex-col overflow-hidden border border-white/20">
@@ -156,15 +187,7 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
                 </div>
 
                 {/* Form - 3 Column Non-Scroll Layout */}
-                <form action={async (formData) => {
-                    setMessage(null)
-                    const res = await updateDoctor(formData)
-                    if (res?.success) {
-                        onClose()
-                    } else {
-                        setMessage({ type: 'error', text: res?.error || "Failed to update profile. Please ensure professional credentials are valid." })
-                    }
-                }} className="flex-1 overflow-hidden flex flex-col bg-slate-50/30">
+                <form onSubmit={handleSubmit} noValidate className="flex-1 overflow-hidden flex flex-col bg-slate-50/30">
                     <input type="hidden" name="id" value={doctor.id} />
 
                     <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
@@ -286,8 +309,8 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Institutional Role <span className="text-red-500">*</span></label>
-                                                <select name="role_id" defaultValue={doctor.role_id || ''} required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
+                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Institutional Role</label>
+                                                <select name="role_id" defaultValue={doctor.role_id || ''} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
                                                     <option value="">Select Role</option>
                                                     {(roles || []).map(role => <option key={role.id} value={role.id}>{role.name}</option>)}
                                                 </select>
@@ -473,10 +496,20 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
                         </button>
                         <button
                             type="submit"
-                            className="px-8 py-3 bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-200 flex items-center gap-2 hover:shadow-2xl hover:-translate-y-0.5 transition-all active:scale-95 uppercase tracking-widest"
+                            disabled={isSubmitting}
+                            className="px-8 py-3 bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-200 flex items-center gap-2 hover:shadow-2xl hover:-translate-y-0.5 transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <Sparkles className="h-4 w-4" />
-                            Update Credentials
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Updating...
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles className="h-4 w-4" />
+                                    Update Credentials
+                                </>
+                            )}
                         </button>
                     </div>
                 </form>
