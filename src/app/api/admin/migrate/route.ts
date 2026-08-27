@@ -74,6 +74,19 @@ export async function GET() {
         errors.push(`Add constraint (may already exist): ${e.message}`);
     }
 
+    try {
+        // Step 6: Ensure round_off columns exist
+        await prisma.$executeRawUnsafe(`
+            ALTER TABLE company_accounting_settings 
+            ADD COLUMN IF NOT EXISTS round_off_account_id UUID;
+        `);
+        await prisma.$executeRawUnsafe(`
+            ALTER TABLE hms_invoice 
+            ADD COLUMN IF NOT EXISTS round_off_amount NUMERIC(18, 6) DEFAULT 0;
+        `);
+        results.push(`Ensured round_off columns exist on company_accounting_settings and hms_invoice.`);
+    } catch (e: any) { errors.push(`Ensure round_off columns: ${e.message}`); }
+
     // Final count
     const remaining = await prisma.$queryRawUnsafe<{cnt: bigint}[]>(`
         SELECT count(*) as cnt FROM hms_print_template
