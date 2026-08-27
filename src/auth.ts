@@ -109,17 +109,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     const moduleKeys = (tenantModules as any[]).map((m: any) => m.module_key);
                     const branchName = branchResult?.name || 'Main Branch';
 
-                    // Self-heal missing company (rare path — don't block normal logins)
+                    // Self-heal missing company & branch (ensures newly created users have valid context)
+                    let currentBranchId = user.current_branch_id;
+                    let currentBranchName = branchResult?.name || 'Main Branch';
+
                     if (user.tenant_id && !user.company_id && !company) {
                         try {
                             let defaultCompany = await prisma.company.findFirst({ where: { tenant_id: user.tenant_id } });
                             if (!defaultCompany) {
-                                defaultCompany = await prisma.company.create({ data: { tenant_id: user.tenant_id, name: "Default Company", industry: "General" } });
+                                defaultCompany = await prisma.company.create({ data: { tenant_id: user.tenant_id, name: "Default Company", industry: "Healthcare" } });
                             }
                             await prisma.app_user.update({ where: { id: user.id }, data: { company_id: defaultCompany.id } });
                             user.company_id = defaultCompany.id;
                         } catch (e) {
-                            console.error("[AUTH] Self-healing failed:", e);
+                            console.error("[AUTH] Company self-healing failed:", e);
+                        }
+                    }
+
+                    if (user.tenant_id && !currentBranchId) {
+                        try {
+                            let defaultBranch = await prisma.hms_branch.findFirst({ where: { tenant_id: user.tenant_id } });
+                            if (defaultBranch) {
+                                await prisma.app_user.update({ where: { id: user.id }, data: { current_branch_id: defaultBranch.id } });
+                                currentBranchId = defaultBranch.id;
+                                currentBranchName = defaultBranch.name;
+                            }
+                        } catch (e) {
+                            console.error("[AUTH] Branch self-healing failed:", e);
                         }
                     }
 
@@ -137,8 +153,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         tenantId: user.tenant_id,
                         companyId: user.company_id,
                         companyName: company?.name || tenantInfo?.name || 'My Business',
-                        current_branch_id: user.current_branch_id,
-                        current_branch_name: branchName,
+                        current_branch_id: currentBranchId,
+                        current_branch_name: currentBranchName,
                         modules: moduleKeys,
                         image: safeImage,
                         dbUrl: (tenantInfo as any)?.db_url,
