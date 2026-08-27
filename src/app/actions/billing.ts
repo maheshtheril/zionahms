@@ -1359,7 +1359,9 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
             return sum + lineTotal;
         }, 0);
         const finalTaxTotal = processedLineItems.reduce((sum: number, item: any) => sum + (Number(item.tax_amount || 0)), 0);
-        const finalGrandTotal = Math.max(0, finalSubtotal + finalTaxTotal - Number(total_discount || 0));
+        const exactTotal = finalSubtotal + finalTaxTotal - Number(total_discount || 0);
+        const finalGrandTotal = Math.max(0, Math.round(exactTotal));
+        const roundOffAmount = Number((finalGrandTotal - exactTotal).toFixed(2));
         const finalOutstanding = (status === 'paid') ? 0 : Math.max(0, finalGrandTotal - totalPaid);
 
         const result = await prisma.$transaction(async (tx) => {
@@ -1389,6 +1391,7 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
                     invoice_date: new Date(date),
                     status: status,
                     total: finalGrandTotal,
+                    round_off_amount: roundOffAmount,
                     subtotal: finalSubtotal,
                     total_tax: finalTaxTotal,
                     total_discount: Number(total_discount),

@@ -796,7 +796,9 @@ export function CompactInvoiceEditor({
       return sum + (line.tax_amount || 0);
   }, 0).toFixed(2));
 
-  const grandTotal = Number(Math.max(0, taxMode === 'inclusive' ? subtotal : subtotal + totalTax - globalDiscount).toFixed(2))
+  const exactNet = Number(Math.max(0, taxMode === 'inclusive' ? subtotal : subtotal + totalTax - globalDiscount).toFixed(2))
+  const grandTotal = Math.round(exactNet)
+  const roundOffAmount = Number((grandTotal - exactNet).toFixed(2))
   const totalPaid = Number(payments.reduce((sum, p) => sum + (p.amount || 0), 0).toFixed(2))
   const balanceDue = Number(Math.max(0, grandTotal - totalPaid).toFixed(2))
 
@@ -1187,6 +1189,7 @@ export function CompactInvoiceEditor({
       }),
       status: effectiveStatus,
       total_discount: globalDiscount,
+      round_off_amount: roundOffAmount,
       notes: invoiceNote,
       payments: finalPayments,
       patient_name: isWalkIn ? walkInName : undefined,
