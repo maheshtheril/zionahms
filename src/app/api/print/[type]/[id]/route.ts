@@ -147,10 +147,123 @@ export async function GET(
 
                 const rawDenom = (shift.denominations as any)?.closing || (shift.denominations as any)?.opening || (typeof shift.denominations === 'object' ? shift.denominations : {});
 
+                const searchParams = req.nextUrl.searchParams;
+                const isDetailed = searchParams.get('detailed') === 'true';
+
+                let printItems: any[] = [];
+
+                if (isDetailed) {
+                    // FULL TRANSACTION-BY-TRANSACTION DETAILED AUDIT
+                    printItems = [
+                        { 
+                            category: { name: "OPENING FLOAT (CASH)" }, 
+                            amount: Number(shift.opening_balance || 0).toFixed(2), 
+                            type: 'INBOUND', 
+                            memo: "Starting cash in drawer at shift start" 
+                        },
+                        ...ledger.map((l: any) => ({
+                            category: { name: `[${l.type === 'IN' ? 'RECEIPT' : (l.type === 'OUT' ? 'EXPENSE' : 'PENDING')}] ${l.category || String(l.method || 'CASH').toUpperCase()}` },
+                            amount: Number(l.amount || 0).toFixed(2),
+                            type: l.type === 'IN' ? 'INBOUND' : (l.type === 'OUT' ? 'OUTBOUND' : 'PENDING'),
+                            memo: `${l.description || 'Transaction'}`
+                        }))
+                    ];
+                } else {
+                    // WORLD-STANDARD EXECUTIVE SUMMARY (Grouped Category Breakdown)
+                    printItems = [
+                        { 
+                            category: { name: "OPENING FLOAT (CASH)" }, 
+                            amount: Number(shift.opening_balance || 0).toFixed(2), 
+                            type: 'INBOUND', 
+                            memo: "Starting cash balance in drawer" 
+                        }
+                    ];
+
+                    // Cash Collections Summary
+                    const cashCollections = ledger.filter((l: any) => l.type === 'IN' && (l.method === 'cash' || !l.method));
+                    if (cashCollections.length > 0 || summary.cashCollected > 0) {
+                        printItems.push({
+                            category: { name: `CASH SALES COLLECTIONS (${cashCollections.length} Receipt${cashCollections.length === 1 ? '' : 's'})` },
+                            amount: Number(summary.cashCollected || 0).toFixed(2),
+                            type: 'INBOUND',
+                            memo: "Total direct cash collected from patient billing"
+                        });
+                    }
+
+                    // UPI / Online Collections Summary
+                    const upiCollections = ledger.filter((l: any) => l.type === 'IN' && l.method === 'upi');
+                    if (upiCollections.length > 0 || summary.upi > 0) {
+                        printItems.push({
+                            category: { name: `UPI / ONLINE COLLECTIONS (${upiCollections.length} Payment${upiCollections.length === 1 ? '' : 's'})` },
+                            amount: Number(summary.upi || 0).toFixed(2),
+                            type: 'INBOUND',
+                            memo: "Direct UPI / QR digital collections"
+                        });
+                    }
+
+                    // Card / POS Collections Summary
+                    const cardCollections = ledger.filter((l: any) => l.type === 'IN' && l.method === 'card');
+                    if (cardCollections.length > 0 || summary.card > 0) {
+                        printItems.push({
+                            category: { name: `CARD / POS COLLECTIONS (${cardCollections.length} Swipe${cardCollections.length === 1 ? '' : 's'})` },
+                            amount: Number(summary.card || 0).toFixed(2),
+                            type: 'INBOUND',
+                            memo: "Credit/Debit Card payments via EDC POS terminal"
+                        });
+                    }
+
+                    // Other / Insurance Collections
+                    if (summary.other > 0) {
+                        printItems.push({
+                            category: { name: `OTHER / BANK TRANSFERS` },
+                            amount: Number(summary.other || 0).toFixed(2),
+                            type: 'INBOUND',
+                            memo: "Cheque, NEFT or Corporate Insurance receipts"
+                        });
+                    }
+
+                    // Group Expenses by Category / Voucher
+                    const expenseItems = ledger.filter((l: any) => l.type === 'OUT');
+                    if (expenseItems.length > 0) {
+                        const expMap = new Map<string, { count: number, total: number, details: string[] }>();
+                        expenseItems.forEach((e: any) => {
+                            const cat = e.category || 'Petty Cash';
+                            const existing = expMap.get(cat) || { count: 0, total: 0, details: [] };
+                            existing.count += 1;
+                            existing.total += Number(e.amount || 0);
+                            if (e.description && !existing.details.includes(e.description)) {
+                                existing.details.push(e.description);
+                            }
+                            expMap.set(cat, existing);
+                        });
+
+                        for (const [catName, expData] of expMap.entries()) {
+                            printItems.push({
+                                category: { name: `[EXPENSE] ${catName.toUpperCase()} (${expData.count} Voucher${expData.count > 1 ? 's' : ''})` },
+                                amount: Number(expData.total).toFixed(2),
+                                type: 'OUTBOUND',
+                                memo: expData.details.slice(0, 3).join("; ")
+                            });
+                        }
+                    }
+
+                    // Pending / Credit Sales Summary
+                    const pendingItems = ledger.filter((l: any) => l.type === 'PENDING');
+                    if (pendingItems.length > 0 || summary.pendingBillsTotal > 0) {
+                        printItems.push({
+                            category: { name: `PENDING / CREDIT SALES (${pendingItems.length} Bill${pendingItems.length === 1 ? '' : 's'})` },
+                            amount: Number(summary.pendingBillsTotal || 0).toFixed(2),
+                            type: 'PENDING',
+                            memo: "Unsettled / Draft bills issued during shift"
+                        });
+                    }
+                }
+
                 data = {
                     ...shift,
                     hms_patient: { name: userName, first_name: userName },
                     invoice_number: shift.id.split('-')[0].toUpperCase(),
+                    is_detailed: isDetailed,
                     // World-Standard Z-Report Metrics passed explicitly
                     shift_summary: {
                         openingFloat: Number(shift.opening_balance || 0),
@@ -165,6 +278,7 @@ export async function GET(
                         expectedCash: expectedCash,
                         actualCash: actualCash,
                         variance: variance,
+                        isDetailed: isDetailed,
                         startedAt: shift.start_time ? new Date(shift.start_time).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A',
                         endedAt: isClosed ? new Date(shift.end_time).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : 'Active (Open)',
                         denominations: rawDenom
@@ -172,21 +286,7 @@ export async function GET(
                     ledger: ledger,
                     invoices: invoices,
                     expenses: expenses,
-                    // Detailed transactions mapping for the table
-                    items: [
-                        { 
-                            category: { name: "OPENING FLOAT (CASH)" }, 
-                            amount: Number(shift.opening_balance || 0).toFixed(2), 
-                            type: 'INBOUND', 
-                            memo: "Starting cash in drawer at shift start" 
-                        },
-                        ...ledger.map((l: any) => ({
-                            category: { name: `[${l.type === 'IN' ? 'RECEIPT' : (l.type === 'OUT' ? 'EXPENSE' : 'PENDING')}] ${l.category || String(l.method || 'CASH').toUpperCase()}` },
-                            amount: Number(l.amount || 0).toFixed(2),
-                            type: l.type === 'IN' ? 'INBOUND' : (l.type === 'OUT' ? 'OUTBOUND' : 'PENDING'),
-                            memo: `${l.description || 'Transaction'}`
-                        }))
-                    ],
+                    items: printItems,
                     total_amount: actualCash.toFixed(2),
                     expectedCash: expectedCash.toFixed(2),
                     actualCash: actualCash.toFixed(2),

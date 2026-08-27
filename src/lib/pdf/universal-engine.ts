@@ -827,9 +827,7 @@ export async function generateUniversalPDF(
                         doc.setDrawColor(203, 213, 225);
                         doc.rect(40 * scale, yOffsetForTable - (6 * scale), 515 * scale, 18 * scale, 'FD');
                         doc.setFont("Helvetica", "bold");
-                        doc.setFontSize(9.5 * scale);
-                        doc.setTextColor(15, 23, 42);
-                        doc.text("DETAILED LEDGER & SHIFT TRANSACTIONS AUDIT", 45 * scale, yOffsetForTable + (5 * scale));
+                        doc.text(s.isDetailed ? "DETAILED TRANSACTION-BY-TRANSACTION AUDIT" : "SHIFT RECONCILIATION & REVENUE CATEGORY BREAKDOWN", 45 * scale, yOffsetForTable + (5 * scale));
 
                         yOffsetForTable += 14 * scale;
                         let dynamicTableConfig = { ...val, y: yOffsetForTable / scale };

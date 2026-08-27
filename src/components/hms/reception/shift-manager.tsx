@@ -187,9 +187,10 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
         }
     };
 
-    const handlePrintShift = (shiftData: any) => {
+    const handlePrintShift = (shiftData: any, detailed: boolean = false) => {
         // We'll open a minimal printable report in a new tab.
-        window.open(`/api/print/shift_close/${shiftData.id}?autoPrint=true`, '_blank', 'width=800,height=600');
+        const url = `/api/print/shift_close/${shiftData.id}?autoPrint=true${detailed ? '&detailed=true' : ''}`;
+        window.open(url, '_blank', 'width=850,height=700');
     };
 
     if (loading && !shift) {
@@ -320,10 +321,13 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                                             {currencySymbol}{Number(s.difference).toLocaleString()}
                                         </TableCell>
                                         <TableCell>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1.5">
                                                 <Badge variant="outline" className="text-[10px] bg-slate-50 capitalize">{s.status}</Badge>
-                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-500" onClick={() => handlePrintShift(s)}>
-                                                    <FileText className="h-3 w-3" />
+                                                <Button variant="outline" size="sm" className="h-7 px-2 text-xs font-bold text-indigo-600 border-indigo-200 hover:bg-indigo-50" onClick={() => handlePrintShift(s, false)} title="Print 1-Page Summary Z-Report">
+                                                    <Printer className="h-3 w-3 mr-1" /> Summary
+                                                </Button>
+                                                <Button variant="ghost" size="sm" className="h-7 px-1.5 text-xs text-slate-500 hover:text-slate-800" onClick={() => handlePrintShift(s, true)} title="Print Full Detailed Audit">
+                                                    <FileText className="h-3 w-3 mr-1" /> Audit
                                                 </Button>
                                             </div>
                                         </TableCell>
@@ -344,19 +348,26 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                             Shift Closed Successfully
                         </DialogTitle>
                         <DialogDescription>
-                            The cash counter has been securely locked and recorded. Would you like to print the end-of-shift report now?
+                            The cash counter has been securely locked and recorded. Choose print format:
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter className="flex gap-2 sm:justify-end mt-4">
+                    <DialogFooter className="flex flex-wrap gap-2 sm:justify-end mt-4">
                         <Button variant="outline" onClick={() => setIsPrintPromptOpen(false)}>
                             Done
                         </Button>
                         <Button onClick={() => {
-                            handlePrintShift({ id: closedShiftId });
+                            handlePrintShift({ id: closedShiftId }, true);
                             setIsPrintPromptOpen(false);
-                        }} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
-                            <Printer className="h-4 w-4 mr-2" />
-                            Print Report
+                        }} variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50">
+                            <FileText className="h-4 w-4 mr-1.5" />
+                            Full Itemized Audit
+                        </Button>
+                        <Button onClick={() => {
+                            handlePrintShift({ id: closedShiftId }, false);
+                            setIsPrintPromptOpen(false);
+                        }} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md font-bold">
+                            <Printer className="h-4 w-4 mr-1.5" />
+                            Print Summary (1 Page)
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -615,12 +626,21 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
                                 <div className="flex gap-3">
                                     <Button
                                         variant="outline"
-                                        className="h-12 px-6 border-slate-300 dark:border-slate-700"
-                                        onClick={() => handlePrintShift({ id: shift?.id })}
-                                        title="Print Report"
+                                        className="h-12 px-3 border-slate-300 dark:border-slate-700 text-xs font-bold"
+                                        onClick={() => handlePrintShift({ id: shift?.id }, false)}
+                                        title="Print 1-Page Summary Report"
                                     >
-                                        <FileText className="h-5 w-5 mr-2" />
-                                        Print
+                                        <Printer className="h-4 w-4 mr-1" />
+                                        Summary
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="h-12 px-3 border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-500"
+                                        onClick={() => handlePrintShift({ id: shift?.id }, true)}
+                                        title="Print Full Detailed Audit"
+                                    >
+                                        <FileText className="h-4 w-4 mr-1" />
+                                        Audit
                                     </Button>
                                     <Button
                                         className="flex-1 h-12 text-lg font-bold"
