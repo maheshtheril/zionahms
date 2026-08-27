@@ -2120,9 +2120,10 @@ export function CompactInvoiceEditor({
                 <thead className="hidden lg:table-header-group">
                   <tr className="bg-slate-50 dark:bg-[#003333] border-b border-slate-200 dark:border-[#006666]">
                     <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-[#64ffff] w-12 italic">SR.</th>
-                    <th className="px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-[#64ffff] min-w-[450px] italic">Particulars / Service Node</th>
+                    <th className="px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-[#64ffff] min-w-[380px] italic">Particulars / Service Node</th>
+                    <th className="px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-[#64ffff] w-24 italic">Type / Lot</th>
                     <th className="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-[#64ffff] w-24 italic">Qty</th>
-                    <th className="px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-[#64ffff] w-32 italic">UOM</th>
+                    <th className="px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-[#64ffff] w-28 italic">UOM</th>
                     <th className="px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-[#64ffff] w-32 italic">Rate ({safeCurrency})</th>
                     <th className="px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-[#64ffff] w-40 italic">Taxation</th>
                     <th className="px-8 py-4 text-right text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-[#64ffff] w-48 italic">Total ({safeCurrency})</th>
