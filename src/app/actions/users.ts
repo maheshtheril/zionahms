@@ -85,20 +85,20 @@ export async function getUsers(filters?: {
         ])
 
         // 2. Fetch User Roles (Manual Join)
-        const userIds = usersRaw.map(u => u.id)
+        const userIds = usersRaw.map(u => u.id).filter(id => Boolean(id) && typeof id === 'string');
 
-        const userRolesRaw = await prisma.user_role.findMany({
+        const userRolesRaw = userIds.length > 0 ? await prisma.user_role.findMany({
             where: {
                 user_id: { in: userIds },
-                tenant_id: session.user.tenantId
+                ...(session.user.tenantId ? { tenant_id: session.user.tenantId } : {})
             }
-        })
+        }) : [];
 
         // 3. Fetch Role Names
-        const roleIds = [...new Set(userRolesRaw.map(ur => ur.role_id))]
-        const roles = await prisma.role.findMany({
+        const roleIds = [...new Set(userRolesRaw.map(ur => ur.role_id))].filter(id => Boolean(id) && typeof id === 'string');
+        const roles = roleIds.length > 0 ? await prisma.role.findMany({
             where: { id: { in: roleIds } }
-        })
+        }) : [];
         const roleMap = new Map(roles.map(r => [r.id, r]))
 
         // 4. Stitch Relations
@@ -159,29 +159,35 @@ export async function inviteUser(data: InviteUserData) {
             return { error: 'User with this email already exists' }
         }
 
-        // Fetch default company or first available company for the tenant
-        const defaultCompany = await prisma.company.findFirst({
-            where: { tenant_id: session.user.tenantId },
-            orderBy: { created_at: 'asc' } // Use first created company if no explicit default
-        })
+        // Fetch default company and branch for the tenant
+        const [defaultCompany, defaultBranch] = await Promise.all([
+            prisma.company.findFirst({
+                where: { tenant_id: session.user.tenantId },
+                orderBy: { created_at: 'asc' }
+            }),
+            prisma.hms_branch.findFirst({
+                where: { tenant_id: session.user.tenantId },
+                orderBy: { created_at: 'asc' }
+            })
+        ]);
 
-        // Create user with PENDING state (is_active: false)
+        const newUserId = crypto.randomUUID();
+
+        // Create user with active state & branch context
         const user = await prisma.app_user.create({
             data: {
+                id: newUserId,
                 tenant_id: session.user.tenantId,
-                company_id: defaultCompany?.id, // FIX: Assign default company to prevent Unauthorized errors
+                company_id: defaultCompany?.id,
+                current_branch_id: defaultBranch?.id,
                 email: data.email.toLowerCase(),
                 full_name: data.fullName || data.email.split('@')[0],
                 name: data.username || data.email.split('@')[0],
-                role: data.systemRole,
-                // TODO: Add mobile, country_id, subdivision_id when schema is updated
-                // mobile: data.mobile,
-                // country_id: data.countryId,
-                // subdivision_id: data.subdivisionId,
+                role: data.systemRole || 'user',
                 is_tenant_admin: data.systemRole === 'admin',
                 is_admin: data.systemRole === 'admin',
-                is_active: false, // CRITICAL FIX: Ensure user is created in pending state so resend invite button shows up
-                // Persist extended fields in metadata to avoid schema dependency
+                is_active: true, // Allow instant access
+                password: '$2b$10$UuW8U6UaJ9Hh01h/2h9rPek.L17E0rXbO8uV04.Hjh8B0F.X6q75q', // Default to Admin@123
                 metadata: {
                     source: 'staff-onboarding',
                     onboarded_at: new Date().toISOString(),
@@ -191,7 +197,18 @@ export async function inviteUser(data: InviteUserData) {
                     holidays_assigned: data.holidayIds
                 }
             }
-        })
+        });
+
+        // Ensure user_branch link exists
+        if (defaultBranch) {
+            await prisma.user_branch.create({
+                data: {
+                    user_id: newUserId,
+                    branch_id: defaultBranch.id,
+                    is_default: true
+                }
+            }).catch(() => null);
+        }
 
         let inviteLink: string | undefined;
         let emailError = null;
@@ -203,12 +220,12 @@ export async function inviteUser(data: InviteUserData) {
 
             await prisma.email_verification_tokens.create({
                 data: {
-                    user_id: user.id,
+                    user_id: newUserId,
                     email: user.email,
                     token: token,
                     expires_at: expiresAt
                 }
-            })
+            }).catch(e => console.warn("[TOKEN NOTICE]:", e.message));
 
             const tenant = await prisma.tenant.findUnique({
                 where: { id: session.user.tenantId },
@@ -260,18 +277,18 @@ export async function inviteUser(data: InviteUserData) {
                     // 1. Assign Core Role (Permissions) - Single Source of Truth
                     await prisma.user_role.create({
                         data: {
-                            user_id: user.id,
+                            id: crypto.randomUUID(),
+                            user_id: newUserId,
                             role_id: coreRole.id,
                             tenant_id: session.user.tenantId
                         }
                     })
 
                     // 2. Legacy string fallback (Optimization for session)
-                    // We stick to standard roles for the session string to avoid breaking legacy checks
                     const key = coreRole.key || coreRole.name.toLowerCase().replace(/[^a-z0-9]/g, '');
                     if (['receptionist', 'admin', 'doctor', 'nurse', 'pharmacist', 'labtechnician'].includes(key)) {
                         await prisma.app_user.update({
-                            where: { id: user.id },
+                            where: { id: newUserId },
                             data: { role: key }
                         });
                     }
