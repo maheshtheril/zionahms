@@ -505,8 +505,7 @@ export function AppointmentForm({
 
                 toast.success("Medical Record Finalized", { description: editingAppointment ? "Clinical encounter updated." : "Session finalized." });
 
-                // Display the Success Hub with direct 1-click print buttons!
-                setSaveSuccess(hydratedApt);
+                handleClose();
             }
         } catch (error: any) {
             toast.error("Terminal Crash", { description: error.message })
