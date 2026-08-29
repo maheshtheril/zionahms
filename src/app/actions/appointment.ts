@@ -85,9 +85,11 @@ export async function createAppointment(data: any) {
     if (!session?.user?.tenantId) return { success: false, error: "Unauthorized" }
 
     try {
+        const appointmentId = data.id || crypto.randomUUID()
         const appointment = await prisma.hms_appointments.create({
             data: {
                 ...data,
+                id: appointmentId,
                 tenant_id: session.user.tenantId,
                 status: 'scheduled',
                 created_by: session.user.id
