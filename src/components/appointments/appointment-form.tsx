@@ -498,14 +498,15 @@ export function AppointmentForm({
                 // [WORLD CLASS] Hydrate Success Object with Local Context for UI/Print Hub
                 const hydratedApt = {
                     ...res.data,
+                    id: aptId,
                     patient: selectedPatientData || patients.find(p => p.id === selectedPatientId),
                     clinician: doctors.find(d => d.id === selectedClinicianId)
                 };
 
                 toast.success("Medical Record Finalized", { description: editingAppointment ? "Clinical encounter updated." : "Session finalized." });
 
-                // Automatically close/redirect back to dashboard
-                handleClose();
+                // Display the Success Hub with direct 1-click print buttons!
+                setSaveSuccess(hydratedApt);
             }
         } catch (error: any) {
             toast.error("Terminal Crash", { description: error.message })
