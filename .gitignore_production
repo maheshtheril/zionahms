@@ -4,6 +4,7 @@
 
 # Dependencies & Cache
 node_modules/
+whatsapp-bridge/node_modules/
 !.next/
 !public/
 !prisma/
@@ -11,17 +12,6 @@ node_modules/
 .env.local
 !package.json
 !package-lock.json
-
-# CRITICAL: Allow database engines & drivers (No Internet Install)
-!node_modules/.prisma/
-!node_modules/@prisma/
-!node_modules/prisma/
-!node_modules/pg/
-!node_modules/dotenv/
-!whatsapp-bridge/node_modules/
-
-# Ensure Next.js large binary is NEVER tracked
-node_modules/@next/swc-win32-x64-msvc/
 
 # Logs & Temp
 *.log

@@ -789,11 +789,14 @@ export function AppointmentForm({
                                 </div>
                                 {/* Quick-print button â€” only shown when editing an existing appointment */}
                                 {editingAppointment?.id && (
-                                    <div className="flex gap-2 items-center">
+                                    <div className="flex gap-2">
                                         <button
                                             type="button"
                                             title="Print OP Slip"
-                                            onClick={() => window.open(`/api/print/appointment/${editingAppointment.id}?autoPrint=true`, '_blank')}
+                                            onClick={() => {
+                                                if (!editingAppointment?.id || editingAppointment.id === 'null' || editingAppointment.id === 'undefined') return;
+                                                window.open(`/api/print/appointment/${editingAppointment.id}?autoPrint=true`, '_blank');
+                                            }}
                                             className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-md shadow-indigo-500/20"
                                         >
                                             <Printer className="h-3.5 w-3.5" />

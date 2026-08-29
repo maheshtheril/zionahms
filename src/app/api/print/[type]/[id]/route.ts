@@ -13,6 +13,11 @@ export async function GET(
 ) {
     try {
         const { type, id } = await params;
+        const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!id || !UUID_REGEX.test(id)) {
+            return new NextResponse("Invalid or missing document UUID.", { status: 400 });
+        }
+
         const session = await auth();
         if (!session?.user?.id) return new NextResponse("Unauthorized", { status: 401 });
 

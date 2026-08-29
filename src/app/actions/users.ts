@@ -11,6 +11,7 @@ import { auth } from '@/auth'
 import { revalidatePath } from 'next/cache'
 import { sendInvitationEmail } from '@/lib/email'
 import crypto from 'crypto'
+import bcrypt from 'bcryptjs'
 import { headers } from 'next/headers'
 
 
@@ -560,19 +561,15 @@ export async function acceptInvitation(token: string, password: string) {
 
         const userId = tokenRecord.user_id
 
-        // SELF-HEALING: Ensure pgcrypto exists for crypt()/gen_salt()
-        try {
-            await prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS pgcrypto`);
-        } catch (e) {
-            console.warn("Security Extension Check:", (e as any).message);
-        }
+        const hashedPassword = await bcrypt.hash(password, 10)
 
-        await prisma.$executeRaw`
-            UPDATE app_user 
-            SET password = crypt(${password}, gen_salt('bf')),
-                is_active = true
-            WHERE id = ${userId}::uuid
-        `
+        await prisma.app_user.update({
+            where: { id: userId },
+            data: {
+                password: hashedPassword,
+                is_active: true
+            }
+        })
 
         await prisma.email_verification_tokens.delete({
             where: { id: tokenRecord.id }

@@ -48,20 +48,24 @@ export async function getConsumptionHistory(encounterId: string) {
     const userIds = [...new Set([
         ...moves.map(m => m.created_by),
         ...vitals.map(v => (v as any).recorded_by || null) 
-    ].filter(id => id !== null))] as string[]
+    ].filter((id): id is string => typeof id === 'string' && id.trim().length > 0))]
 
-    const users = await prisma.app_user.findMany({
-        where: { id: { in: userIds } },
-        select: { id: true, name: true, full_name: true }
-    })
+    const users = userIds.length > 0
+        ? await prisma.app_user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, name: true, full_name: true }
+        })
+        : []
     const userMap = new Map(users.map(u => [u.id, u.full_name || u.name || 'Unknown']))
 
     // Fetch product details for moves
-    const productIds = [...new Set(moves.map(m => m.product_id))]
-    const products = await prisma.hms_product.findMany({
-        where: { id: { in: productIds } },
-        select: { id: true, name: true, price: true }
-    })
+    const productIds = [...new Set(moves.map(m => m.product_id).filter((id): id is string => typeof id === 'string' && id.trim().length > 0))]
+    const products = productIds.length > 0
+        ? await prisma.hms_product.findMany({
+            where: { id: { in: productIds } },
+            select: { id: true, name: true, price: true }
+        })
+        : []
     const productMap = new Map(products.map(p => [p.id, p]))
 
     // Fetch Invoice Status for this Encounter for the 'Global' status fallback

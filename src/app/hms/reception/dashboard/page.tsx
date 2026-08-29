@@ -228,34 +228,43 @@ export default async function ReceptionDashboardPage({
 
 
         // Fetch Vitals, Tags, and Clinical Integrity Status (Pending Nursing Consumption)
-        const appointmentIds = appointmentsRaw.map(a => a.id);
+        const appointmentIds = appointmentsRaw
+            .map(a => a.id)
+            .filter((id): id is string => typeof id === 'string' && id.trim().length > 0);
+
         const [vitalsRaw, tagsRaw, pendingClinicalRaw] = await Promise.all([
-            prisma.hms_vitals.findMany({
-                where: { encounter_id: { in: appointmentIds }, tenant_id: tenantId },
-                select: {
-                    encounter_id: true,
-                    temperature: true,
-                    pulse: true,
-                    respiration: true,
-                    systolic: true,
-                    diastolic: true,
-                    spo2: true,
-                    weight: true,
-                    height: true
-                }
-            }),
-            prisma.hms_appointment_tags.findMany({
-                where: { appointment_id: { in: appointmentIds }, tenant_id: tenantId },
-                select: { appointment_id: true, tag: true }
-            }),
-            prisma.hms_stock_move.groupBy({
-                by: ['source_reference'],
-                where: {
-                    source_reference: { in: appointmentIds },
-                    source: 'Nursing Consumption (Pending)'
-                },
-                _count: { id: true }
-            })
+            appointmentIds.length > 0
+                ? prisma.hms_vitals.findMany({
+                    where: { encounter_id: { in: appointmentIds }, tenant_id: tenantId },
+                    select: {
+                        encounter_id: true,
+                        temperature: true,
+                        pulse: true,
+                        respiration: true,
+                        systolic: true,
+                        diastolic: true,
+                        spo2: true,
+                        weight: true,
+                        height: true
+                    }
+                })
+                : Promise.resolve([]),
+            appointmentIds.length > 0
+                ? prisma.hms_appointment_tags.findMany({
+                    where: { appointment_id: { in: appointmentIds }, tenant_id: tenantId },
+                    select: { appointment_id: true, tag: true }
+                })
+                : Promise.resolve([]),
+            appointmentIds.length > 0
+                ? prisma.hms_stock_move.groupBy({
+                    by: ['source_reference'],
+                    where: {
+                        source_reference: { in: appointmentIds },
+                        source: 'Nursing Consumption (Pending)'
+                    },
+                    _count: { id: true }
+                })
+                : Promise.resolve([])
         ]);
 
         const vitalsMap: Record<string, any> = {};

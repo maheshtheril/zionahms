@@ -36,6 +36,9 @@ export function OpSlipDialog({
     const handleDirectPrint = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        if (!docId || docId === 'null' || docId === 'undefined') {
+            return;
+        }
         window.open(`/api/print/${docType}/${docId}?autoPrint=true`, '_blank');
     };
 
@@ -43,6 +46,9 @@ export function OpSlipDialog({
     const handlePreview = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        if (!docId || docId === 'null' || docId === 'undefined') {
+            return;
+        }
         const printId = isInvoice ? docId : initialApt?.id;
         const searchParams = new URLSearchParams({ type: docType, mode: 'standard' });
         window.open(`/hms/billing/${printId}/print?${searchParams.toString()}`, '_blank');

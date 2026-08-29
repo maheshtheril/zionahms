@@ -48,15 +48,19 @@ export default async function NursingStationPage({
     })
 
     // Fetch vitals status for these appointments to show "Done" or "Pending"
-    const appointmentIds = appointments.map(a => a.id)
-    const vitals = await prisma.hms_vitals.findMany({
-        where: {
-            encounter_id: { in: appointmentIds }
-        },
-        select: {
-            encounter_id: true
-        }
-    })
+    const appointmentIds = appointments
+        .map(a => a.id)
+        .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+    const vitals = appointmentIds.length > 0
+        ? await prisma.hms_vitals.findMany({
+            where: {
+                encounter_id: { in: appointmentIds }
+            },
+            select: {
+                encounter_id: true
+            }
+        })
+        : []
     const vitalsDoneSet = new Set(vitals.map(v => v.encounter_id))
 
     const awaitingVitals = appointments.filter(a => !vitalsDoneSet.has(a.id))

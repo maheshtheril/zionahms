@@ -81,11 +81,15 @@ export default async function NursingDashboardPage({
     ])
 
     // Fetch Vitals Status for Appointments
-    const appointmentIds = appointments.map(a => a.id)
-    const vitals = await prisma.hms_vitals.findMany({
-        where: { encounter_id: { in: appointmentIds } },
-        select: { encounter_id: true }
-    })
+    const appointmentIds = appointments
+        .map(a => a.id)
+        .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+    const vitals = appointmentIds.length > 0
+        ? await prisma.hms_vitals.findMany({
+            where: { encounter_id: { in: appointmentIds } },
+            select: { encounter_id: true }
+        })
+        : []
     const vitalsDoneSet = new Set(vitals.map(v => v.encounter_id))
 
     // Categorize Appointments

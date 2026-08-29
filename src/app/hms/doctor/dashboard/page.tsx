@@ -114,30 +114,38 @@ export default async function DoctorDashboardPage({
     })
 
     // 3. Check Vitals Status
-    const appointmentIds = appointments.map(a => a.id)
-    const vitals = await prisma.hms_vitals.findMany({
-        where: {
-            encounter_id: { in: appointmentIds }
-        },
-        select: {
-            encounter_id: true
-        }
-    })
+    const appointmentIds = appointments
+        .map(a => a.id)
+        .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+
+    const [vitals, labs, tags] = await Promise.all([
+        appointmentIds.length > 0
+            ? prisma.hms_vitals.findMany({
+                where: { encounter_id: { in: appointmentIds } },
+                select: { encounter_id: true }
+            })
+            : Promise.resolve([]),
+        appointmentIds.length > 0
+            ? prisma.hms_lab_order.findMany({
+                where: { encounter_id: { in: appointmentIds } },
+                select: {
+                    id: true,
+                    encounter_id: true,
+                    status: true,
+                    report_url: true
+                }
+            })
+            : Promise.resolve([]),
+        appointmentIds.length > 0
+            ? prisma.hms_appointment_tags.findMany({
+                where: { appointment_id: { in: appointmentIds } }
+            })
+            : Promise.resolve([])
+    ])
+
     const vitalsSet = new Set(vitals.map(v => v.encounter_id))
 
     // 4. Check Lab Results Status
-    const labs = await prisma.hms_lab_order.findMany({
-        where: {
-            encounter_id: { in: appointmentIds }
-        },
-        select: {
-            id: true,
-            encounter_id: true,
-            status: true,
-            report_url: true
-        }
-    })
-
     // Create a map for easy lookup: appointmentId -> { hasLab: true, isReady: true, url: ... }
     const labMap = new Map()
     labs.forEach(lab => {
@@ -157,9 +165,6 @@ export default async function DoctorDashboardPage({
     })
 
     // 5. Fetch Tags
-    const tags = await prisma.hms_appointment_tags.findMany({
-        where: { appointment_id: { in: appointmentIds } }
-    })
     const tagsMap: Record<string, string[]> = {}
     tags.forEach(t => {
         if (!tagsMap[t.appointment_id]) tagsMap[t.appointment_id] = []

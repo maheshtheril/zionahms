@@ -12,6 +12,10 @@ import { revalidatePath } from "next/cache"
 export async function ensureAppointmentToken(appointmentId: string) {
     const session = await auth()
     if (!session?.user?.tenantId) return { success: false, error: "Unauthorized" }
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!appointmentId || !UUID_REGEX.test(appointmentId)) {
+        return { success: false, error: "Invalid appointment ID" }
+    }
 
     try {
         return await prisma.$transaction(async (tx) => {
