@@ -3,6 +3,7 @@
 import React from "react"
 import { Button } from "@/components/ui/button"
 import { Printer, Eye } from "lucide-react"
+import { toast } from "sonner"
 
 interface OpSlipDialogProps {
     appointment: any
@@ -11,6 +12,23 @@ interface OpSlipDialogProps {
     initialTab?: 'voucher' | 'invoice'
     directPrint?: boolean
     defaultPrintMode?: 'standard' | 'label'
+}
+
+function safeOpen(url: string) {
+    try {
+        const win = window.open(url, '_blank')
+        if (!win || win.closed || typeof win.closed === 'undefined') {
+            const a = document.createElement('a')
+            a.href = url
+            a.target = '_blank'
+            a.rel = 'noopener,noreferrer'
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+        }
+    } catch {
+        window.location.href = url
+    }
 }
 
 /**
@@ -26,49 +44,45 @@ export function OpSlipDialog({
     defaultPrintMode = 'standard'
 }: OpSlipDialogProps) {
 
-    const isInvoice = initialTab === 'invoice';
-    const docType = isInvoice ? 'sale_bill' : 'appointment';
+    const actualApt = initialApt?.appointment || initialApt
+    const isInvoice = initialTab === 'invoice'
+    const docType = isInvoice ? 'sale_bill' : 'appointment'
     const docId = isInvoice
-        ? (initialApt?.invoice_id || initialApt?.hms_invoice?.[0]?.id || initialApt?.id)
-        : initialApt?.id;
+        ? (actualApt?.invoice_id || actualApt?.hms_invoice?.[0]?.id || actualApt?.invoices?.[0]?.id || actualApt?.id)
+        : actualApt?.id
 
-    // PRINTER: opens raw PDF — jsPDF autoPrint triggers OS print dialog immediately
-    const handleDirectPrint = (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!docId || docId === 'null' || docId === 'undefined') {
-            return;
-        }
-        window.open(`/api/print/${docType}/${docId}?autoPrint=true`, '_blank');
-    };
+    const handleClick = (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
 
-    // EYE: opens full preview page with controls
-    const handlePreview = (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
         if (!docId || docId === 'null' || docId === 'undefined') {
-            return;
+            toast.error("Cannot Print", { description: "Missing appointment or invoice ID." })
+            return
         }
-        const printId = isInvoice ? docId : initialApt?.id;
-        const searchParams = new URLSearchParams({ type: docType, mode: 'standard' });
-        window.open(`/hms/billing/${printId}/print?${searchParams.toString()}`, '_blank');
-    };
+
+        if (directPrint) {
+            safeOpen(`/api/print/${docType}/${docId}?autoPrint=true`)
+        } else {
+            const searchParams = new URLSearchParams({ type: docType, mode: defaultPrintMode || 'standard' })
+            safeOpen(`/hms/billing/${docId}/print?${searchParams.toString()}`)
+        }
+    }
+
+    if (trigger && React.isValidElement(trigger)) {
+        return React.cloneElement(trigger as React.ReactElement<any>, {
+            onClick: handleClick,
+        })
+    }
 
     return (
-        <div
-            onClick={directPrint ? handleDirectPrint : handlePreview}
-            className="cursor-pointer flex items-center"
+        <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleClick}
+            className={`h-8 w-8 ${directPrint ? 'text-indigo-500 hover:bg-indigo-50' : 'text-slate-400 hover:bg-slate-100'}`}
+            title={directPrint ? "Print (OS Dialog)" : "Preview"}
         >
-            {trigger || (
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`h-8 w-8 ${directPrint ? 'text-indigo-500 hover:bg-indigo-50' : 'text-slate-400 hover:bg-slate-100'}`}
-                    title={directPrint ? "Print (OS Dialog)" : "Preview"}
-                >
-                    {directPrint ? <Printer className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-            )}
-        </div>
-    );
+            {directPrint ? <Printer className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </Button>
+    )
 }
