@@ -57,8 +57,10 @@ export async function startShift(openingBalance: number, denominations?: any) {
         });
         if (existing) return { error: "You already have an open shift." };
 
+        const shiftId = crypto.randomUUID();
         await prisma.hms_cash_shift.create({
             data: {
+                id: shiftId,
                 tenant_id: tenantId,
                 company_id: companyId,
                 user_id: session.user.id,
@@ -287,25 +289,57 @@ export async function closeShift(shiftId: string, closingCash: number, denominat
     const session = await auth();
     if (!session?.user?.id) return { error: "Unauthorized" };
 
-    const { summary } = await getShiftSummary(shiftId) as any;
-    if (!summary) return { error: "Failed to calc summary" };
+    let targetShift: any = null;
+    if (shiftId && typeof shiftId === 'string' && shiftId !== 'null' && shiftId !== 'undefined' && shiftId.trim() !== '') {
+        targetShift = await prisma.hms_cash_shift.findUnique({ where: { id: shiftId } }).catch(() => null);
+    }
 
-    const shift = await prisma.hms_cash_shift.findUnique({ where: { id: shiftId } });
-    if (!shift) return { error: "Shift not found" };
+    if (!targetShift) {
+        targetShift = await prisma.hms_cash_shift.findFirst({
+            where: {
+                user_id: session.user.id,
+                status: 'open'
+            },
+            orderBy: { start_time: 'desc' }
+        }).catch(() => null);
+    }
 
-    const systemCash = Number(shift.opening_balance) + summary.netCash;
-    const diff = closingCash - systemCash;
+    if (!targetShift && session.user.tenantId) {
+        targetShift = await prisma.hms_cash_shift.findFirst({
+            where: {
+                tenant_id: session.user.tenantId,
+                status: 'open'
+            },
+            orderBy: { start_time: 'desc' }
+        }).catch(() => null);
+    }
 
-    await prisma.hms_cash_shift.update({
-        where: { id: shiftId },
-        data: {
-            end_time: new Date(),
-            closing_balance: closingCash,
-            system_balance: systemCash,
-            denominations: { opening: (shift.denominations as any)?.opening, closing: denominations },
-            status: 'closed'
-        }
-    });
+    if (!targetShift) return { error: "No active open shift found to close." };
+
+    const resolvedShiftId = targetShift.id;
+    const { summary } = await getShiftSummary(resolvedShiftId) as any;
+    if (!summary) return { error: "Failed to calculate shift summary" };
+
+    const systemCash = Number(targetShift.opening_balance || 0) + (summary.netCash || 0);
+
+    if (resolvedShiftId) {
+        await prisma.hms_cash_shift.update({
+            where: { id: resolvedShiftId },
+            data: {
+                end_time: new Date(),
+                closing_balance: closingCash,
+                system_balance: systemCash,
+                denominations: { opening: (targetShift.denominations as any)?.opening, closing: denominations },
+                status: 'closed'
+            }
+        });
+    } else {
+        await prisma.$executeRaw`
+            UPDATE hms_cash_shift 
+            SET end_time = NOW(), closing_balance = ${closingCash}, system_balance = ${systemCash}, status = 'closed', id = COALESCE(id, gen_random_uuid())
+            WHERE user_id = ${session.user.id} AND status = 'open'
+        `;
+    }
 
     revalidatePath('/hms/reception/dashboard');
     return { success: true };
