@@ -13,13 +13,27 @@ export async function GET(
 ) {
     try {
         const { type, id } = await params;
-        const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!id || !UUID_REGEX.test(id)) {
-            return new NextResponse("Invalid or missing document UUID.", { status: 400 });
-        }
-
         const session = await auth();
         if (!session?.user?.id) return new NextResponse("Unauthorized", { status: 401 });
+
+        const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        let resolvedId = id;
+
+        if (type === 'shift_close' && (!id || id === 'null' || id === 'undefined' || id === 'latest' || !UUID_REGEX.test(id))) {
+            const latestShift = await prisma.hms_cash_shift.findFirst({
+                where: {
+                    user_id: session.user.id,
+                    tenant_id: session.user.tenantId || undefined
+                },
+                orderBy: { start_time: 'desc' }
+            }).catch(() => null);
+
+            resolvedId = latestShift?.id || '';
+        }
+
+        if (!resolvedId || (!UUID_REGEX.test(resolvedId) && type !== 'shift_close')) {
+            return new NextResponse("Invalid or missing document UUID.", { status: 400 });
+        }
 
         const companyData = await getCurrentCompany();
         if (!companyData) return new NextResponse("Company configuration not found", { status: 404 });
@@ -119,7 +133,7 @@ export async function GET(
                 data.items = data.payment_lines; // Engine uses `items` if present
             }
         } else if (usage === 'shift_close') {
-            const shiftRes = await getShiftSummary(id);
+            const shiftRes = await getShiftSummary(resolvedId);
             if (shiftRes.success && shiftRes.shift && shiftRes.summary) {
                 const shift = shiftRes.shift;
                 

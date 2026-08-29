@@ -342,7 +342,7 @@ export async function closeShift(shiftId: string, closingCash: number, denominat
     }
 
     revalidatePath('/hms/reception/dashboard');
-    return { success: true };
+    return { success: true, shiftId: resolvedShiftId || 'latest' };
 }
 
 export async function getShiftsForAudit(startDate?: Date, endDate?: Date) {

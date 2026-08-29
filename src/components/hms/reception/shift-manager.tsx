@@ -160,7 +160,8 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
         const res = await closeShift(shift.id, totalCashPhysical, quantities);
         if (res.success) {
             toast.success("Shift closed and reconciled successfully");
-            setClosedShiftId(shift.id);
+            const targetId = (res as any).shiftId || shift.id || 'latest';
+            setClosedShiftId(targetId);
             setIsEndOpen(false);
             setShift(null);
             setQuantities({});
@@ -201,8 +202,8 @@ export function ShiftManager({ onShiftUpdate, onOpenExpense, onClose }: { onShif
     };
 
     const handlePrintShift = (shiftData: any, detailed: boolean = false) => {
-        // We'll open a minimal printable report in a new tab.
-        const url = `/api/print/shift_close/${shiftData.id}?autoPrint=true${detailed ? '&detailed=true' : ''}`;
+        const docId = shiftData?.id && shiftData.id !== 'null' && shiftData.id !== 'undefined' ? shiftData.id : 'latest';
+        const url = `/api/print/shift_close/${docId}?autoPrint=true${detailed ? '&detailed=true' : ''}`;
         window.open(url, '_blank', 'width=850,height=700');
     };
 

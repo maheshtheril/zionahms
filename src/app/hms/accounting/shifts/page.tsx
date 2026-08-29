@@ -298,7 +298,7 @@ export default function ShiftAuditPage() {
                                     </div>
                                     <div className="text-right flex items-center justify-end gap-2">
                                         <button 
-                                            onClick={() => window.open(`/api/print/shift_close/${selectedShift.id}`, '_blank')}
+                                            onClick={() => window.open(`/api/print/shift_close/${selectedShift.id || 'latest'}`, '_blank')}
                                             className="text-xs font-bold bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-xl transition-colors flex items-center gap-1.5 border border-white/10"
                                         >
                                             <Printer className="h-3.5 w-3.5" /> Print
