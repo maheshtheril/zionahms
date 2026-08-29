@@ -315,7 +315,7 @@ export async function GET(
             if (data.length === 0) console.warn('[PRINT] lab_catalog: no tests found for companyId:', companyId);
         }
 
-        if (!data) return new NextResponse("Document Data Not Found", { status: 404 });
+        if (!data) return new NextResponse("Document record not found for printing.", { status: 404 });
 
         const autoPrint = req.nextUrl.searchParams.get('autoPrint') === 'true';
         const templateId = req.nextUrl.searchParams.get('templateId') || undefined;

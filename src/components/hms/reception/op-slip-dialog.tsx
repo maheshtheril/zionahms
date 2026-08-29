@@ -47,24 +47,43 @@ export function OpSlipDialog({
     const actualApt = initialApt?.appointment || initialApt
     const isInvoice = initialTab === 'invoice'
     const docType = isInvoice ? 'sale_bill' : 'appointment'
-    const docId = isInvoice
-        ? (actualApt?.invoice_id || actualApt?.hms_invoice?.[0]?.id || actualApt?.invoices?.[0]?.id || actualApt?.id)
-        : actualApt?.id
+
+    const directDocId = typeof initialApt === 'string'
+        ? initialApt
+        : (typeof actualApt === 'string'
+            ? actualApt
+            : (actualApt?.id || actualApt?.appointment_id || actualApt?.appointmentId || actualApt?.uuid || actualApt?.encounter_id))
+
+    const invoiceId = actualApt?.invoice_id || actualApt?.hms_invoice?.[0]?.id || actualApt?.invoices?.[0]?.id
+
+    let finalDocType = docType
+    let finalDocId = directDocId
+
+    if (isInvoice) {
+        if (invoiceId) {
+            finalDocType = 'sale_bill'
+            finalDocId = invoiceId
+        } else {
+            // Fall back to appointment voucher if invoice hasn't been billed yet
+            finalDocType = 'appointment'
+            finalDocId = directDocId
+        }
+    }
 
     const handleClick = (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
 
-        if (!docId || docId === 'null' || docId === 'undefined') {
+        if (!finalDocId || finalDocId === 'null' || finalDocId === 'undefined') {
             toast.error("Cannot Print", { description: "Missing appointment or invoice ID." })
             return
         }
 
         if (directPrint) {
-            safeOpen(`/api/print/${docType}/${docId}?autoPrint=true`)
+            safeOpen(`/api/print/${finalDocType}/${finalDocId}?autoPrint=true`)
         } else {
-            const searchParams = new URLSearchParams({ type: docType, mode: defaultPrintMode || 'standard' })
-            safeOpen(`/hms/billing/${docId}/print?${searchParams.toString()}`)
+            const searchParams = new URLSearchParams({ type: finalDocType, mode: defaultPrintMode || 'standard' })
+            safeOpen(`/hms/billing/${finalDocId}/print?${searchParams.toString()}`)
         }
     }
 
