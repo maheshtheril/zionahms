@@ -467,6 +467,13 @@ export function AppointmentForm({
     }
 
     const executeSave = async (data: FormData) => {
+        if (!selectedClinicianId) {
+            toast.error("Doctor / Clinician Missing", { 
+                description: "Please select an attending doctor to finalize the appointment." 
+            });
+            return;
+        }
+
         setIsPending(true)
         try {
             const dateStr = data.get('date') as string;
@@ -516,7 +523,16 @@ export function AppointmentForm({
 
     async function handleSubmit(formData: FormData) {
         if (!selectedPatientId) {
-            toast.error("Patient Missing", { description: "Select a patient to finalize the session." });
+            toast.error("Patient Missing", { description: "Please select or register a patient before finalizing the appointment." });
+            return;
+        }
+
+        if (!selectedClinicianId) {
+            toast.error("Doctor / Clinician Missing", { 
+                description: "Please select an attending doctor to finalize the appointment." 
+            });
+            const doctorInput = document.querySelector('input[placeholder*="doctor" i]') as HTMLElement;
+            doctorInput?.focus();
             return;
         }
 
@@ -528,7 +544,7 @@ export function AppointmentForm({
                 : regStatus.status === 'expired'
                     ? "Patient's registration has expired. Please renew or waive the fee before booking."
                     : "Registration fee is unpaid. Please collect or waive it before saving.";
-            toast.success("â›” Registration Fee Required", { description: msg,
+            toast.success("⛔ Registration Fee Required", { description: msg,
                 variant: "destructive",
                 duration: 6000,
             });

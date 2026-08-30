@@ -84,6 +84,13 @@ export async function createAppointment(data: any) {
     const session = await auth()
     if (!session?.user?.tenantId) return { success: false, error: "Unauthorized" }
 
+    if (!data.patient_id) {
+        return { success: false, error: "Please select a patient before booking." }
+    }
+    if (!data.clinician_id) {
+        return { success: false, error: "Please select an attending doctor / clinician." }
+    }
+
     try {
         const appointmentId = data.id || crypto.randomUUID()
         const appointment = await prisma.hms_appointments.create({
@@ -98,6 +105,9 @@ export async function createAppointment(data: any) {
         revalidatePath('/hms/reception/dashboard')
         return { success: true, data: serialize(appointment) }
     } catch (error: any) {
+        if (error.message?.includes('hms_appointments_clinician_id_fkey') || error.message?.includes('Foreign key constraint')) {
+            return { success: false, error: "Please select a valid attending doctor / clinician." }
+        }
         return { success: false, error: error.message }
     }
 }
@@ -105,6 +115,10 @@ export async function createAppointment(data: any) {
 export async function updateAppointmentDetails(id: string, data: any) {
     const session = await auth()
     if (!session?.user?.tenantId) return { success: false, error: "Unauthorized" }
+
+    if (data.clinician_id === '' || data.clinician_id === null) {
+        return { success: false, error: "Attending doctor / clinician cannot be empty." }
+    }
 
     try {
         const appointment = await prisma.hms_appointments.update({
@@ -114,6 +128,9 @@ export async function updateAppointmentDetails(id: string, data: any) {
         revalidatePath('/hms/reception/dashboard')
         return { success: true, data: serialize(appointment) }
     } catch (error: any) {
+        if (error.message?.includes('hms_appointments_clinician_id_fkey') || error.message?.includes('Foreign key constraint')) {
+            return { success: false, error: "Please select a valid attending doctor / clinician." }
+        }
         return { success: false, error: error.message }
     }
 }
