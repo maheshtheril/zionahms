@@ -21,7 +21,8 @@ const SECTIONS_CONFIG = [
         ]
     },
     {
-        group: 'Patient Info', icon: '👤', items: [
+        group: 'Patient & Invoice Details', icon: '👤', items: [
+            { key: 'showTaxInvoiceTitle', label: 'Tax Invoice Title' },
             { key: 'showPatientId', label: 'Patient ID' },
             { key: 'showDoctorName', label: 'Doctor Name' },
             { key: 'showDueDate', label: 'Due Date' },
@@ -149,7 +150,7 @@ function LivePreview({ brand, sections, paper }: {
                                 {sections.showDoctorName && <div style={{ fontSize: 10.5, color: '#64748b', marginTop: 1 }}>Dr. Alexander Fleming – Cardiology</div>}
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                                <div style={{ fontWeight: 900, fontSize: 13, color: brand.primaryColor }}>TAX INVOICE</div>
+                                {sections.showTaxInvoiceTitle !== false && <div style={{ fontWeight: 900, fontSize: 13, color: brand.primaryColor }}>TAX INVOICE</div>}
                                 <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginTop: 4 }}>INV-2026-00142</div>
                                 <div style={{ fontSize: 10.5, color: '#64748b', marginTop: 2 }}>Date: 10 Jul 2026</div>
                                 {sections.showDueDate && <div style={{ fontSize: 10, color: '#ef4444', marginTop: 1 }}>Due: 25 Jul 2026</div>}

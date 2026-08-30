@@ -51,7 +51,7 @@ const DEFAULT_BLOCKS: Block[] = [
     },
     {
         id: 'bill_info', label: 'Patient & Bill Info', enabled: true, variant: 'A',
-        fields: { patientName: true, patientId: true, doctorName: true, opNumber: true, billNumber: true, billDate: true, dueDate: false, phone: false },
+        fields: { showTaxInvoiceTitle: true, patientName: true, patientId: true, doctorName: true, opNumber: true, billNumber: true, billDate: true, dueDate: false, phone: false },
         style: { fontSize: 11, bold: false, align: 'left', padding: 16 }
     },
     {
@@ -116,6 +116,7 @@ const BLOCK_FIELDS: Record<BlockType, { key: string; label: string }[]> = {
         { key: 'email', label: 'Email' }, { key: 'gstin', label: 'GSTIN' }, { key: 'tagline', label: 'Tagline' }
     ],
     bill_info: [
+        { key: 'showTaxInvoiceTitle', label: 'Tax Invoice Title' },
         { key: 'patientName', label: 'Patient Name' }, { key: 'patientId', label: 'Patient ID' },
         { key: 'doctorName', label: 'Doctor Name' }, { key: 'opNumber', label: 'OP Number' },
         { key: 'billNumber', label: 'Bill Number' }, { key: 'billDate', label: 'Bill Date' },
@@ -268,7 +269,7 @@ function BillCanvas({ blocks, theme, selectedId, onSelect }: {
                                 {f.opNumber && <div style={{ fontSize: 10, color: '#64748b', marginTop: 1 }}>OP No: OP-2026-00312</div>}
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                                <div style={{ fontWeight: 900, fontSize: 13, color: pc }}>TAX INVOICE</div>
+                                {f.showTaxInvoiceTitle !== false && <div style={{ fontWeight: 900, fontSize: 13, color: pc }}>TAX INVOICE</div>}
                                 {f.billNumber && <div style={{ fontWeight: 700, fontSize: 12, marginTop: 4 }}>INV-2026-00142</div>}
                                 {f.billDate && <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>Date: 10 Jul 2026</div>}
                                 {f.dueDate && <div style={{ fontSize: 10, color: '#ef4444', marginTop: 1 }}>Due: 25 Jul 2026</div>}
@@ -280,7 +281,7 @@ function BillCanvas({ blocks, theme, selectedId, onSelect }: {
                             {[
                                 { title: 'Patient', rows: [f.patientName && 'JOHN DOE', f.patientId && 'P-900827', f.phone && '+91 98765 43210'] },
                                 { title: 'Doctor', rows: [f.doctorName && 'Dr. Alexander Fleming', f.opNumber && 'OP-2026-00312', ''] },
-                                { title: 'Invoice', rows: [f.billNumber && 'INV-2026-00142', f.billDate && '10 Jul 2026', f.dueDate && 'Due: 25 Jul 2026'] },
+                                { title: 'Invoice', rows: [f.showTaxInvoiceTitle !== false && 'TAX INVOICE', f.billNumber && 'INV-2026-00142', f.billDate && '10 Jul 2026', f.dueDate && 'Due: 25 Jul 2026'] },
                             ].map(col => (
                                 <div key={col.title} style={{ background: `${pc}08`, borderRadius: 6, padding: '10px 12px', border: `1px solid ${pc}18` }}>
                                     <div style={{ fontSize: 8.5, fontWeight: 800, color: pc, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>{col.title}</div>
@@ -291,6 +292,7 @@ function BillCanvas({ blocks, theme, selectedId, onSelect }: {
                     )
                     if (block.variant === 'C') return blockWrap(block,
                         <div style={{ ...bStyle, display: 'flex', gap: 20, flexWrap: 'wrap', fontSize: 10 }}>
+                            {f.showTaxInvoiceTitle !== false && <span style={{ fontWeight: 900, color: pc }}>TAX INVOICE</span>}
                             {f.patientName && <span><strong>Patient:</strong> JOHN DOE</span>}
                             {f.patientId && <span><strong>ID:</strong> P-900827</span>}
                             {f.doctorName && <span><strong>Dr:</strong> Alexander Fleming</span>}

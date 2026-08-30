@@ -147,7 +147,8 @@ function headerBlock(block: any, co: ReturnType<typeof extractCompanyData>, pc: 
 function billInfoBlock(block: any, bill: ReturnType<typeof extractBillData>, pc: string, narrow: boolean): string {
     const f = block.fields || {}
     const pad = narrow ? 10 : (block.style?.padding || 18)
-    const v = block.variant || 'A'
+    const showTitle = f.showTaxInvoiceTitle !== false
+    const titleHtml = showTitle ? `<div style="font-weight:900;font-size:13px;color:${pc};">TAX INVOICE</div>` : ''
 
     const patientHtml = `
         ${f.patientName ? `<div style="font-weight:900;font-size:15px;">${esc(bill.patientName)}</div>` : ''}
@@ -156,7 +157,8 @@ function billInfoBlock(block: any, bill: ReturnType<typeof extractBillData>, pc:
         ${f.opNumber && bill.opNumber ? `<div style="font-size:10px;color:#64748b;margin-top:1px;">OP No: ${esc(bill.opNumber)}</div>` : ''}
     `
     const billHtml = `
-        ${f.billNumber && bill.billNumber ? `<div style="font-weight:900;font-size:13px;color:${pc};">TAX INVOICE</div><div style="font-weight:700;font-size:12px;margin-top:4px;">${esc(bill.billNumber)}</div>` : `<div style="font-weight:900;font-size:13px;color:${pc};">TAX INVOICE</div>`}
+        ${titleHtml}
+        ${f.billNumber && bill.billNumber ? `<div style="font-weight:700;font-size:12px;margin-top:4px;">${esc(bill.billNumber)}</div>` : ''}
         ${f.billDate && bill.billDate ? `<div style="font-size:10px;color:#64748b;margin-top:2px;">Date: ${esc(bill.billDate)}</div>` : ''}
     `
 
@@ -175,6 +177,7 @@ function billInfoBlock(block: any, bill: ReturnType<typeof extractBillData>, pc:
 
     // C — compact
     return `<div style="padding:${pad}px;display:flex;gap:20px;flex-wrap:wrap;font-size:10px;border-bottom:1px solid ${pc}18;">
+        ${showTitle ? `<span style="font-weight:900;color:${pc};">TAX INVOICE</span>` : ''}
         ${f.patientName ? `<span><strong>Patient:</strong> ${esc(bill.patientName)}</span>` : ''}
         ${f.patientId && bill.patientId ? `<span><strong>ID:</strong> ${esc(bill.patientId)}</span>` : ''}
         ${f.doctorName && bill.doctorName ? `<span><strong>Dr:</strong> ${esc(bill.doctorName)}</span>` : ''}
