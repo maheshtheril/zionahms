@@ -37,9 +37,60 @@ function extractCompanyData(company: any) {
 }
 
 function extractBillData(data: any) {
-    const patient = data?.hms_patient || {}
-    const apt = data?.hms_appointment || {}
-    const doctor = apt?.hms_clinician || {}
+    const patient = data?.hms_patient || data?.patient || {}
+    const apt = data?.hms_appointment || data?.appointment || {}
+    const doctor = apt?.hms_clinician || data?.hms_clinician || data?.clinician || data?.doctor || {}
+
+    // Parse billing metadata
+    let bMeta: any = {}
+    if (typeof data?.billing_metadata === 'string') {
+        try { bMeta = JSON.parse(data.billing_metadata) } catch (_) { bMeta = {} }
+    } else if (typeof data?.billing_metadata === 'object' && data?.billing_metadata !== null) {
+        bMeta = data.billing_metadata
+    }
+
+    let genMeta: any = {}
+    if (typeof data?.metadata === 'string') {
+        try { genMeta = JSON.parse(data.metadata) } catch (_) { genMeta = {} }
+    } else if (typeof data?.metadata === 'object' && data?.metadata !== null) {
+        genMeta = data.metadata
+    }
+
+    const walkinMeta = {
+        ...bMeta,
+        ...(genMeta?.walkin_details || {}),
+        ...genMeta
+    }
+
+    // Resolve Patient Name (Priority: Walkin metadata -> Registered Profile -> Direct Columns -> Default)
+    const patientName = 
+        walkinMeta.patient_name ||
+        walkinMeta.customer_name ||
+        walkinMeta.name ||
+        patient.name ||
+        [patient.first_name, patient.last_name].filter(Boolean).join(' ') ||
+        data?.patient_name ||
+        data?.customer_name ||
+        data?.customer ||
+        data?.name ||
+        'Walk-in Patient';
+
+    // Resolve Patient Phone
+    const patientPhone = 
+        walkinMeta.patient_phone ||
+        walkinMeta.customer_phone ||
+        walkinMeta.phone ||
+        walkinMeta.mobile ||
+        walkinMeta.contact ||
+        patient.phone ||
+        patient.mobile ||
+        (patient.contact as any)?.phone ||
+        (patient.contact as any)?.mobile ||
+        data?.patient_phone ||
+        data?.customer_phone ||
+        data?.phone ||
+        data?.mobile ||
+        '';
 
     let rawLines = data?.hms_invoice_lines || data?.items || []
     if (!rawLines || rawLines.length === 0) {
@@ -77,11 +128,11 @@ function extractBillData(data: any) {
     }
 
     return {
-        patientName: patient.name || [patient.first_name, patient.last_name].filter(Boolean).join(' ') || 'Patient',
-        patientId: data?.patient_id || patient.patient_id || patient.op_number || '',
+        patientName,
+        patientId: data?.patient_id || patient.patient_number || patient.patient_id || patient.op_number || (walkinMeta.is_walk_in ? 'WALK-IN' : ''),
         doctorName: doctor.name || [doctor.first_name, doctor.last_name].filter(Boolean).join(' ') || '',
         opNumber: apt?.token_number || apt?.op_number || data?.op_number || '',
-        patientPhone: patient.phone || patient.mobile || '',
+        patientPhone,
         billNumber: data?.invoice_number || data?.bill_number || data?.id?.split('-')[0]?.toUpperCase() || '',
         billDate: fmtDate(data?.invoice_date || data?.created_at),
         paymentMode: data?.payment_mode || (data?.metadata as any)?.paymentMode || '',
@@ -146,6 +197,7 @@ function headerBlock(block: any, co: ReturnType<typeof extractCompanyData>, pc: 
 
 function billInfoBlock(block: any, bill: ReturnType<typeof extractBillData>, pc: string, narrow: boolean): string {
     const f = block.fields || {}
+    const v = block.variant || 'A'
     const pad = narrow ? 10 : (block.style?.padding || 18)
     const showTitle = f.showTaxInvoiceTitle !== false
     const titleHtml = showTitle ? `<div style="font-weight:900;font-size:13px;color:${pc};">TAX INVOICE</div>` : ''
@@ -153,6 +205,7 @@ function billInfoBlock(block: any, bill: ReturnType<typeof extractBillData>, pc:
     const patientHtml = `
         ${f.patientName ? `<div style="font-weight:900;font-size:15px;">${esc(bill.patientName)}</div>` : ''}
         ${f.patientId && bill.patientId ? `<div style="font-size:10px;color:#64748b;margin-top:2px;">Patient ID: ${esc(bill.patientId)}</div>` : ''}
+        ${(f.phone !== false && bill.patientPhone) ? `<div style="font-size:10px;color:#64748b;margin-top:1px;">📞 ${esc(bill.patientPhone)}</div>` : ''}
         ${f.doctorName && bill.doctorName ? `<div style="font-size:10px;color:#64748b;margin-top:1px;">Dr. ${esc(bill.doctorName)}</div>` : ''}
         ${f.opNumber && bill.opNumber ? `<div style="font-size:10px;color:#64748b;margin-top:1px;">OP No: ${esc(bill.opNumber)}</div>` : ''}
     `
@@ -180,6 +233,7 @@ function billInfoBlock(block: any, bill: ReturnType<typeof extractBillData>, pc:
         ${showTitle ? `<span style="font-weight:900;color:${pc};">TAX INVOICE</span>` : ''}
         ${f.patientName ? `<span><strong>Patient:</strong> ${esc(bill.patientName)}</span>` : ''}
         ${f.patientId && bill.patientId ? `<span><strong>ID:</strong> ${esc(bill.patientId)}</span>` : ''}
+        ${(f.phone !== false && bill.patientPhone) ? `<span><strong>Phone:</strong> ${esc(bill.patientPhone)}</span>` : ''}
         ${f.doctorName && bill.doctorName ? `<span><strong>Dr:</strong> ${esc(bill.doctorName)}</span>` : ''}
         ${f.billNumber && bill.billNumber ? `<span style="margin-left:auto;font-weight:800;color:${pc};">${esc(bill.billNumber)}</span>` : ''}
         ${f.billDate && bill.billDate ? `<span><strong>Date:</strong> ${esc(bill.billDate)}</span>` : ''}

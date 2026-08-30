@@ -265,6 +265,7 @@ function BillCanvas({ blocks, theme, selectedId, onSelect }: {
                                 <div style={label}>Bill To</div>
                                 {f.patientName && <div style={{ ...val, fontSize: s.fontSize + 3, fontWeight: 900 }}>JOHN DOE</div>}
                                 {f.patientId && <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>Patient ID: P-900827</div>}
+                                {f.phone && <div style={{ fontSize: 10, color: '#64748b', marginTop: 1 }}>📞 +91 98765 43210</div>}
                                 {f.doctorName && <div style={{ fontSize: 10, color: '#64748b', marginTop: 1 }}>Dr. Alexander Fleming</div>}
                                 {f.opNumber && <div style={{ fontSize: 10, color: '#64748b', marginTop: 1 }}>OP No: OP-2026-00312</div>}
                             </div>
@@ -279,23 +280,24 @@ function BillCanvas({ blocks, theme, selectedId, onSelect }: {
                     if (block.variant === 'B') return blockWrap(block,
                         <div style={{ ...bStyle, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                             {[
-                                { title: 'Patient', rows: [f.patientName && 'JOHN DOE', f.patientId && 'P-900827', f.phone && '+91 98765 43210'] },
-                                { title: 'Doctor', rows: [f.doctorName && 'Dr. Alexander Fleming', f.opNumber && 'OP-2026-00312', ''] },
-                                { title: 'Invoice', rows: [f.showTaxInvoiceTitle !== false && 'TAX INVOICE', f.billNumber && 'INV-2026-00142', f.billDate && '10 Jul 2026', f.dueDate && 'Due: 25 Jul 2026'] },
-                            ].map(col => (
-                                <div key={col.title} style={{ background: `${pc}08`, borderRadius: 6, padding: '10px 12px', border: `1px solid ${pc}18` }}>
-                                    <div style={{ fontSize: 8.5, fontWeight: 800, color: pc, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>{col.title}</div>
-                                    {col.rows.filter(Boolean).map((r, i) => <div key={i} style={{ fontSize: 10.5, fontWeight: i === 0 ? 800 : 500, color: '#0f172a', marginBottom: 2 }}>{r}</div>)}
+                                { title: 'Patient', lines: [f.patientName && 'JOHN DOE', f.patientId && 'ID: P-900827', f.phone && '+91 98765 43210'].filter(Boolean) },
+                                { title: 'Doctor', lines: [f.doctorName && 'Dr. Alexander Fleming', f.opNumber && 'OP: OP-2026-00312'].filter(Boolean) },
+                                { title: 'Invoice', lines: [f.billNumber && 'INV-2026-00142', f.billDate && '10 Jul 2026', f.dueDate && 'Due: 25 Jul 2026'].filter(Boolean) },
+                            ].map((col, i) => (
+                                <div key={i} style={{ background: `${pc}08`, borderRadius: 6, padding: '8px 10px', border: `1px solid ${pc}18` }}>
+                                    <div style={{ ...label, color: pc, marginBottom: 4 }}>{col.title}</div>
+                                    {col.lines.map((l, j) => <div key={j} style={{ ...val, fontSize: 11 }}>{l}</div>)}
                                 </div>
                             ))}
                         </div>
                     )
-                    if (block.variant === 'C') return blockWrap(block,
-                        <div style={{ ...bStyle, display: 'flex', gap: 20, flexWrap: 'wrap', fontSize: 10 }}>
+                    return blockWrap(block,
+                        <div style={{ ...bStyle, display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 10 }}>
                             {f.showTaxInvoiceTitle !== false && <span style={{ fontWeight: 900, color: pc }}>TAX INVOICE</span>}
                             {f.patientName && <span><strong>Patient:</strong> JOHN DOE</span>}
                             {f.patientId && <span><strong>ID:</strong> P-900827</span>}
-                            {f.doctorName && <span><strong>Dr:</strong> Alexander Fleming</span>}
+                            {f.phone && <span><strong>Phone:</strong> +91 98765 43210</span>}
+                            {f.doctorName && <span><strong>Dr:</strong> Dr. Alexander Fleming</span>}
                             {f.billNumber && <span style={{ marginLeft: 'auto', fontWeight: 800, color: pc }}>INV-2026-00142</span>}
                             {f.billDate && <span><strong>Date:</strong> 10 Jul 2026</span>}
                         </div>
