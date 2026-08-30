@@ -4,8 +4,8 @@ import { prisma } from '@/lib/prisma'
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const productId = searchParams.get('productId')
-  if (!productId) {
-    return NextResponse.json({ error: 'productId required' }, { status: 400 })
+  if (!productId || productId === 'null' || productId === 'undefined' || productId.trim() === '') {
+    return NextResponse.json([])
   }
 
   const session = await import('@/auth').then(m => m.auth())

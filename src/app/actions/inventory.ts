@@ -1232,13 +1232,17 @@ export async function updateProduct(formData: FormData) {
 }
 
 export async function getProductBatches(productId: string) {
+    if (!productId || productId === 'null' || productId === 'undefined' || typeof productId !== 'string' || productId.trim() === '') {
+        return [];
+    }
+
     const session = await auth();
     if (!session?.user?.companyId) return [];
 
     try {
         const batches = await prisma.hms_product_batch.findMany({
             where: {
-                product_id: productId,
+                product_id: productId.trim(),
                 company_id: session.user.companyId
             },
             orderBy: { expiry_date: 'asc' }
@@ -1251,13 +1255,17 @@ export async function getProductBatches(productId: string) {
 }
 
 export async function getBestBatch(productId: string) {
+    if (!productId || productId === 'null' || productId === 'undefined' || typeof productId !== 'string' || productId.trim() === '') {
+        return null;
+    }
+
     const session = await auth();
     if (!session?.user?.companyId) return null;
 
     try {
         const batch = await prisma.hms_product_batch.findFirst({
             where: {
-                product_id: productId,
+                product_id: productId.trim(),
                 company_id: session.user.companyId,
                 qty_on_hand: { gt: 0 }
             },
