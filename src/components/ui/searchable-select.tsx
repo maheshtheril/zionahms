@@ -77,16 +77,11 @@ export function SearchableSelect({
     const [position, setPosition] = React.useState<{ top?: number, bottom?: number, left: number, width: number, isFlipped?: boolean }>({ top: 0, left: 0, width: 0 });
 
     React.useEffect(() => {
-        // Sync options with propOptions ONLY when propOptions actually changes (content-wise)
-        if (query) return;
+        // Sync options with propOptions ONLY when no search query is typed
+        if (query.trim()) return;
 
-        const currentOptionsIds = options.map(o => o.id).join(',');
-        const propOptionsIds = propOptions.map(o => o.id).join(',');
-
-        if (currentOptionsIds !== propOptionsIds) {
-            setOptions(propOptions);
-        }
-    }, [propOptions, query]); // Only depend on external propOptions and query, NOT internal options.
+        setOptions(propOptions.slice(0, 50));
+    }, [propOptions, query]);
 
     // Reset active index when options change
     React.useEffect(() => {
@@ -97,10 +92,8 @@ export function SearchableSelect({
     const inputRef = React.useRef<HTMLInputElement>(null);
     const listRef = React.useRef<HTMLUListElement>(null);
 
-    // Initial value handling
     // Initial value handling: sync internal state when the value prop changes
     React.useEffect(() => {
-        // [AUDIT] If we are focused and open, DO NOT sync. The user is in control.
         if (open) return;
 
         if (!value) {
@@ -112,13 +105,13 @@ export function SearchableSelect({
             return;
         }
 
-        const found = options.find(o => o.id === value) || propOptions.find(o => o.id === value);
+        const found = propOptions.find(o => o.id === value) || options.find(o => o.id === value);
 
         if (found) {
             if (selectedOption?.id !== found.id) {
                 setSelectedOption(found);
             }
-            const targetQuery = variant === 'ghost' ? found.label : "";
+            const targetQuery = variant === 'ghost' ? (found.label || valueLabel || "") : "";
             if (query !== targetQuery) {
                 setQuery(targetQuery);
             }
@@ -225,44 +218,58 @@ export function SearchableSelect({
 
 
     const performSearch = useDebouncedCallback(async (searchTerm: string) => {
-        if (!onSearch) {
-            const lowerSearch = searchTerm.toLowerCase();
-            const filtered = propOptions.filter(o => 
-                o.label.toLowerCase().includes(lowerSearch) || 
-                o.subLabel?.toLowerCase().includes(lowerSearch)
-            );
-            setOptions(filtered);
+        const lowerSearch = (searchTerm || "").toLowerCase().trim();
+        if (!lowerSearch) {
+            setOptions(propOptions.slice(0, 50));
             return;
         }
 
-        setLoading(true);
-        // [MOD] Clear previous options immediately to show looking state
-        setOptions([]); 
-        try {
-            console.log("CLIENT-SIDE SEARCH TRIGGERED:", searchTerm);
-            const results = await onSearch(searchTerm);
-            console.log("CLIENT-SIDE RESULTS RECEIVED:", results.length);
-            setOptions(results);
-        } catch (err) {
-            console.error("CLIENT-SIDE SEARCH ERROR:", err);
-            setOptions([]);
-        } finally {
-            setLoading(false);
+        if (onSearch) {
+            setLoading(true);
+            try {
+                const results = await onSearch(searchTerm);
+                if (Array.isArray(results)) {
+                    setOptions(results);
+                }
+            } catch (err) {
+                console.error("CLIENT-SIDE SEARCH ERROR:", err);
+            } finally {
+                setLoading(false);
+            }
         }
-    }, 300);
+    }, 150);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         setQuery(val);
         setOpen(true);
-        performSearch(val);
+
+        // Instant synchronous filter of propOptions so stale options (like CBC + ESR) disappear on the exact millisecond of typing!
+        const lowerSearch = val.toLowerCase().trim();
+        if (lowerSearch) {
+            const instantFiltered = propOptions.filter(o => 
+                (o.label || "").toLowerCase().includes(lowerSearch) || 
+                (o.subLabel || "").toLowerCase().includes(lowerSearch)
+            );
+            setOptions(instantFiltered);
+        } else {
+            setOptions(propOptions.slice(0, 50));
+        }
+
+        if (onSearch) {
+            performSearch(val);
+        }
     };
 
     const handleSelect = (option: Option) => {
         setSelectedOption(option);
-        onChange(option.id, option);
+        if (variant === 'ghost') {
+            setQuery(option.label);
+        } else {
+            setQuery("");
+        }
         setOpen(false);
-        setQuery("");
+        onChange(option.id, option);
     };
 
     const handleCreate = async () => {
@@ -281,11 +288,10 @@ export function SearchableSelect({
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        // [WORLD CLASS] High-Speed Shortcut Management
-        if (onKeyDown) onKeyDown(e);
-
         if (!open) {
-            if (e.key === 'ArrowDown' || e.key === 'Enter') {
+            // [WORLD CLASS] High-Speed Shortcut Management when menu is closed
+            if (onKeyDown) onKeyDown(e);
+            if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 setOpen(true);
                 performSearch(query);
@@ -293,30 +299,39 @@ export function SearchableSelect({
             return;
         }
 
+        // When dropdown is OPEN: handle navigation & item selection
         switch (e.key) {
             case 'ArrowDown':
                 e.preventDefault();
                 e.stopPropagation();
-                setActiveIndex(prev => (prev < options.length - 1 ? prev + 1 : 0)); // Wrap to top
+                if (options.length > 0) {
+                    setActiveIndex(prev => (prev < options.length - 1 ? prev + 1 : 0)); // Wrap to top
+                }
                 break;
             case 'ArrowUp':
                 e.preventDefault();
                 e.stopPropagation();
-                setActiveIndex(prev => (prev > 0 ? prev - 1 : options.length - 1)); // Wrap to bottom
+                if (options.length > 0) {
+                    setActiveIndex(prev => (prev > 0 ? prev - 1 : options.length - 1)); // Wrap to bottom
+                }
                 break;
             case 'Enter':
                 e.preventDefault();
                 e.stopPropagation();
                 
-                const currentPool = options.length > 0 ? options : propOptions;
-                const match = currentPool[activeIndex] || currentPool[0];
-                
-                if (match) {
-                    handleSelect(match);
-                } else if (onCreate && query.length > 1) {
+                if (loading) {
+                    return; // Wait for search results before selecting
+                }
+
+                if (options.length > 0) {
+                    const match = options[activeIndex] ?? options[0];
+                    if (match) {
+                        handleSelect(match);
+                    }
+                } else if (onCreate && query.trim().length > 1) {
                     handleCreate();
                 } else {
-                  setOpen(false);
+                    setOpen(false);
                 }
                 break;
             case 'Escape':
@@ -325,10 +340,11 @@ export function SearchableSelect({
                 setOpen(false);
                 break;
             case 'Tab':
-                // Auto-select top item on tab out for maximum speed
-                if (options.length > 0) {
-                    handleSelect(options[activeIndex] || options[0]);
-                }
+                setOpen(false);
+                if (onKeyDown) onKeyDown(e);
+                break;
+            default:
+                if (onKeyDown) onKeyDown(e);
                 break;
         }
     };

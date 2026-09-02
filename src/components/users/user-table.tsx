@@ -204,8 +204,8 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {users.map((user) => (
-                                <tr key={user.id} className="group hover:bg-slate-50/50 dark:hover:bg-indigo-500/5 transition-all duration-300">
+                            {users.map((user, index) => (
+                                <tr key={user?.id ? `${user.id}-${index}` : `user-${index}`} className="group hover:bg-slate-50/50 dark:hover:bg-indigo-500/5 transition-all duration-300">
                                     <td className="px-8 py-5">
                                         <div className="flex items-center gap-4">
                                             <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${getAvatarColor(user.email)} flex items-center justify-center text-white font-black text-sm shadow-lg transform group-hover:scale-110 transition-transform duration-300 shadow-indigo-500/20`}>

@@ -353,11 +353,15 @@ export async function getUOMs() {
                         });
                     }
 
-                    await prisma.hms_uom.update({
-                        where: { id: refToMove.id },
-                        data: { category_id: newCategory.id }
-                    });
-                    needsRefetch = true;
+                    try {
+                        await prisma.hms_uom.updateMany({
+                            where: { id: refToMove.id },
+                            data: { category_id: newCategory.id }
+                        });
+                        needsRefetch = true;
+                    } catch (uomErr) {
+                        console.warn("Could not auto-heal UOM category:", uomErr);
+                    }
                 }
             }
         }
@@ -1033,7 +1037,7 @@ export async function updateProduct(formData: FormData) {
     }
 
     try {
-        const existingProduct = await prisma.hms_product.findUnique({
+        const existingProduct = await prisma.hms_product.findFirst({
             where: { id, company_id: session.user.companyId },
             select: { metadata: true }
         });
@@ -1069,8 +1073,7 @@ export async function updateProduct(formData: FormData) {
 
         await prisma.hms_product.update({
             where: {
-                id,
-                company_id: session.user.companyId
+                id
             },
             data: {
                 name,

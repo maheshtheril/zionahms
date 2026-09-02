@@ -204,7 +204,7 @@ export async function getProduct(id: string) {
     const session = await auth();
     if (!session?.user?.companyId) return null;
     try {
-        const product = await prisma.hms_product.findUnique({
+        const product = await prisma.hms_product.findFirst({
             where: { id, company_id: session.user.companyId },
             include: {
                 hms_product_supplier: { where: { is_primary: true }, take: 1 },

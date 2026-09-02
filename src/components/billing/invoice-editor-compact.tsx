@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import { QRCodeSVG } from 'qrcode.react'
-import { createInvoice, updateInvoice, cancelInvoice, restoreInvoice, createQuickPatient, getNextVoucherNumber, shareInvoiceWhatsapp, getPatientBalance, getPatientLedger, getPatientContact } from '@/app/actions/billing'
+import { createInvoice, updateInvoice, cancelInvoice, restoreInvoice, createQuickPatient, getNextVoucherNumber, shareInvoiceWhatsapp, getPatientBalance, getPatientLedger, getPatientContact, searchBillableItems } from '@/app/actions/billing'
 import { PrintFormatSelector } from "@/components/print/print-format-selector";
 import { getInitialInvoiceData, getPatientActiveAppointmentForBilling } from "@/app/actions/clinical"
 import { getActiveGeneralBillingConfig } from "@/app/actions/print-settings";
@@ -423,12 +423,16 @@ export function CompactInvoiceEditor({
     const loc = m.storageLocation;
     const salePrice = m.last_sale_price || m.salePrice || i.price || 0;
     const expStr = m.expiryDate || m.expiry_date || m.best_before;
-    const expText = expStr ? ` â€¢ Exp: ${new Date(expStr).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })}` : '';
-    const compositionText = m.composition ? ` â€¢ [${m.composition}]` : '';
+    const expText = expStr ? ` • Exp: ${new Date(expStr).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })}` : '';
+    const compositionText = m.composition ? ` • [${m.composition}]` : '';
     return {
+      ...i,
       id: i.id,
       label: i.label || i.name,
-      subLabel: `${i.sku ? `SKU: ${i.sku} â€¢ ` : ''}${safeCurrency}${salePrice}${i.type !== 'service' ? ` â€¢ Stock: ${Number(i.totalStock || 0).toLocaleString()}` : ''}${expText}${loc ? ` â€¢ Loc: ${loc}` : ''}${compositionText}`
+      subLabel: `${i.sku ? `SKU: ${i.sku} • ` : ''}${safeCurrency}${salePrice}${i.type !== 'service' ? ` • Stock: ${Number(i.totalStock || 0).toLocaleString()}` : ''}${expText}${loc ? ` • Loc: ${loc}` : ''}${compositionText}`,
+      price: Number(salePrice) || Number(i.price) || 0,
+      metadata: m,
+      type: i.type || 'item'
     };
   }), [localBillableItems, safeCurrency]);
 
@@ -743,7 +747,7 @@ export function CompactInvoiceEditor({
       getBestBatch(line.product_id).then(batch => {
         if (batch) {
           setLines(current => current.map(l =>
-            l.id === line.id ? {
+            l.id === line.id && l.product_id === line.product_id && !l.batch_id ? {
               ...l,
               batch_id: batch.id,
               batch_no: batch.batch_no,
@@ -1006,49 +1010,66 @@ export function CompactInvoiceEditor({
   }
 
   const handleAddItem = () => {
-    setLines([...lines, { id: Date.now(), product_id: '', description: '', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0, item_type: 'item' }])
-  }
+    const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : (Date.now() + Math.random());
+    setLines(prev => [
+      ...prev,
+      { id: uniqueId, product_id: '', description: '', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0, item_type: 'item' }
+    ]);
+  };
 
-  const handleRemoveItem = (id: number) => {
-    if (lines.length > 1) {
-      setLines(lines.filter(l => l.id !== id))
+  const handleRemoveItem = (id: any) => {
+    setLines(prev => (prev.length > 1 ? prev.filter(l => l.id !== id) : prev));
+  };
+
+  const updateLine = (id: any, field: string, value: any, optionObj?: any) => {
+    let itemToProcess: any = null;
+
+    if (field === 'product_id') {
+      const matched = localBillableItems.find(bi => bi && bi.id === value);
+      const item = { ...(matched || {}), ...(optionObj || {}) };
+      if (item.price === undefined && matched?.price !== undefined) item.price = matched.price;
+      itemToProcess = item;
+
+      if (optionObj && !localBillableItems.some(bi => bi?.id === optionObj.id)) {
+        setLocalBillableItems((prev: any[]) => [...prev, item]);
+      }
+
+      const isDuplicate = lines.some(l => l.id !== id && l.product_id === value);
+      if (isDuplicate && value) {
+        toast.error("Duplicate Item Detected", { description: `${item?.label || item?.name || 'Item'} is already in the list. You can adjust its quantity instead.` });
+      }
     }
-  }
 
-  const updateLine = (id: number, field: string, value: any) => {
-    setLines(lines.map(line => {
+    setLines(prevLines => prevLines.map(line => {
       if (line.id === id) {
         const updated = { ...line, [field]: value }
 
         // Logic for Product/Service Selection
         if (field === 'product_id') {
-          const item = localBillableItems.find(bi => bi && bi.id === value)
-
-          
-          // [DUPLICATE GUARD] - Check if item already exists in other lines
-          const isDuplicate = lines.some(l => l.id !== id && l.product_id === value);
-          if (isDuplicate && value) {
-            toast.error("Duplicate Item Detected", { description: `${item?.name || 'Item'} is already in the list. You can adjust its quantity instead.` });
-          }
+          const item = itemToProcess;
 
           if (item) {
-            // Description Polish: Override generic auto-created labels
-            const rawDescription = item.description || item.label || item.name;
+            // Description: Always prioritize the actual product name/label for billing line
+            const rawDescription = item.label || item.name || item.description || '';
             updated.description = rawDescription?.includes('Auto-created from') ? (item.label || item.name) : rawDescription;
 
             updated.item_type = item.type || 'item'
 
+            // Reset batch when changing product
+            updated.batch_id = undefined;
+            updated.batch_no = undefined;
+
             // Extract Prices (Support for packing metadata)
-            const basePrice = item.metadata?.basePrice || item.price || 0
-            updated.base_price = basePrice
-            updated.unit_price = basePrice
+            const basePrice = item.price || item.metadata?.salePrice || item.metadata?.last_sale_price || item.metadata?.basePrice || 0;
+            updated.base_price = Number(basePrice) || 0;
+            updated.unit_price = Number(basePrice) || 0;
             // Intelligent Defaulting: Preference to packUom for retail sales if quantity context is missing
             const defaultUom = (item.metadata?.packUom || item.metadata?.baseUom || 'PCS').toUpperCase();
             updated.uom = defaultUom;
 
             // Trigger pack price if defaulting to packUom
             if (item.metadata?.packUom?.toUpperCase() === defaultUom && item.metadata?.packPrice) {
-                updated.unit_price = item.metadata.packPrice;
+                updated.unit_price = Number(item.metadata.packPrice) || updated.unit_price;
             }
 
             // INTELLIGENT TAX RESOLUTION (UI side fallback)
@@ -1061,59 +1082,14 @@ export function CompactInvoiceEditor({
 
             // Metadata for complex items
             updated.metadata = item.metadata
-
-            // WORLD CLASS HYBRID SELECTION: Auto-show dialog if multiple batches exist, otherwise auto-select FEFO.
-            if (item.type === 'item' || !item.type) {
-              getProductBatches(item.id).then(batches => {
-                const availableBatches = Array.isArray(batches) ? batches.filter((b: any) => Number(b.qty_on_hand) > 0) : [];
-                
-                if (availableBatches.length > 1) {
-                  // [CLINICAL SAFETY] Multi-batch detected: Force selection to ensure accuracy
-                  setBatchProductName(item.label || item.name || '');
-                  setActiveBatches(availableBatches);
-                  setSelectedLineForBatch(id);
-                  setIsBatchSelectorOpen(true);
-                  
-                  // Still pick the best one as a fallback in case they close the dialog
-                  const best = availableBatches[0];
-                  setLines(current => current.map(l =>
-                    l.id === id ? {
-                      ...l,
-                      batch_id: best.id,
-                      batch_no: best.batch_no,
-                      unit_price: pricingMode === 'mrp' ? Number(best.mrp || l.unit_price) : l.unit_price
-                    } : l
-                  ));
-                } else if (availableBatches.length === 1) {
-                  // [SPEED] Only one batch: Auto-select it and move on
-                  const batch = availableBatches[0];
-                  setLines(current => current.map(l =>
-                    l.id === id ? {
-                      ...l,
-                      batch_id: batch.id,
-                      batch_no: batch.batch_no,
-                      unit_price: pricingMode === 'mrp' ? Number(batch.mrp || l.unit_price) : l.unit_price
-                    } : l
-                  ));
-                }
-              });
-            }
-
-            // World Class UX: After item selection, move focus to quantity
-            setTimeout(() => {
-              const lineIndex = lines.findIndex(l => l.id === id);
-              const qtyInput = document.getElementById(`qty-input-${lineIndex}`);
-              if (qtyInput) {
-                (qtyInput as HTMLInputElement).focus();
-                (qtyInput as HTMLInputElement).select();
-              }
-            }, 100);
           } else {
             // If item not found (e.g. cleared), reset basics
             updated.description = '';
             updated.product_id = '';
             updated.unit_price = 0;
             updated.tax_amount = 0;
+            updated.batch_id = undefined;
+            updated.batch_no = undefined;
           }
         }
 
@@ -1128,7 +1104,6 @@ export function CompactInvoiceEditor({
             
             if (baseUom && newUom && baseUom.ratio && newUom.ratio) {
               // Scale price: New Price = Base Price * (New Ratio / Base Ratio)
-              // Note: This assumes ratio is "units per reference". Adjust if your schema uses "reference per unit".
               const scaleFactor = Number(newUom.ratio) / Number(baseUom.ratio);
               updated.unit_price = (updated.base_price || product.price || 0) * scaleFactor;
             }
@@ -1144,7 +1119,50 @@ export function CompactInvoiceEditor({
         return updated
       }
       return line
-    }))
+    }));
+
+    // Async batch handling outside state updater
+    if (field === 'product_id' && itemToProcess && (itemToProcess.type === 'item' || !itemToProcess.type)) {
+      getProductBatches(itemToProcess.id).then(batches => {
+        const availableBatches = Array.isArray(batches) ? batches.filter((b: any) => Number(b.qty_on_hand) > 0) : [];
+        
+        if (availableBatches.length > 1) {
+          setBatchProductName(itemToProcess.label || itemToProcess.name || '');
+          setActiveBatches(availableBatches);
+          setSelectedLineForBatch(id);
+          setIsBatchSelectorOpen(true);
+          
+          const best = availableBatches[0];
+          setLines(current => current.map(l =>
+            l.id === id && l.product_id === itemToProcess.id ? {
+              ...l,
+              batch_id: best.id,
+              batch_no: best.batch_no,
+              unit_price: pricingMode === 'mrp' && best.mrp ? Number(best.mrp) : l.unit_price
+            } : l
+          ));
+        } else if (availableBatches.length === 1) {
+          const batch = availableBatches[0];
+          setLines(current => current.map(l =>
+            l.id === id && l.product_id === itemToProcess.id ? {
+              ...l,
+              batch_id: batch.id,
+              batch_no: batch.batch_no,
+              unit_price: pricingMode === 'mrp' && batch.mrp ? Number(batch.mrp) : l.unit_price
+            } : l
+          ));
+        }
+      }).catch(err => console.error("Batch lookup error:", err));
+
+      setTimeout(() => {
+        const lineIndex = lines.findIndex(l => l.id === id);
+        const qtyInput = document.getElementById(`qty-input-${lineIndex}`);
+        if (qtyInput) {
+          (qtyInput as HTMLInputElement).focus();
+          (qtyInput as HTMLInputElement).select();
+        }
+      }, 100);
+    }
   }
 
   const handleSave = async (status: any, paymentsOverride?: Payment[]) => {
@@ -2158,17 +2176,53 @@ export function CompactInvoiceEditor({
                             inputId={index === 0 ? 'item-search-0' : `item-search-${index}`}
                             value={line.product_id}
                             valueLabel={line.description}
-                            options={displayedBillableOptions}
-                            onChange={v => updateLine(line.id, 'product_id', v)}
+                            options={itemOptions}
+                            onChange={(v, opt) => updateLine(line.id, 'product_id', v, opt)}
                             disabled={isPaymentModalOpen || loading}
                             variant="ghost"
                             isDark={true}
                             onSearch={async q => {
-                              const query = (q || "").toLowerCase();
-                              return itemOptions.filter(i => 
+                              const query = (q || "").trim().toLowerCase();
+                              if (!query) {
+                                return itemOptions.slice(0, 50);
+                              }
+                              const localMatches = itemOptions.filter(i => 
                                 (i.label || "").toLowerCase().includes(query) || 
                                 (i.subLabel || "").toLowerCase().includes(query)
                               );
+                              try {
+                                const serverRes = await searchBillableItems(query);
+                                if (serverRes.success && Array.isArray(serverRes.data) && serverRes.data.length > 0) {
+                                  setLocalBillableItems((prev: any[]) => {
+                                    const existingIds = new Set(prev.map((p: any) => p?.id));
+                                    const toAdd = serverRes.data.filter((item: any) => !existingIds.has(item.id));
+                                    return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
+                                  });
+                                  const serverOptions = serverRes.data.map((i: any) => {
+                                    const m = i.metadata || {};
+                                    const loc = m.storageLocation;
+                                    const salePrice = m.last_sale_price || m.salePrice || i.price || 0;
+                                    const expStr = m.expiryDate || m.expiry_date || m.best_before;
+                                    const expText = expStr ? ` • Exp: ${new Date(expStr).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })}` : '';
+                                    const compositionText = m.composition ? ` • [${m.composition}]` : '';
+                                    return {
+                                      ...i,
+                                      id: i.id,
+                                      label: i.label || i.name,
+                                      subLabel: `${i.sku ? `SKU: ${i.sku} • ` : ''}${safeCurrency}${salePrice}${i.type !== 'service' ? ` • Stock: ${Number(i.totalStock || 0).toLocaleString()}` : ''}${expText}${loc ? ` • Loc: ${loc}` : ''}${compositionText}`,
+                                      price: Number(salePrice) || Number(i.price) || 0,
+                                      metadata: m,
+                                      type: i.type || 'item'
+                                    };
+                                  });
+                                  const optionMap = new Map();
+                                  [...localMatches, ...serverOptions].forEach(opt => optionMap.set(opt.id, opt));
+                                  return Array.from(optionMap.values()).slice(0, 50);
+                                }
+                              } catch (e) {
+                                console.error("Dynamic product search error:", e);
+                              }
+                              return localMatches.slice(0, 50);
                             }}
                             onCreate={async (q) => {
                               // World Standard: Quick-create product inline from billing
@@ -2183,14 +2237,8 @@ export function CompactInvoiceEditor({
                             }}
                             placeholder="SEARCH..."
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !line.product_id && lines.some(l => l.product_id)) {
+                              if (e.key === 'Enter') {
                                 e.preventDefault();
-                                // Automate cleanup: Remove the empty line before settling
-                                handleRemoveItem(line.id);
-                                setTimeout(() => {
-                                  const settleBtn = document.getElementById('settle-button');
-                                  if (settleBtn) settleBtn.focus();
-                                }, 100);
                               }
                             }}
                           />

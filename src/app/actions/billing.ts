@@ -181,15 +181,13 @@ export async function getBillableItems() {
                     select: { quantity: true }
                 }
             },
-            orderBy: { updated_at: 'desc' },
-            take: 2000 // [OPTIMIZATION] Limit to avoid heap/timeout issues on very large catalogs
+            orderBy: { name: 'asc' },
+            take: 50000 // Ensure ALL products across any customer database are fetched
         });
 
         const itemIds = items.map(i => i.id);
 
         // PROCUREMENT SYNC: Retrieve latest system-wide records to populate maps efficiently
-        // [OPTIMIZATION] High-Performance Fetch: Only fetch THE latest 2000 records total.
-        // This is much faster than fetching per-product history across the entire history.
         const [lastInvoiceEntries, lastReceiptEntries, taxMaps] = await Promise.all([
             prisma.hms_purchase_invoice_line.findMany({
                 where: {
@@ -197,7 +195,7 @@ export async function getBillableItems() {
                     tenant_id: tenantId,
                 },
                 orderBy: { created_at: 'desc' },
-                take: 1500
+                take: 5000
             }),
             prisma.hms_purchase_receipt_line.findMany({
                 where: {
@@ -205,7 +203,7 @@ export async function getBillableItems() {
                     tenant_id: tenantId
                 },
                 orderBy: { created_at: 'desc' },
-                take: 1500
+                take: 5000
             }),
             prisma.company_tax_maps.findMany({
                 where: { company_id: companyId },
@@ -288,7 +286,6 @@ export async function getBillableItems() {
                 finalTaxRate = Number(resolvedRateObj.rate);
             } else {
                 // 3. FALLBACK: If ID was set but not found in company map (Ghost ID), RESET it.
-                // This is critical for data that might have been imported/restored with broken links.
                 finalTaxId = null;
 
                 // Resolve by rate values
@@ -301,17 +298,8 @@ export async function getBillableItems() {
 
                 if (fallbackRate > 0) {
                     finalTaxRate = fallbackRate;
-                    // RE-RESOLVE ID: Find matching ID by rate in company settings (O(1) lookup)
                     finalTaxId = rateToIdMap.get(fallbackRate) || null;
                 }
-            }
-
-            // SERVICE OVERRIDE: Only if NO tax is explicitly found
-            // Previously we forced 0% for all services without a specific rule, which caused issues.
-            // Now we trust the resolution chain (Product Rule > Purchase > Category > Default).
-            if (item.is_service && !finalTaxId && !productTaxRule?.tax_rate_id) {
-                // Keep as is: No tax found, so 0% is correct.
-                // But do NOT clear it if finalTaxId is already set (e.g. from Category)
             }
 
             // Extract UOM pricing data from metadata
@@ -325,7 +313,6 @@ export async function getBillableItems() {
             if (pricingStrategy === 'mrp' && metadata.last_mrp) {
                 finalPrice = Number(metadata.last_mrp);
             } else if (metadata.last_sale_price) {
-                // This covers 'manual' and 'mrp_discount' (where the intended bill price is the discounted one)
                 finalPrice = Number(metadata.last_sale_price);
             } else if (metadata.last_mrp) {
                 finalPrice = Number(metadata.last_mrp);
@@ -336,6 +323,7 @@ export async function getBillableItems() {
             return {
                 id: item.id,
                 sku: item.sku || '',
+                name: item.name,
                 label: item.name, // UI friendly
                 description: item.description || '',
                 uom: item.uom || 'Unit',
@@ -358,7 +346,6 @@ export async function getBillableItems() {
                     lastSalePrice: metadata.last_sale_price,
                     pricingStrategy: pricingStrategy
                 },
-                // Extract tax for auto-suggest (prioritize rule > purchase > category)
                 categoryTaxId: finalTaxId,
                 categoryTaxRate: finalTaxRate
             };
@@ -368,6 +355,152 @@ export async function getBillableItems() {
     } catch (error) {
         console.error("Failed to fetch billable items:", error);
         return { error: "Failed to fetch items" };
+    }
+}
+
+export async function searchBillableItems(searchTerm: string) {
+    const session = await auth();
+    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    const tenantId = session?.user?.tenantId;
+    if (!companyId || !tenantId || !searchTerm || !searchTerm.trim()) {
+        return { success: true, data: [] };
+    }
+
+    try {
+        const term = searchTerm.trim();
+        const items = await prisma.hms_product.findMany({
+            where: {
+                tenant_id: tenantId,
+                company_id: companyId,
+                is_active: true,
+                OR: [
+                    { name: { contains: term, mode: 'insensitive' } },
+                    { sku: { contains: term, mode: 'insensitive' } },
+                    { description: { contains: term, mode: 'insensitive' } }
+                ]
+            },
+            select: {
+                id: true,
+                sku: true,
+                name: true,
+                description: true,
+                uom: true,
+                price: true,
+                metadata: true,
+                is_service: true,
+                hms_product_price_history: {
+                    orderBy: { valid_from: 'desc' },
+                    take: 1,
+                    select: { price: true }
+                },
+                hms_product_category_rel: {
+                    include: {
+                        hms_product_category: {
+                            include: {
+                                tax_rates: true
+                            }
+                        }
+                    }
+                },
+                product_tax_rules: {
+                    where: { is_active: true },
+                    include: { tax_rates: true },
+                    orderBy: { priority: 'desc' },
+                    take: 1
+                },
+                hms_purchase_order_line: {
+                    orderBy: { created_at: 'desc' },
+                    take: 1
+                },
+                hms_product_batch: {
+                    where: { qty_on_hand: { gt: 0 }, expiry_date: { not: null } },
+                    orderBy: { expiry_date: 'asc' },
+                    take: 1,
+                    select: { expiry_date: true, batch_no: true }
+                },
+                hms_stock_levels: {
+                    select: { quantity: true }
+                }
+            },
+            orderBy: { name: 'asc' },
+            take: 50
+        });
+
+        const taxMaps = await prisma.company_tax_maps.findMany({
+            where: { company_id: companyId },
+            include: { tax_rates: true }
+        });
+
+        const companyTaxRates = taxMaps.map(m => m.tax_rates).filter(Boolean);
+        const idToRateObjMap = new Map(companyTaxRates.map(tr => [tr.id, tr]));
+
+        const flatItems = items.map((item) => {
+            const priceHistory = item.hms_product_price_history?.[0];
+            const categoryRel = item.hms_product_category_rel?.[0];
+            const category = categoryRel?.hms_product_category;
+            const productTaxRule = item.product_tax_rules?.[0];
+
+            const productMetadata = item.metadata as any || {};
+            let finalTaxId = productTaxRule?.tax_rate_id ||
+                productMetadata.tax_id ||
+                productMetadata.tax?.id ||
+                category?.default_tax_rate_id ||
+                null;
+
+            let finalTaxRate = 0;
+            const resolvedRateObj = finalTaxId ? idToRateObjMap.get(finalTaxId) : null;
+            if (resolvedRateObj) {
+                finalTaxRate = Number(resolvedRateObj.rate);
+            }
+
+            const metadata = item.metadata as any || {};
+            const uomData = metadata.uom_data || {};
+            const pricingStrategy = metadata.pricing_strategy || 'manual';
+
+            let finalPrice = priceHistory?.price?.toNumber() || Number(item.price) || 0;
+            if (pricingStrategy === 'mrp' && metadata.last_mrp) {
+                finalPrice = Number(metadata.last_mrp);
+            } else if (metadata.last_sale_price) {
+                finalPrice = Number(metadata.last_sale_price);
+            } else if (metadata.last_mrp) {
+                finalPrice = Number(metadata.last_mrp);
+            }
+
+            const totalStock = item.hms_stock_levels.reduce((sum, lvl) => sum + Number(lvl.quantity || 0), 0);
+
+            return {
+                id: item.id,
+                sku: item.sku || '',
+                name: item.name,
+                label: item.name,
+                description: item.description || '',
+                uom: item.uom || 'Unit',
+                price: finalPrice,
+                type: item.is_service ? 'service' : 'item',
+                totalStock,
+                metadata: {
+                    ...metadata,
+                    expiryDate: item.hms_product_batch?.[0]?.expiry_date || metadata.expiryDate || metadata.expiry_date,
+                    batchNo: item.hms_product_batch?.[0]?.batch_no || metadata.batchNo,
+                    baseUom: uomData.base_uom || item.uom || 'PCS',
+                    basePrice: finalPrice,
+                    conversionFactor: uomData.conversion_factor || 1,
+                    packUom: uomData.pack_uom || (uomData.conversion_factor > 1 ? `PACK-${uomData.conversion_factor}` : (item.uom || 'PCS')),
+                    packPrice: uomData.pack_price || (finalPrice * (uomData.conversion_factor || 1)),
+                    packSize: uomData.pack_size || uomData.conversion_factor || 1,
+                    lastMrp: metadata.last_mrp,
+                    lastSalePrice: metadata.last_sale_price,
+                    pricingStrategy: pricingStrategy
+                },
+                categoryTaxId: finalTaxId,
+                categoryTaxRate: finalTaxRate
+            };
+        });
+
+        return { success: true, data: serialize(flatItems) };
+    } catch (error) {
+        console.error("Failed to search billable items:", error);
+        return { success: false, data: [] };
     }
 }
 
@@ -419,7 +552,8 @@ export async function createInvoice(data: {
     payments?: any[],
     status?: any,
     total_discount?: number,
-    billing_metadata?: any
+    billing_metadata?: any,
+    idempotency_key?: string
 }) {
     const session = await auth();
     const LOG_PREFIX = `[BILLING-ENGINE-${Date.now()}]`;
@@ -453,6 +587,11 @@ export async function createInvoice(data: {
 
     try {
         const result = await prisma.$transaction(async (tx) => {
+            // [IDEMPOTENCY-GUARD] Check idempotency token to prevent double-click submissions
+            if (data.idempotency_key) {
+                await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext('idemp_${data.idempotency_key}'))`);
+            }
+
             // [ATOMIC-GUARD] Use Postgres Advisory Lock to prevent concurrent creation for the same context
             const lockKeyStr = data.appointment_id || data.patient_id;
             await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext('${lockKeyStr}'))`);
@@ -747,6 +886,7 @@ export async function createInvoice(data: {
 
                 // Priority A: Explicitly selected batch (from Nursing Hub)
                 if (isUUID(explicitBatchId)) {
+                    await tx.$executeRawUnsafe(`SELECT id FROM hms_product_batch WHERE id = '${explicitBatchId}'::uuid FOR UPDATE`);
                     const b = await tx.hms_product_batch.findFirst({ where: { id: explicitBatchId, product_id: item.product_id } });
                     if (b) {
                         const deduct = Math.min(Number(b.qty_on_hand), remaining);
@@ -764,6 +904,7 @@ export async function createInvoice(data: {
 
                 // Priority B: Auto-Selector (FEFO - First Expiry First Out)
                 if (remaining > 0) {
+                    await tx.$executeRawUnsafe(`SELECT id FROM hms_product_batch WHERE product_id = '${item.product_id}'::uuid FOR UPDATE`);
                     const batches = await tx.hms_product_batch.findMany({
                         where: { product_id: item.product_id, qty_on_hand: { gt: 0 } },
                         orderBy: { expiry_date: 'asc' }

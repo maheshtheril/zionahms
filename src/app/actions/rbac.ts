@@ -341,7 +341,7 @@ export async function seedRolesAndPermissions() {
             } else {
                 // OVERWRITE (Force Standard Compliance - "Stress Free")
                 // We update permissions to ensure the role matches the definition
-                await prisma.role.update({
+                await prisma.role.updateMany({
                     where: { id: existing.id },
                     data: { permissions: roleData.permissions }
                 });

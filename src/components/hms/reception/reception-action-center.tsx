@@ -505,7 +505,7 @@ export function ReceptionActionCenter({
                                         key={apt.id}
                                         variant="outline"
                                         size="lg"
-                                        onClick={() => router.push(`/hms/billing/new?appointmentId=${apt.id}&patientId=${apt.patient.id}`)}
+                                        onClick={() => router.push(apt.patient?.id ? `/hms/billing/new?appointmentId=${apt.id}&patientId=${apt.patient.id}` : `/hms/billing/new?appointmentId=${apt.id}`)}
                                         className="h-14 px-6 rounded-2xl border-2 border-orange-100 hover:border-orange-500 hover:bg-orange-50 transition-all flex items-center gap-3 group"
                                     >
                                         <Avatar className="h-8 w-8 border-2 border-white">
@@ -789,8 +789,7 @@ export function ReceptionActionCenter({
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                        {filteredAppointments.map((apt) => {
-                                            const { currencySymbol } = useLocalization();
+                                        {filteredAppointments.map((apt, index) => {
                                             const isEmergency = apt.type === 'emergency' || apt.tags?.includes('EMERGENCY');
                                             const isUrgent = apt.priority === 'urgent';
                                             const isHigh = apt.priority === 'high';
@@ -807,7 +806,7 @@ export function ReceptionActionCenter({
                                             else if (isPaid) rowColor = 'bg-emerald-50/60 hover:bg-emerald-100/60 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/20 border-l-4 border-l-emerald-500';
 
                                             return (
-                                                <tr key={apt.id} className={`group transition-colors ${rowColor}`}>
+                                                <tr key={`${apt.id}-${index}`} className={`group transition-colors ${rowColor}`}>
                                                     <td className="px-6 py-5">
                                                         <div className="flex flex-col">
                                                             <span className="text-sm font-black text-indigo-600 dark:text-indigo-400 font-mono">
@@ -828,10 +827,17 @@ export function ReceptionActionCenter({
                                                                     {isPrivacyMode ? '**' : getInitials(apt.patient?.first_name, apt.patient?.last_name)}
                                                                 </AvatarFallback>
                                                             </Avatar>
-                                                            <div>
-                                                                <div className="text-sm font-bold">{maskName(apt.patient?.first_name)} {maskName(apt.patient?.last_name)}</div>
-                                                                <div className="text-[10px] text-slate-500">{apt.patient?.patient_number}</div>
-                                                            </div>
+                                                            {(() => {
+                                                                const fullName = [apt.patient?.first_name, apt.patient?.last_name].filter(Boolean).join(' ').trim();
+                                                                const displayName = fullName ? (isPrivacyMode ? maskName(fullName) : fullName) : (apt.patient_name || (apt.token_number ? `Walk-in (Token #${apt.token_number})` : 'Walk-in Patient'));
+                                                                const patientNum = apt.patient?.patient_number || (apt.patient_id ? `ID: ${apt.patient_id.slice(0, 8)}` : 'OP Guest');
+                                                                return (
+                                                                    <div>
+                                                                        <div className="text-sm font-bold text-slate-800 dark:text-white">{displayName}</div>
+                                                                        <div className="text-[10px] text-slate-500 font-mono">{patientNum}</div>
+                                                                    </div>
+                                                                );
+                                                            })()}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-5">
@@ -842,9 +848,9 @@ export function ReceptionActionCenter({
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-5">
-                                                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                                                            <Stethoscope className="h-3 w-3" />
-                                                            <span>Dr. {apt.clinician?.first_name} {apt.clinician?.last_name?.[0]}.</span>
+                                                        <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                                                            <Stethoscope className="h-3 w-3 text-indigo-500" />
+                                                            <span>{apt.clinician ? `Dr. ${[apt.clinician.first_name, apt.clinician.last_name].filter(Boolean).join(' ')}` : 'Duty Medical Officer (OP)'}</span>
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-5">
@@ -861,15 +867,6 @@ export function ReceptionActionCenter({
                                                     </td>
                                                     <td className="px-6 py-5 text-right relative">
                                                         <div className="flex justify-end gap-2 items-center">
-                                                            <div className="flex items-center gap-2">                                                                 <AdmissionDialog
-                                                                patientId={apt.patient.id}
-                                                                patientName={`${apt.patient.first_name} ${apt.patient.last_name}`}
-                                                                trigger={
-                                                                    <Button variant="outline" size="icon" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
-                                                                        <BedIcon className="h-4 w-4" />
-                                                                    </Button>
-                                                                }
-                                                            />
                                                                 {/* ðŸ–¨ï¸ ELITE MULTI-PRINT HUB: SEPARATE ONE-SHOT BUTTONS */}
                                                                 <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-200/50">
                                                                     {/* 1. Standard Clinical OP Slip */}
@@ -954,7 +951,6 @@ export function ReceptionActionCenter({
                                                                         )}
                                                                     </Button>
                                                                 )}
-                                                            </div>
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
                                                                     <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -964,7 +960,7 @@ export function ReceptionActionCenter({
                                                                 <DropdownMenuContent align="end">
                                                                     <DropdownMenuItem onClick={() => handleEditClick(apt)}>Edit</DropdownMenuItem>
                                                                     {(getSmartStatus(apt).label === 'Billing / Checkout' && (apt as any).pendingConsumablesCount === 0) && (
-                                                                        <DropdownMenuItem onClick={() => router.push(`/hms/billing/new?appointmentId=${apt.id}&patientId=${apt.patient.id}`)}>
+                                                                        <DropdownMenuItem onClick={() => router.push(apt.patient?.id ? `/hms/billing/new?appointmentId=${apt.id}&patientId=${apt.patient.id}` : `/hms/billing/new?appointmentId=${apt.id}`)}>
                                                                             Process Billing
                                                                         </DropdownMenuItem>
                                                                     )}
@@ -1689,8 +1685,8 @@ function PatientCard({
                             {statusLoading === apt.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Send In"}
                         </Button>
                         <AdmissionDialog
-                            patientId={apt.patient.id}
-                            patientName={`${apt.patient.first_name} ${apt.patient.last_name}`}
+                            patientId={apt.patient?.id || apt.patient_id || ''}
+                            patientName={apt.patient ? `${apt.patient.first_name || ''} ${apt.patient.last_name || ''}`.trim() : (apt.patient_name || 'Walk-in Patient')}
                             trigger={
                                 <Button size="sm" variant="outline" className="h-7 text-[10px] border-emerald-100 text-emerald-600 hover:bg-emerald-50">Admit</Button>
                             }

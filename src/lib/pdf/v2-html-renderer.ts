@@ -9,7 +9,16 @@ function fmt(n: number): string {
 
 function fmtDate(d: any): string {
     if (!d) return ''
-    try { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) }
+    try {
+        const dt = new Date(d);
+        const dateStr = dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        const hours = dt.getHours();
+        const minutes = dt.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const formattedHours = (hours % 12 || 12).toString().padStart(2, '0');
+        const timeStr = `${formattedHours}:${minutes} ${ampm}`;
+        return `${dateStr} ${timeStr}`;
+    }
     catch { return String(d) }
 }
 
@@ -129,12 +138,12 @@ function extractBillData(data: any) {
 
     return {
         patientName,
-        patientId: data?.patient_id || patient.patient_number || patient.patient_id || patient.op_number || (walkinMeta.is_walk_in ? 'WALK-IN' : ''),
+        patientId: patient.patient_number || patient.op_number || patient.legacy_mrn || (walkinMeta.is_walk_in ? 'WALK-IN' : (data?.patient_id && data.patient_id.length > 15 ? '' : data?.patient_id || '')),
         doctorName: doctor.name || [doctor.first_name, doctor.last_name].filter(Boolean).join(' ') || '',
         opNumber: apt?.token_number || apt?.op_number || data?.op_number || '',
         patientPhone,
         billNumber: data?.invoice_number || data?.bill_number || data?.id?.split('-')[0]?.toUpperCase() || '',
-        billDate: fmtDate(data?.invoice_date || data?.created_at),
+        billDate: fmtDate(data?.created_at || data?.invoice_date || data?.posted_at),
         paymentMode: data?.payment_mode || (data?.metadata as any)?.paymentMode || '',
         received: Number(data?.paid_amount || data?.received_amount || data?.total || 0),
         balance: Number(data?.balance_due || 0),
@@ -156,7 +165,9 @@ function extractBillData(data: any) {
 function headerBlock(block: any, co: ReturnType<typeof extractCompanyData>, pc: string, headerBg: string, headerText: string, narrow: boolean): string {
     const f = block.fields || {}
     const pad = narrow ? 12 : (block.style?.padding || 24)
-    const nameSz = narrow ? 14 : 20
+    const fs = block.style?.fontSize ? Number(block.style.fontSize) : (narrow ? 9 : 11)
+    const nameSz = narrow ? Math.round(fs * 1.4) : Math.round(fs * 1.6)
+    const addrSz = block.style?.addressFontSize ? Number(block.style.addressFontSize) : (block.style?.fontSize ? Number(block.style.fontSize) : (narrow ? 8.5 : 10))
     const logoHtml = f.logo && co.logoUrl
         ? `<img src="${esc(co.logoUrl)}" style="width:${narrow ? 36 : 52}px;height:${narrow ? 36 : 52}px;object-fit:contain;border-radius:6px;flex-shrink:0;" />`
         : f.logo
@@ -165,10 +176,10 @@ function headerBlock(block: any, co: ReturnType<typeof extractCompanyData>, pc: 
 
     const infoHtml = `
         ${f.hospitalName ? `<div style="font-weight:900;font-size:${nameSz}px;letter-spacing:-0.3px;">${esc(co.name)}</div>` : ''}
-        ${f.tagline && co.tagline ? `<div style="font-size:10px;opacity:0.75;font-style:italic;margin-top:2px;">${esc(co.tagline)}</div>` : ''}
-        ${f.address && co.address ? `<div style="font-size:${narrow ? 8.5 : 10}px;opacity:0.85;margin-top:3px;">${esc(co.address)}</div>` : ''}
-        ${f.phone && co.phone ? `<div style="font-size:10px;opacity:0.75;margin-top:2px;">📞 ${esc(co.phone)}${f.email && co.email ? `  ✉  ${esc(co.email)}` : ''}</div>` : ''}
-        ${f.gstin && co.gstin ? `<div style="font-size:9px;opacity:0.65;margin-top:1px;">GSTIN: ${esc(co.gstin)}</div>` : ''}
+        ${f.tagline && co.tagline ? `<div style="font-size:${Math.max(8, fs - 1)}px;opacity:0.75;font-style:italic;margin-top:2px;">${esc(co.tagline)}</div>` : ''}
+        ${f.address && co.address ? `<div style="font-size:${addrSz}px;opacity:0.85;margin-top:3px;">${esc(co.address)}</div>` : ''}
+        ${f.phone && co.phone ? `<div style="font-size:${addrSz}px;opacity:0.75;margin-top:2px;">📞 ${esc(co.phone)}${f.email && co.email ? `  ✉  ${esc(co.email)}` : ''}</div>` : ''}
+        ${f.gstin && co.gstin ? `<div style="font-size:${Math.max(8, fs - 2)}px;opacity:0.65;margin-top:1px;">GSTIN: ${esc(co.gstin)}</div>` : ''}
     `
 
     const v = block.variant || 'A'
@@ -179,7 +190,7 @@ function headerBlock(block: any, co: ReturnType<typeof extractCompanyData>, pc: 
     if (v === 'C') return `<div style="${base}display:grid;grid-template-columns:1fr 2fr 1fr;gap:12px;align-items:center;">
         <div>${logoHtml}</div>
         <div style="text-align:center;">${infoHtml}</div>
-        <div style="text-align:right;font-size:9px;opacity:0.8;">
+        <div style="text-align:right;font-size:${Math.max(8, fs - 2)}px;opacity:0.8;">
             ${f.gstin && co.gstin ? `<div>GSTIN: ${esc(co.gstin)}</div>` : ''}
             ${f.phone && co.phone ? `<div style="margin-top:3px;">📞 ${esc(co.phone)}</div>` : ''}
         </div>
@@ -189,8 +200,8 @@ function headerBlock(block: any, co: ReturnType<typeof extractCompanyData>, pc: 
         ${logoHtml}
         <div style="flex:1;">
             ${f.hospitalName ? `<div style="font-weight:900;font-size:${nameSz}px;color:${pc};">${esc(co.name)}</div>` : ''}
-            ${f.address && co.address ? `<div style="font-size:10px;color:#64748b;margin-top:3px;">${esc(co.address)}${f.phone && co.phone ? ` | ${esc(co.phone)}` : ''}</div>` : ''}
-            ${f.gstin && co.gstin ? `<div style="font-size:9px;color:#94a3b8;margin-top:1px;">GSTIN: ${esc(co.gstin)}</div>` : ''}
+            ${f.address && co.address ? `<div style="font-size:${addrSz}px;color:#64748b;margin-top:3px;">${esc(co.address)}${f.phone && co.phone ? ` | ${esc(co.phone)}` : ''}</div>` : ''}
+            ${f.gstin && co.gstin ? `<div style="font-size:${Math.max(8, fs - 2)}px;color:#94a3b8;margin-top:1px;">GSTIN: ${esc(co.gstin)}</div>` : ''}
         </div>
     </div>`
 }

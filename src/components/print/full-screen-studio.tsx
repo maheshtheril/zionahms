@@ -203,16 +203,17 @@ function BillCanvas({ blocks, theme, selectedId, onSelect }: {
 
                 if (block.id === 'header') {
                     const headerStyle: React.CSSProperties = { background: theme.headerBg, color: theme.headerText, padding: pad, fontFamily: ff }
+                    const addrSize = s.addressFontSize || (narrow ? 8.5 : 10)
 
                     if (block.variant === 'A') return blockWrap(block,
                         <div style={{ ...headerStyle, display: 'flex', alignItems: 'center', gap: 16 }}>
                             {f.logo && <div style={{ width: narrow ? 36 : 52, height: narrow ? 36 : 52, borderRadius: 8, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }}>🏥</div>}
                             <div>
                                 {f.hospitalName && <div style={{ fontWeight: 900, fontSize: narrow ? 14 : s.fontSize + 6, letterSpacing: -0.3 }}>ELITE MEDICAL CENTER</div>}
-                                {f.tagline && <div style={{ fontSize: 10, opacity: 0.75, fontStyle: 'italic', marginTop: 1 }}>Your Health, Our Priority</div>}
-                                {f.address && <div style={{ fontSize: narrow ? 8.5 : 10, opacity: 0.85, marginTop: 3 }}>123 Hospital Road, Thrissur, Kerala – 680001</div>}
-                                {f.phone && <div style={{ fontSize: 10, opacity: 0.75, marginTop: 2 }}>📞 +91 98765 43210{f.email ? '  ✉  info@elite.in' : ''}</div>}
-                                {f.gstin && <div style={{ fontSize: 9, opacity: 0.65, marginTop: 1 }}>GSTIN: 32AABCE1234F1Z5</div>}
+                                {f.tagline && <div style={{ fontSize: Math.max(8, addrSize - 1), opacity: 0.75, fontStyle: 'italic', marginTop: 1 }}>Your Health, Our Priority</div>}
+                                {f.address && <div style={{ fontSize: addrSize, opacity: 0.85, marginTop: 3 }}>123 Hospital Road, Thrissur, Kerala – 680001</div>}
+                                {f.phone && <div style={{ fontSize: addrSize, opacity: 0.75, marginTop: 2 }}>📞 +91 98765 43210{f.email ? '  ✉  info@elite.in' : ''}</div>}
+                                {f.gstin && <div style={{ fontSize: Math.max(8, addrSize - 2), opacity: 0.65, marginTop: 1 }}>GSTIN: 32AABCE1234F1Z5</div>}
                             </div>
                         </div>
                     )
@@ -220,10 +221,10 @@ function BillCanvas({ blocks, theme, selectedId, onSelect }: {
                         <div style={{ ...headerStyle, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                             {f.logo && <div style={{ width: narrow ? 40 : 60, height: narrow ? 40 : 60, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>🏥</div>}
                             {f.hospitalName && <div style={{ fontWeight: 900, fontSize: narrow ? 14 : s.fontSize + 7 }}>ELITE MEDICAL CENTER</div>}
-                            {f.tagline && <div style={{ fontSize: 10, opacity: 0.75, fontStyle: 'italic' }}>Your Health, Our Priority</div>}
-                            {f.address && <div style={{ fontSize: 10, opacity: 0.8, marginTop: 2 }}>123 Hospital Road, Thrissur, Kerala – 680001</div>}
-                            {f.phone && <div style={{ fontSize: 10, opacity: 0.7 }}>+91 98765 43210{f.email ? '  ·  info@elite.in' : ''}</div>}
-                            {f.gstin && <div style={{ fontSize: 9, opacity: 0.6, marginTop: 2 }}>GSTIN: 32AABCE1234F1Z5</div>}
+                            {f.tagline && <div style={{ fontSize: Math.max(8, addrSize - 1), opacity: 0.75, fontStyle: 'italic' }}>Your Health, Our Priority</div>}
+                            {f.address && <div style={{ fontSize: addrSize, opacity: 0.8, marginTop: 2 }}>123 Hospital Road, Thrissur, Kerala – 680001</div>}
+                            {f.phone && <div style={{ fontSize: addrSize, opacity: 0.7 }}>+91 98765 43210{f.email ? '  ·  info@elite.in' : ''}</div>}
+                            {f.gstin && <div style={{ fontSize: Math.max(8, addrSize - 2), opacity: 0.6, marginTop: 2 }}>GSTIN: 32AABCE1234F1Z5</div>}
                         </div>
                     )
                     if (block.variant === 'C') return blockWrap(block,
@@ -233,10 +234,10 @@ function BillCanvas({ blocks, theme, selectedId, onSelect }: {
                             </div>
                             <div style={{ textAlign: 'center' }}>
                                 {f.hospitalName && <div style={{ fontWeight: 900, fontSize: s.fontSize + 5 }}>ELITE MEDICAL CENTER</div>}
-                                {f.address && <div style={{ fontSize: 9.5, opacity: 0.8, marginTop: 2 }}>123 Hospital Road, Thrissur, Kerala – 680001</div>}
-                                {f.phone && <div style={{ fontSize: 9, opacity: 0.7, marginTop: 1 }}>+91 98765 43210</div>}
+                                {f.address && <div style={{ fontSize: addrSize, opacity: 0.8, marginTop: 2 }}>123 Hospital Road, Thrissur, Kerala – 680001</div>}
+                                {f.phone && <div style={{ fontSize: addrSize, opacity: 0.7, marginTop: 1 }}>+91 98765 43210</div>}
                             </div>
-                            <div style={{ textAlign: 'right', fontSize: 9, opacity: 0.8 }}>
+                            <div style={{ textAlign: 'right', fontSize: Math.max(8, addrSize - 2), opacity: 0.8 }}>
                                 {f.gstin && <div>GSTIN: 32AABCE1234F1Z5</div>}
                                 {f.phone && <div style={{ marginTop: 3 }}>📞 +91 98765 43210</div>}
                             </div>
@@ -247,8 +248,8 @@ function BillCanvas({ blocks, theme, selectedId, onSelect }: {
                             {f.logo && <div style={{ width: narrow ? 36 : 48, height: narrow ? 36 : 48, borderRadius: 8, background: `${pc}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }}>🏥</div>}
                             <div style={{ flex: 1 }}>
                                 {f.hospitalName && <div style={{ fontWeight: 900, fontSize: s.fontSize + 6, color: pc }}>ELITE MEDICAL CENTER</div>}
-                                {f.address && <div style={{ fontSize: 10, color: '#64748b', marginTop: 3 }}>123 Hospital Road, Thrissur, Kerala – 680001  {f.phone ? '| +91 98765 43210' : ''}</div>}
-                                {f.gstin && <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 1 }}>GSTIN: 32AABCE1234F1Z5</div>}
+                                {f.address && <div style={{ fontSize: addrSize, color: '#64748b', marginTop: 3 }}>123 Hospital Road, Thrissur, Kerala – 680001  {f.phone ? '| +91 98765 43210' : ''}</div>}
+                                {f.gstin && <div style={{ fontSize: Math.max(8, addrSize - 2), color: '#94a3b8', marginTop: 1 }}>GSTIN: 32AABCE1234F1Z5</div>}
                             </div>
                         </div>
                     )
@@ -843,6 +844,16 @@ export function FullScreenStudio({ usage, label, initialTemplates, initialTempla
                                     </div>
                                     <input type="range" min={8} max={20} value={selectedBlock.style.fontSize} onChange={e => updateBlockStyle(selectedBlock.id, 'fontSize', +e.target.value)} style={{ width: '100%', accentColor: theme.primaryColor }} />
                                 </div>
+
+                                {selectedBlock.id === 'header' && (
+                                    <div style={{ marginBottom: 12 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                            <span style={{ fontSize: 11, color: '#334155', fontWeight: 700 }}>Address Font Size</span>
+                                            <span style={{ fontSize: 13, fontWeight: 800, color: '#4f46e5', minWidth: 32, textAlign: 'right' }}>{selectedBlock.style.addressFontSize || 10}px</span>
+                                        </div>
+                                        <input type="range" min={7} max={20} value={selectedBlock.style.addressFontSize || 10} onChange={e => updateBlockStyle(selectedBlock.id, 'addressFontSize', +e.target.value)} style={{ width: '100%', accentColor: theme.primaryColor }} />
+                                    </div>
+                                )}
 
                                 <div style={{ marginBottom: 12 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>

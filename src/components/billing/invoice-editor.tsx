@@ -319,16 +319,16 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
         }
     }
 
-    const updateLine = (id: number, field: string, value: any) => {
+    const updateLine = (id: number, field: string, value: any, optionObj?: any) => {
         setLines(lines.map(line => {
             if (line.id === id) {
                 const updated = { ...line, [field]: value }
 
                 // Auto-fill details if product selected
                 if (field === 'product_id') {
-                    const product = billableItems.find(i => i.id === value)
+                    const product = billableItems.find(i => i.id === value) || optionObj;
                     if (product) {
-                        updated.description = product.description || product.label
+                        updated.description = product.label || product.name || product.description || ''
 
                         // Get UOM pricing data (Industry Standard)
                         const basePrice = product.metadata?.basePrice || product.price || 0;
@@ -589,7 +589,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                                             <SearchableSelect
                                                 value={line.product_id}
                                                 onChange={(id, option) => {
-                                                    updateLine(line.id, 'product_id', id);
+                                                    updateLine(line.id, 'product_id', id, option);
                                                 }}
                                                 onSearch={async (query) => {
                                                     const lower = query.toLowerCase();
@@ -606,7 +606,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                                                             subLabel: `${item.sku ? `[${item.sku}] ` : ''}${item.description || ''}`.trim()
                                                         }));
                                                 }}
-                                                options={displayedBillableOptions}
+                                                options={billableOptions}
                                                 placeholder="Search product/service..."
                                                 className="w-full mb-2"
                                             />

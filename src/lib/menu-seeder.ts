@@ -9,6 +9,8 @@ export async function ensureAccountingMenu() {
     isAccountingMenuSeeded = true; // Lock immediately to prevent parallel hammering
     
     try {
+        await prisma.$executeRawUnsafe(`UPDATE menu_items SET id = gen_random_uuid() WHERE id IS NULL`).catch(() => {});
+        
         // --- ADMIN CONFIG NOW HANDLED IN ensureAdminMenus ---
         
         // 2.5 Ensure 'Dashboard' exists in Accounting Module
@@ -392,7 +394,7 @@ export async function ensureCrmMenus() {
                         }
                     });
                     console.log(`Auto-seeded CRM Menu: ${item.label}`);
-                } else {
+                } else if (existing?.id) {
                     // Ensure it is in CRM module, correct URL, and correct sort
                     if (existing.module_key !== 'crm' || existing.url !== item.url || existing.label !== item.label || existing.sort_order !== item.sort) {
                         await prisma.menu_items.update({
