@@ -122,8 +122,10 @@ function extractBillData(data: any) {
 
     const grandTotal = Number(data?.total || data?.total_amount || 0)
     const subtotal = Number(data?.subtotal || 0)
-    const taxTotal = Number(data?.tax_amount || data?.tax || 0)
-    const discountTotal = Number(data?.discount_amount || data?.discount || 0)
+    const taxTotal = Number(data?.total_tax || data?.tax_amount || data?.tax || 0)
+    const billDiscount = Number(data?.total_discount || data?.discount_amount || data?.discount || 0)
+    const lineDiscountTotal = (rawLines || []).reduce((sum: number, l: any) => sum + Number(l.discount_amount || l.discount || 0), 0)
+    const discountTotal = billDiscount > 0 ? billDiscount : lineDiscountTotal
 
     // Fallback: If no line items exist in DB but total > 0, generate a single line item
     if ((!rawLines || rawLines.length === 0) && grandTotal > 0) {
