@@ -61,3 +61,15 @@ next-env.d.ts
 
 # Infrastructure
 /infra/certs
+
+# Database Dumps and Backups
+*.dump
+*.backup
+*.dump*
+*.zip
+*Copy.env
+backups/*.dump
+backups/*.sql
+backups/*.json
+tsc_fresh.txt
+tsc_errors.txt
