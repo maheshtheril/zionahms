@@ -790,7 +790,7 @@ export function CompactInvoiceEditor({
   // World Standard Tax Logic
   const totalTax = taxMode === 'exempt' ? 0 : Number(lines.reduce((sum, line) => {
       if (taxMode === 'inclusive') {
-          // Calculate tax from inclusive price
+          // Calculate tax from inclusive price (after line-level discount)
           const taxRateObj = extendedTaxRates.find((t: any) => t.id === line.tax_rate_id);
           const rate = taxRateObj ? Number(taxRateObj.rate) : 0;
           const lineTotal = (line.quantity * line.unit_price) - (line.discount_amount || 0);
@@ -800,7 +800,14 @@ export function CompactInvoiceEditor({
       return sum + (line.tax_amount || 0);
   }, 0).toFixed(2));
 
-  const exactNet = Number(Math.max(0, taxMode === 'inclusive' ? subtotal : subtotal + totalTax - globalDiscount).toFixed(2))
+  // FIX: globalDiscount must always be subtracted regardless of tax mode.
+  // In inclusive mode: subtotal already contains tax, so we just deduct global discount.
+  // In exclusive mode: subtotal is pre-tax, so we add tax then deduct global discount.
+  const exactNet = Number(Math.max(0,
+      taxMode === 'inclusive'
+          ? subtotal - globalDiscount          // inclusive: tax is inside subtotal
+          : subtotal + totalTax - globalDiscount  // exclusive: add tax, then deduct global discount
+  ).toFixed(2))
   const grandTotal = Math.round(exactNet)
   const roundOffAmount = Number((grandTotal - exactNet).toFixed(2))
   const totalPaid = Number(payments.reduce((sum, p) => sum + (p.amount || 0), 0).toFixed(2))
