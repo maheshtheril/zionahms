@@ -157,8 +157,8 @@ export function PremiumPrintHeader({
                         style={{ 
                             left: `${coordinates.logo?.x}px`, 
                             top: `${coordinates.logo?.y}px`,
-                            height: `${coordinates.logo?.size || coordinates.logo?.width || logoSize}px`,
-                            width: `${coordinates.logo?.size || coordinates.logo?.width || logoSize}px`
+                            height: `${coordinates.logo?.size || (coordinates.logo as any)?.width || logoSize}px`,
+                            width: `${coordinates.logo?.size || (coordinates.logo as any)?.width || logoSize}px`
                         }}
                     />
                 ) : (

@@ -854,7 +854,7 @@ export function POSClient({ products, availableTaxes = [] }: Props) {
                                         <td className="py-1">
                                             <div className="truncate w-32 font-bold">
                                                 {item.name}
-                                                {cols.showHsn && item.product?.hsn_code ? ` (HSN:${item.product.hsn_code})` : ''}
+                                                {cols.showHsn && (item as any).product?.hsn_code ? ` (HSN:${(item as any).product.hsn_code})` : ''}
                                                 {cols.showTax && item.taxRate > 0 ? ` [T]` : ''}
                                             </div>
                                             <div className="text-[10px] text-gray-500">@{item.unitPrice.toFixed(2)}</div>

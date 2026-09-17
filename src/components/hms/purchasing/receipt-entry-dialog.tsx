@@ -128,8 +128,10 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
         }
         async function loadUOMs() {
             try {
-                const res = await getUOMs();
-                if (res?.data) {
+                const res: any = await getUOMs();
+                if (Array.isArray(res)) {
+                    setUomOptions(res);
+                } else if (res?.data) {
                     setUomOptions(res.data);
                 }
             } catch (e) {

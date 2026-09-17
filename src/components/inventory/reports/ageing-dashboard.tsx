@@ -134,7 +134,7 @@ export function AgeingDashboard({ data }: { data: AgeingData }) {
                             />
                             <RechartsTooltip 
                                 cursor={{ fill: '#f9fafb' }}
-                                formatter={(value: number) => [formatCurrency(value), 'Value']}
+                                formatter={(value: any) => [formatCurrency(Number(value || 0)), 'Value']}
                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                             />
                             <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={60} />

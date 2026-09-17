@@ -188,7 +188,7 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                                 {/* Staff Info - Smarter Prefix Logic */}
                                 <div className="mb-4">
                                     <h3 className="text-xl font-black text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
-                                        {doc.salutation || (doc.hms_roles?.is_clinical ? 'Dr. ' : '')}{doc.first_name} {doc.last_name}
+                                        {(doc as any).salutation || (doc.hms_roles?.is_clinical ? 'Dr. ' : '')}{doc.first_name} {doc.last_name}
                                     </h3>
                                     <div className="flex flex-col">
                                         <p className="text-sm font-bold text-blue-600">

@@ -587,10 +587,6 @@ export function CompactInvoiceEditor({
     const loadConfig = async () => {
       try {
         if (tenantId && companyId) {
-          const pdf = await getPDFConfig(companyId, tenantId);
-          if (isMounted && pdf) setPdfConfig(pdf);
-          const hms = await getHMSSettings();
-          if (isMounted && hms.success) setHmsConfig(hms.settings);
           const profile = await getActiveGeneralBillingConfig();
           if (isMounted && profile) setPrintProfile(profile);
         }
@@ -946,8 +942,7 @@ export function CompactInvoiceEditor({
         });
         
         if (totalImported > 0) {
-            toast.success("Unified Sync Complete", { description: `Successfully imported ${totalImported} orders from clinical hubs.`,
-                variant: "default" });
+            toast.success("Unified Sync Complete", { description: `Successfully imported ${totalImported} orders from clinical hubs.` });
         } else {
             toast.error("Nothing to Import", { description: "All detected items are already in the billing grid." });
         }
@@ -997,8 +992,7 @@ export function CompactInvoiceEditor({
       return [...prev, newLine as any];
     });
 
-    toast.success("Item Imported", { description: `Successfully added ${item.name} to voucher.`,
-      variant: "default" });
+    toast.success("Item Imported", { description: `Successfully added ${item.name} to voucher.` });
   };
 
   useEffect(() => {
@@ -1727,7 +1721,7 @@ export function CompactInvoiceEditor({
               </a>
 
               {/* PRINT OPTIONS */}
-              <PrintFormatSelector usage="sale_bill" documentId={lastSavedId}>
+              <PrintFormatSelector usage="sale_bill" documentId={lastSavedId || ''}>
                 <button
                   className="group p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-indigo-500 transition-all text-center w-full"
                 >

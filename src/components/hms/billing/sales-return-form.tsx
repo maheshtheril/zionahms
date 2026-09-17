@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
-import { searchPatients } from '@/app/actions/patients';
+import { searchPatients } from '@/app/actions/patient-search';
 import { getInvoicesByPatient, getInvoice } from '@/app/actions/billing';
 import { createSalesReturn } from '@/app/actions/returns';
 import { Button } from '@/components/ui/button';
@@ -153,7 +152,7 @@ export default function SalesReturnForm() {
                             onChange={(id) => id && handlePatientSelect(id)}
                             onSearch={async (q) => {
                                 const res = await searchPatients(q);
-                                return res.map(p => ({ id: p.id, label: `${p.first_name} ${p.last_name} (${p.patient_number})` }));
+                                return (res as any[]).map((p: any) => ({ id: p.id, label: `${p.first_name || ''} ${p.last_name || ''} (${p.patient_number || ''})` }));
                             }}
                         />
                     </div>

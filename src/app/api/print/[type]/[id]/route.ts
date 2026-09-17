@@ -52,7 +52,7 @@ export async function GET(
         let data: any = null;
         if (usage === 'op_slip') {
             // [ELITE-GUARD] Auto-generate token if missing before printing
-            const tokenRes = await ensureAppointmentToken(id);
+            const tokenRes: any = await ensureAppointmentToken(id);
             if (tokenRes.success) data = tokenRes.data;
 
             if (!data) {
@@ -67,12 +67,12 @@ export async function GET(
                 include: { 
                     hms_patient: true, 
                     hms_clinician: true,
-                    prescription: { include: { medicines: true } }
+                    prescription: { include: { prescription_items: true } }
                 }
             });
             // Flatten for engine
             if (data?.prescription?.[0]) {
-                data.medicines = data.prescription[0].medicines;
+                data.medicines = data.prescription[0].prescription_items || (data.prescription[0] as any).medicines;
             }
         } else if (usage === 'lab_report') {
             data = await prisma.hms_lab_order.findFirst({
@@ -142,7 +142,7 @@ export async function GET(
                 try {
                     const userRecord = await prisma.app_user.findUnique({ where: { id: shift.user_id } });
                     if (userRecord) {
-                        userName = userRecord.name || [userRecord.first_name, userRecord.last_name].filter(Boolean).join(" ") || userRecord.email?.split('@')[0] || "CASHIER / STAFF";
+                        userName = userRecord.full_name || userRecord.name || (userRecord as any).first_name || userRecord.email?.split('@')[0] || "CASHIER / STAFF";
                     } else {
                         userName = "STAFF-" + shift.user_id.split('-')[0].toUpperCase();
                     }
@@ -315,7 +315,7 @@ export async function GET(
         } else if (usage === 'lab_catalog') {
             const companyId = session.user.companyId;
             data = await prisma.hms_lab_test.findMany({
-                where: { company_id: companyId },
+                where: { company_id: companyId || undefined },
                 include: {
                     hms_lab_test_panel_member_hms_lab_test_panel_member_panel_idTohms_lab_test: {
                         include: {
@@ -367,7 +367,7 @@ export async function GET(
             usage,
             data,
             companyData,
-            data.branch_id || session.user.branchId as string,
+            (data.branch_id || (session.user as any).current_branch_id || (session.user as any).branchId || undefined) as string,
             autoPrint,
             undefined, // configOverride
             templateId

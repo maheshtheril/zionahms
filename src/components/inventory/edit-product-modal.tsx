@@ -22,6 +22,7 @@ interface EditProductModalProps {
     batches?: any[];
     isOpen: boolean;
     onClose: () => void;
+    onSuccess?: () => void;
 }
 
 export function EditProductModal({

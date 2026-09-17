@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { cn, copyToClipboard } from '@/lib/utils'
 import { useState, useEffect } from 'react'
@@ -127,8 +127,7 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
         setLoading(false)
 
         if (result.error) {
-            toast.success('Operation Failed', { description: result.error,
-                variant: 'destructive' })
+            toast.error('Operation Failed', { description: result.error })
         } else {
             // SUCCESS STATE
             setInviteResult({

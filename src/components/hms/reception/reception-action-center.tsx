@@ -84,10 +84,11 @@ export function ReceptionActionCenter({
     billableItems = [],
     taxConfig = { defaultTax: null, taxRates: [] },
     uoms = [],
-    currency = currencySymbol,
+    currency: propCurrency,
     hospitalInfo = null
 }: ReceptionActionCenterProps) {
     const { currencySymbol } = useLocalization();
+    const currency = propCurrency || currencySymbol || '₹';
     const router = useRouter()
     const [viewMode, setViewMode] = useState<'board' | 'list'>('list')
     const [isPrivacyMode, setIsPrivacyMode] = useState(false)

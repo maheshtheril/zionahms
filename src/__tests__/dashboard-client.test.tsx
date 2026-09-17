@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import '@testing-library/jest-dom/vitest'
 import { describe, it, expect, vi } from 'vitest'
 import { DashboardClient } from '../components/hms/dashboard-client'
 
@@ -37,7 +38,7 @@ describe('DashboardClient', () => {
       todayRevenue: 5000
     }
     
-    render(<DashboardClient stats={mockStats} currencySymbol="₹" revenueChart={[]} appointments={[]} patients={[]} doctors={[]} />)
+    render(<DashboardClient user={{ name: 'Test User' }} stats={mockStats} revenueChart={[]} appointments={[]} patients={[]} doctors={[]} />)
     
     // Check if the titles are present
     expect(screen.getByText("Today's Appointments")).toBeInTheDocument()

@@ -5,6 +5,7 @@ export type NotificationType =
     | 'NURSE_CALL_ALERT'
     | 'NEW_PATIENT_WAITING'
     | 'STAT_MEDICATION_ORDER'
+    | 'CONNECTED'
     | 'GENERAL';
 
 export interface RealtimeNotification {

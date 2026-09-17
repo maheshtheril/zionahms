@@ -13,7 +13,7 @@ import {
 type BlockType = 'header' | 'bill_info' | 'table' | 'summary' | 'payment' | 'footer'
 type PaperSize = 'a4' | 'a5' | 'roll80'
 
-interface BlockStyle { fontSize: number; bold: boolean; align: 'left' | 'center' | 'right'; padding: number }
+interface BlockStyle { fontSize: number; bold: boolean; align: 'left' | 'center' | 'right'; padding: number; addressFontSize?: number }
 
 interface Block {
     id: BlockType

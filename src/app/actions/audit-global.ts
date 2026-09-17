@@ -21,7 +21,7 @@ export async function getGlobalAuditLogs(page: number = 1, limit: number = 50) {
         });
 
         // Fetch users manually since relation is not defined in Prisma schema
-        const actorIds = Array.from(new Set(logs.map(l => l.actor_id).filter(Boolean))) as string[];
+        const actorIds = Array.from(new Set(logs.map((l: any) => l.actor_id).filter(Boolean))) as string[];
         const users = actorIds.length > 0 ? await prisma.app_user.findMany({
             where: { id: { in: actorIds } },
             select: { id: true, name: true }
@@ -29,7 +29,7 @@ export async function getGlobalAuditLogs(page: number = 1, limit: number = 50) {
 
         const userMap = new Map(users.map(u => [u.id, u]));
 
-        const logsWithUser = logs.map(l => ({
+        const logsWithUser = logs.map((l: any) => ({
             ...l,
             app_user: l.actor_id ? (userMap.get(l.actor_id) || null) : null
         }));

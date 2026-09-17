@@ -115,9 +115,9 @@ export async function processPOSCheckout(data: POSCheckoutPayload) {
                     company_id: companyId,
                     invoice_id: invoice.id,
                     amount: data.total,
-                    payment_date: new Date(),
-                    payment_method: data.paymentMethod,
-                    reference: `POS-${invoiceNumber}`,
+                    paid_at: new Date(),
+                    method: (['cash', 'card', 'upi', 'bank_transfer'].includes(data.paymentMethod) ? data.paymentMethod : 'cash') as any,
+                    payment_reference: `POS-${invoiceNumber}`,
                     created_by: session.user.id
                 }
             })
@@ -149,10 +149,9 @@ export async function processPOSCheckout(data: POSCheckoutPayload) {
                         company_id: companyId,
                         product_id: realProductId,
                         batch_id: hasBatch ? item.batchId : null,
-                        transaction_type: 'sales',
-                        quantity: -item.quantity,
+                        movement_type: 'sales',
+                        qty: -item.quantity,
                         reference: `POS-${invoiceNumber}`,
-                        created_by: session.user.id
                     }
                 })
             }
@@ -198,7 +197,7 @@ export async function processPOSCheckout(data: POSCheckoutPayload) {
             const { getActivePOSPrintConfig } = await import('./print-settings');
             // const { NotificationService } = await import('@/lib/notification-service');
             
-            const config = await getActivePOSPrintConfig();
+            const config: any = await getActivePOSPrintConfig();
             if (config?.automation) {
                 if (config.automation.whatsappOnSave) {
                     // await NotificationService.sendInvoiceWhatsapp(result.id, tenantId).catch(console.error);
@@ -210,7 +209,7 @@ export async function processPOSCheckout(data: POSCheckoutPayload) {
 
             // [ACCOUNTING INTEGRATION] Post POS Sale to General Ledger instantly
             const { AccountingService } = await import('@/lib/services/accounting');
-            await AccountingService.postSalesInvoice(result.id, tenantId, companyId, session.user.id)
+            await AccountingService.postSalesInvoice(result.id, session.user.id)
                 .catch(err => console.error("POS Accounting Posting Error:", err));
 
         } catch (autoErr) {

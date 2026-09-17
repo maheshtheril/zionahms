@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { consumeStockBulk, ConsumptionItem, confirmNursingConsumption } from "@/app/actions/nursing-inventory"
 import { getProductAvailableUOMs } from "@/app/actions/product-uom"
 import { getConsumptionHistory } from "@/app/actions/nursing-history"

@@ -99,8 +99,8 @@ export function CreatePatientForm({
                     setRegistrationProductName(res.settings.registrationProductName);
                     setRegistrationProductDescription(res.settings.registrationProductDescription);
                     setEnableCardIssuanceSetting(res.settings.enableCardIssuance);
-                    setDisableRegistrationBillingSetting(res.settings.disableRegistrationBilling);
-                    if (res.settings.disableRegistrationBilling) {
+                    setDisableRegistrationBillingSetting((res.settings as any).disableRegistrationBilling);
+                    if ((res.settings as any).disableRegistrationBilling) {
                         setChargeRegistration(false);
                     }
                 }

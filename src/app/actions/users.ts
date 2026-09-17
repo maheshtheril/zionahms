@@ -650,3 +650,44 @@ export async function deleteUserPermanently(userId: string) {
         return { error: error.message || "Failed to delete user" }
     }
 }
+
+/**
+ * Bulk invite multiple users
+ */
+export async function bulkInviteUsers(users: any[]) {
+    const session = await auth()
+    if (!session?.user?.tenantId) {
+        return { success: false, error: 'Unauthorized' }
+    }
+
+    const results = {
+        total: users.length,
+        invited: 0,
+        failed: 0,
+        errors: [] as string[]
+    }
+
+    for (const u of users) {
+        try {
+            const res = await inviteUser({
+                email: u.email,
+                fullName: u.fullName,
+                roleId: u.roleId,
+                systemRole: u.systemRole || 'user'
+            })
+            if (res.error) {
+                results.failed++
+                results.errors.push(`${u.email}: ${res.error}`)
+            } else {
+                results.invited++
+            }
+        } catch (err: any) {
+            results.failed++
+            results.errors.push(`${u.email}: ${err.message}`)
+        }
+    }
+
+    revalidatePath('/settings/users')
+    return { success: true, results }
+}
+

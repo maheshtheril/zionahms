@@ -139,7 +139,7 @@ export class NotificationService {
         token: string,
         phone: string,
         message: string,
-        options: { endpoint: 'chat' | 'document', pdfBase64?: string, filename?: string, provider?: 'ultramsg' | 'evolution' }
+        options: { endpoint: 'chat' | 'document', pdfBase64?: string, filename?: string, provider?: 'ultramsg' | 'evolution' | 'local-bridge' | 'local' }
     ) {
         // Detect API Type (Priority: Explicit Provider > Token/ID naming convention)
         const apiType = options.provider || (token === 'local' || instanceId.includes('8081') ? 'local-bridge' : (token.startsWith('evo_') || instanceId.includes('-') ? 'evolution' : 'ultramsg'));
@@ -181,6 +181,7 @@ export class NotificationService {
         }
 
         if (apiType === 'evolution') {
+            const baseUrl = process.env.EVOLUTION_API_URL || 'https://api.evolution-api.com';
             const endpoint = options.endpoint === 'document' ? 'sendMedia' : 'sendText';
             const url = `${baseUrl}/message/${endpoint}/${instanceId}`;
 
@@ -291,14 +292,14 @@ export class NotificationService {
             // Flatten medicines for the universal engine
             const mappedPrescription = {
                 ...prescription,
-                medicines: prescription.prescription_items.map(i => ({
+                medicines: ((prescription as any).prescription_items || []).map((i: any) => ({
                     ...i,
                     name: i.hms_product?.name,
                     dosage: i.dosage,
                     timing: i.timing
                 }))
             };
-            const pdfBase64 = await generateUniversalPDF('prescription', mappedPrescription, company, prescription.branch_id || undefined);
+            const pdfBase64 = await generateUniversalPDF('prescription', mappedPrescription, company, (prescription as any).branch_id || undefined);
 
             // 4. Construct Message
             const companyName = company?.name || "HealthCare Center";
@@ -441,7 +442,7 @@ export class NotificationService {
             }
 
             // 3. Generate PDF (Unified Engine)
-            const pdfBase64 = await generateUniversalPDF('lab_report', order, company, order.branch_id || undefined);
+            const pdfBase64 = await generateUniversalPDF('lab_report', order, company, (order as any).branch_id || undefined);
 
             // 4. Construct Message
             const companyName = company?.name || "HealthCare Center";

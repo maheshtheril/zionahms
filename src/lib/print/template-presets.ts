@@ -24,6 +24,7 @@ export interface TemplateSections {
     showEmail: boolean;
     showTaxId: boolean;
     showPatientId: boolean;
+    showTaxInvoiceTitle?: boolean;
     showDoctorName: boolean;
     showTaxColumn: boolean;
     showDiscountColumn: boolean;

@@ -17,6 +17,7 @@ import { useLocalization } from "@/contexts/localization-context";
 
 export default function JournalsPage() {
     const { currencySymbol } = useLocalization();
+    const precision = 2;
     const router = useRouter();
     const [entries, setEntries] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);

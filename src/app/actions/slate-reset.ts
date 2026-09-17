@@ -47,11 +47,8 @@ export async function totalNuclearWipe(fullWipe: boolean) {
         await prisma.hms_stock_levels.deleteMany({ where });
         await prisma.hms_product_batch.deleteMany({ where });
         await prisma.hms_stock_move.deleteMany({ where });
-        await prisma.hms_inventory_ledger.deleteMany({ where });
-        await prisma.hms_opening_stock.deleteMany({ where });
         await prisma.hms_purchase_order_line.deleteMany({ where });
         await prisma.hms_purchase_order.deleteMany({ where });
-        await prisma.hms_accounts_ledger.deleteMany({ where });
         await prisma.hms_stock_adjustment_line.deleteMany({ where });
         await prisma.hms_stock_adjustment.deleteMany({ where });
         
@@ -59,7 +56,6 @@ export async function totalNuclearWipe(fullWipe: boolean) {
         await prisma.journal_lines.deleteMany({ where });
         await prisma.journal_entry_lines.deleteMany({ where });
         await prisma.journal_entries.deleteMany({ where });
-        await prisma.hms_accounts_ledger.deleteMany({ where });
 
         if (fullWipe) {
             await prisma.hms_invoice_lines.deleteMany({ where: { company_id: companyId as any } });

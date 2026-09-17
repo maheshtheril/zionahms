@@ -69,8 +69,8 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
                             <div className="p-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/10 space-y-2">
                                 <p className="text-[9px] font-black uppercase tracking-widest text-indigo-300">Manual Activation Link</p>
                                 <button
-                                    onClick={() => {
-                                        const success = copyToClipboard(result.inviteLink!)
+                                    onClick={async () => {
+                                        const success = await copyToClipboard(result.inviteLink!)
                                         if (success) toast.success("Copied to clipboard!")
                                     }}
                                     className="w-full bg-white/20 hover:bg-white hover:text-indigo-600 p-2 rounded-lg text-white text-left font-bold text-[10px] flex items-center justify-between transition-all group"
