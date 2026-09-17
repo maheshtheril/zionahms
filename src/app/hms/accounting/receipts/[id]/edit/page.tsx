@@ -60,15 +60,15 @@ export default function EditReceiptPage() {
 
     if (isLoading) {
         return (
-            <div className="h-screen w-full bg-[#003333] flex items-center justify-center text-[#64ffff] font-mono uppercase tracking-[0.3em]">
-                <Loader2 className="h-8 w-8 animate-spin mr-4" />
-                Retrieving Voucher Data...
+            <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-3 font-sans">
+                <Loader2 className="h-8 w-8 animate-spin text-emerald-600 dark:text-emerald-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Loading Voucher Details...</span>
             </div>
         );
     }
 
     return (
-        <div className="h-screen w-full bg-[#003333]">
+        <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-950">
             <TallyPaymentForm
                 type="receipt"
                 initialData={initialData}

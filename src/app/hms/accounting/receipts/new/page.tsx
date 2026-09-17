@@ -127,9 +127,10 @@ export default function NewReceiptPage() {
 
                     <button
                         onClick={() => setClassicMode(true)}
-                        className="px-4 py-2 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all text-emerald-400"
+                        className="px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-white/5 transition-all text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5"
                     >
-                        Classic ERP Mode
+                        <Receipt className="h-3.5 w-3.5" />
+                        Full Voucher Terminal
                     </button>
                 </div>
             </motion.div>

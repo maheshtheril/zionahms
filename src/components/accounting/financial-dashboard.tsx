@@ -98,41 +98,41 @@ export function FinancialDashboard({
 
     if (loading && !dailyData) {
         return (
-            <div className="fixed inset-0 z-[200] bg-background flex flex-col items-center justify-center gap-6 animate-in fade-in duration-700 font-mono">
-                <div className="p-10 border-4 border-primary animate-pulse">
-                    <RefreshCcw className="h-16 w-16 text-primary animate-spin" />
+            <div className="fixed inset-0 z-[200] bg-background flex flex-col items-center justify-center gap-4 animate-in fade-in duration-300 font-sans">
+                <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
+                    <RefreshCcw className="h-10 w-10 text-indigo-600 dark:text-indigo-400 animate-spin" />
                 </div>
-                <div className="text-center space-y-2">
-                    <p className="text-foreground font-black text-2xl uppercase tracking-widest">GATEWAY OF HMS</p>
-                    <p className="text-muted-foreground text-xs font-bold tracking-[0.4em] uppercase">Syncing Institutional Ledgers...</p>
+                <div className="text-center space-y-1">
+                    <p className="text-foreground font-black text-lg tracking-tight">Financial Intelligence</p>
+                    <p className="text-muted-foreground text-xs font-semibold">Synchronizing Institutional Ledgers...</p>
                 </div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground font-mono p-1 flex flex-col gap-1 overflow-x-hidden transition-colors duration-500">
+        <div className="min-h-screen bg-background text-foreground font-sans p-4 lg:p-6 flex flex-col gap-6 overflow-x-hidden transition-colors duration-300">
             
-            {/* 1. INSTITUTIONAL TOP BAR - ADAPTIVE THEME */}
-            <div className="h-10 bg-slate-100 dark:bg-[#003333] flex items-center justify-between px-6 border-b border-slate-200 dark:border-[#004d4d] shrink-0">
+            {/* 1. INSTITUTIONAL TOP BAR - MODERN SAAS THEME */}
+            <div className="h-12 bg-white dark:bg-slate-900 flex items-center justify-between px-6 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm shrink-0">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                         <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-[#64ffff]">Live Audit Active</span>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-emerald-400">Live Audit Active</span>
                     </div>
-                    <div className="h-4 w-px bg-slate-200 dark:bg-white/10"></div>
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-[#ffffcc]/60 uppercase">
-                        Medical Day: <span className="text-primary dark:text-[#ffffcc]">{format(new Date(), 'EEEE, MMM dd').toUpperCase()} (08:00 Shift)</span>
+                    <div className="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                        Financial Day: <span className="font-bold text-slate-900 dark:text-white">{format(new Date(), 'EEEE, dd MMM yyyy')}</span>
                     </span>
                 </div>
-                <div className="flex items-center gap-6 text-[10px] font-bold text-muted-foreground">
+                <div className="flex items-center gap-6 text-xs font-medium text-slate-500">
                     <div className="flex items-center gap-2">
                         <History className="h-3.5 w-3.5" />
-                        <span>{formatDate(date, 'MMMM yyyy')}</span>
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">{formatDate(date, 'MMMM yyyy')}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-primary">
-                        <ShieldCheck className="h-3.5 w-3.5" />
-                        <span>POSTED & VERIFIED</span>
+                    <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold">
+                        <ShieldCheck className="h-4 w-4" />
+                        <span>POSTED & RECONCILED</span>
                     </div>
                 </div>
             </div>

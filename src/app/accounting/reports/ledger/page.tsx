@@ -58,7 +58,7 @@ export default function GeneralLedgerPage() {
                             <h1 className="font-black text-2xl tracking-[0.02em] uppercase text-slate-900 dark:text-white leading-none">
                                 GENERAL <span className="text-emerald-500">LEDGER</span>
                             </h1>
-                            <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[10px] uppercase font-black px-2 py-0.5 rounded-full">TALLY ERP V.REPORTS</Badge>
+                            <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full">INSTITUTIONAL LEDGER</Badge>
                         </div>
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1.5 opacity-60">Supplier / Expense / Patient Statement</p>
                     </div>

@@ -1,8 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Save, Loader2, Search, X, Check } from 'lucide-react';
+import {
+    Save, Loader2, Search, X, Check, ArrowLeft,
+    Calendar, Building2, User, Receipt, CreditCard,
+    Plus, Trash2, CheckCircle2, AlertCircle, FileText
+} from 'lucide-react';
 import { useLocalization } from "@/contexts/localization-context";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface TallyPaymentFormProps {
     type: 'payment' | 'receipt';
@@ -18,8 +25,7 @@ interface TallyPaymentFormProps {
 }
 
 /**
- * TallySelect: A localized search component that doesn't use any shared code.
- * FORCED HIGH-CONTRAST COLORS: Black-on-Yellow Focus, White-on-Navy List.
+ * Modern searchable select component matching SaaS ERP theme
  */
 function TallySelect({ 
     id, 
@@ -38,7 +44,6 @@ function TallySelect({
     onChange: (id: string, label: string) => void;
     autoFocus?: boolean;
 }) {
-    const { currencySymbol } = useLocalization();
     const [query, setQuery] = useState(label || '');
     const [results, setResults] = useState<any[]>([]);
     const [open, setOpen] = useState(false);
@@ -55,7 +60,6 @@ function TallySelect({
         setLoading(true);
         try {
             const res = await onSearch(q);
-            // Map results to ensure we have label/subLabel even if the API uses name/id
             const mapped = (res || []).map((item: any) => ({
                 ...item,
                 label: item.label || item.name || 'Unnamed Account',
@@ -76,7 +80,6 @@ function TallySelect({
     };
 
     const handleBlur = () => {
-        // Strict Reset: If we don't have a valid value (ID), revert query to label
         if (!value) {
             setQuery('');
         } else {
@@ -87,47 +90,51 @@ function TallySelect({
 
     return (
         <div className="relative w-full" ref={containerRef}>
-            <input
-                id={id}
-                ref={inputRef}
-                type="text"
-                autoComplete="off"
-                autoFocus={autoFocus}
-                value={(open ? query : (label)) || ''}
-                onChange={(e) => {
-                    const val = e.target.value || '';
-                    setQuery(val);
-                    performSearch(val);
-                }}
-                onFocus={() => {
-                    performSearch(query);
-                }}
-                onBlur={() => {
-                    // Delay slightly to allow onMouseDown to trigger selection
-                    setTimeout(handleBlur, 200);
-                }}
-                onKeyDown={(e) => {
-                    if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        setActiveIndex(prev => Math.min(prev + 1, results.length - 1));
-                    } else if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        setActiveIndex(prev => Math.max(prev - 1, 0));
-                    } else if (e.key === 'Enter' && open && results[activeIndex]) {
-                        e.preventDefault();
-                        handleSelect(results[activeIndex]);
-                    } else if (e.key === 'Escape') {
-                        setOpen(false);
-                    }
-                }}
-                placeholder={placeholder}
-                className={`w-full bg-transparent border-none outline-none text-[#ffffcc] text-xs placeholder:text-[#64ffff]/30 focus:bg-[#ffffcc] focus:text-black focus:font-bold px-1 py-0.5
-                    ${!value && query && !open ? 'ring-1 ring-red-500 bg-red-900/20' : ''}`}
-            />
+            <div className="relative">
+                <input
+                    id={id}
+                    ref={inputRef}
+                    type="text"
+                    autoComplete="off"
+                    autoFocus={autoFocus}
+                    value={(open ? query : label) || ''}
+                    onChange={(e) => {
+                        const val = e.target.value || '';
+                        setQuery(val);
+                        performSearch(val);
+                    }}
+                    onFocus={() => {
+                        performSearch(query);
+                    }}
+                    onBlur={() => {
+                        setTimeout(handleBlur, 200);
+                    }}
+                    onKeyDown={(e) => {
+                        if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            setActiveIndex(prev => Math.min(prev + 1, results.length - 1));
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            setActiveIndex(prev => Math.max(prev - 1, 0));
+                        } else if (e.key === 'Enter' && open && results[activeIndex]) {
+                            e.preventDefault();
+                            handleSelect(results[activeIndex]);
+                        } else if (e.key === 'Escape') {
+                            setOpen(false);
+                        }
+                    }}
+                    placeholder={placeholder}
+                    className="w-full h-10 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm"
+                />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+            </div>
+
             {open && (
-                <div className="absolute z-[200] w-full mt-1 bg-[#000080] border border-[#006666] shadow-2xl max-h-60 overflow-auto">
+                <div className="absolute z-[200] w-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl max-h-60 overflow-auto divide-y divide-slate-100 dark:divide-slate-800">
                     {loading ? (
-                        <div className="p-2 text-[10px] text-[#64ffff] italic">Searching...</div>
+                        <div className="p-3 text-xs text-slate-400 italic flex items-center gap-2">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-500" /> Searching accounts...
+                        </div>
                     ) : results.length > 0 ? (
                         <ul className="py-1">
                             {results.map((item, idx) => (
@@ -138,20 +145,25 @@ function TallySelect({
                                         handleSelect(item);
                                     }}
                                     onMouseEnter={() => setActiveIndex(idx)}
-                                    className={`px-3 py-1.5 cursor-pointer flex flex-col border-b border-[#004d4d]/30 
-                                        ${idx === activeIndex ? 'bg-[#006666]' : ''}`}
+                                    className={`px-3 py-2 cursor-pointer flex flex-col transition-colors ${
+                                        idx === activeIndex
+                                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+                                            : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200'
+                                    }`}
                                 >
-                                    <span className="text-white text-xs font-bold leading-tight">{item.label}</span>
+                                    <span className="text-xs font-bold">{item.label}</span>
                                     {item.subLabel && (
-                                        <span className="text-[#64ffff] text-[9px] uppercase tracking-wider">{item.subLabel}</span>
+                                        <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono">
+                                            {item.subLabel}
+                                        </span>
                                     )}
                                 </li>
                             ))}
                         </ul>
                     ) : (
-                        <div className="p-3 text-[10px] border-b border-red-900 bg-red-500/10 flex flex-col gap-1">
-                            <span className="font-bold text-red-400 uppercase tracking-widest">Spelling Error / Not Found</span>
-                            <span className="text-[#64ffff]/40">Ensure you have created this ledger in the Chart of Accounts first.</span>
+                        <div className="p-3 text-xs text-slate-500 dark:text-slate-400 flex flex-col gap-0.5">
+                            <span className="font-bold text-slate-700 dark:text-slate-300">No matching ledgers found</span>
+                            <span className="text-[10px] text-slate-400">Please verify or create this ledger in the Chart of Accounts.</span>
                         </div>
                     )}
                 </div>
@@ -215,7 +227,6 @@ export function TallyPaymentForm({
                 setAllocations(map);
             }
             
-            // Logic: If partner exists, it's almost always a Bill-wise entry for HMS
             if (initialData.partner_id) setVoucherType('bill');
             else if (initialData.lines && initialData.lines.length > 0) setVoucherType('direct');
 
@@ -250,7 +261,6 @@ export function TallyPaymentForm({
     // Keyboard Listeners (Ctrl+A, Esc, Y/N)
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Ctrl+A -> Show Accept Prompt (Save)
             const isCtrlA = e.ctrlKey && e.key.toLowerCase() === 'a';
             if (isCtrlA) {
                 e.preventDefault();
@@ -258,17 +268,14 @@ export function TallyPaymentForm({
                     setShowAcceptPrompt(true);
                 }
             }
-            // Esc -> Close Prompt or Abort
             if (e.key === 'Escape') {
                 if (showAcceptPrompt) setShowAcceptPrompt(false);
                 else if (!isSavedSuccessfully) onCancel();
             }
-            // Y or Enter in Prompt
             if (showAcceptPrompt && (e.key.toLowerCase() === 'y' || (e.key === 'Enter' && !isSubmitting))) {
                 e.preventDefault();
                 handleSave();
             }
-            // N in Prompt
             if (showAcceptPrompt && e.key.toLowerCase() === 'n') {
                 e.preventDefault();
                 setShowAcceptPrompt(false);
@@ -304,7 +311,6 @@ export function TallyPaymentForm({
             await onSave(payload);
             setIsSavedSuccessfully(true);
             
-            // World Standard Continuous Entry: Reset for NEW Voucher after 1s
             setTimeout(() => {
                 resetForm();
                 setLocalVoucherNo(prev => prev + 1);
@@ -315,262 +321,392 @@ export function TallyPaymentForm({
         }
     };
 
+    const isReceipt = type === 'receipt';
+    const accentColor = isReceipt ? 'emerald' : 'indigo';
+
     return (
-        <div className="fixed inset-0 z-[100] bg-[#003333] text-[#64ffff] font-mono select-none flex flex-col overflow-hidden">
-            {/* Legend Bar */}
-            <div className="h-7 bg-[#004d4d] flex items-center justify-between px-2 text-[10px] font-bold border-b border-[#006666]">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 flex flex-col">
+            
+            {/* Top Navigation Header */}
+            <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between shadow-sm shrink-0">
                 <div className="flex items-center gap-4">
-                    <span className="uppercase">{type} VOUCHER ENTRY</span>
-                    <span className="text-[#ffffcc]">No. {localVoucherNo}</span>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={onCancel}
+                        className="h-10 w-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
+                    >
+                        <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+                                {isReceipt ? 'Receipt Voucher Entry' : 'Payment Voucher Entry'}
+                            </h1>
+                            <Badge className={isReceipt ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 font-bold" : "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 font-bold"}>
+                                Voucher #{localVoucherNo}
+                            </Badge>
+                        </div>
+                        <p className="text-xs text-slate-400">
+                            {isReceipt ? 'Inbound cash/bank collection & invoice settlement' : 'Outbound payment & expense settlement'}
+                        </p>
+                    </div>
                 </div>
-                <div className="flex items-center gap-4">
-                    <span className="text-[#ffffcc]">{new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+
+                {/* Mode Selector & Quick Actions */}
+                <div className="flex items-center gap-3">
+                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <button
+                            type="button"
+                            onClick={() => setVoucherType('bill')}
+                            className={cn(
+                                "px-3 py-1.5 text-xs font-bold rounded-lg transition-all",
+                                voucherType === 'bill'
+                                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm"
+                                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                            )}
+                        >
+                            Against Bill
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setVoucherType('direct')}
+                            className={cn(
+                                "px-3 py-1.5 text-xs font-bold rounded-lg transition-all",
+                                voucherType === 'direct'
+                                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm"
+                                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                            )}
+                        >
+                            Direct Ledger
+                        </button>
+                    </div>
+
+                    <Button
+                        variant="outline"
+                        onClick={onCancel}
+                        className="h-10 px-4 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-bold"
+                    >
+                        Cancel (Esc)
+                    </Button>
+                    <Button
+                        onClick={() => setShowAcceptPrompt(true)}
+                        disabled={isSubmitting || Number(amount || 0) <= 0}
+                        className={cn(
+                            "h-10 px-6 rounded-xl text-white text-xs font-bold shadow-lg active:scale-95 transition-all",
+                            isReceipt ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20" : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20"
+                        )}
+                    >
+                        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                        Save Voucher
+                        <span className="ml-2 px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-mono font-normal">Ctrl+A</span>
+                    </Button>
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-                {/* 1. Success Message overlay */}
-                {isSavedSuccessfully && (
-                    <div className="absolute inset-0 z-[300] bg-black/80 flex items-center justify-center animate-in fade-in duration-300">
-                        <div className="bg-[#ffffcc] text-black p-8 border-4 border-[#006666] shadow-[0_0_50px_rgba(255,255,204,0.3)] text-center scale-110 animate-in zoom-in-95">
-                            <Check className="h-12 w-12 mx-auto mb-4" />
-                            <div className="text-2xl font-black uppercase tracking-tighter">Voucher Saved</div>
-                            <div className="text-[10px] mt-2 opacity-60">Entry posted to ledger successfully</div>
-                        </div>
-                    </div>
-                )}
+            {/* Main Content Area */}
+            <div className="flex-1 p-6 lg:p-8 max-w-6xl mx-auto w-full space-y-6 overflow-y-auto">
+                
+                {/* 1. Header Details Card */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-slate-400" />
+                        Voucher Particulars
+                    </h3>
 
-                {/* 2. Accept Prompt (World Standard) */}
-                {showAcceptPrompt && (
-                    <div className="absolute inset-0 z-[250] bg-black/40 flex items-center justify-center backdrop-blur-sm">
-                        <div className="bg-[#000080] border-2 border-[#ffffcc] p-6 shadow-2xl animate-in zoom-in-95 duration-100">
-                            <div className="text-white text-xl font-black uppercase tracking-widest mb-4">Accept?</div>
-                            <div className="flex gap-4">
-                                <button 
-                                    autoFocus
-                                    onClick={handleSave}
-                                    className="bg-[#ffffcc] text-black px-6 py-1 font-black uppercase text-xs hover:bg-white"
-                                >Yes (Enter)</button>
-                                <button 
-                                    onClick={() => setShowAcceptPrompt(false)}
-                                    className="border border-[#ffffcc] text-[#ffffcc] px-6 py-1 font-black uppercase text-xs hover:bg-[#004d4d]"
-                                >No (Esc)</button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Form Main Area */}
-                <div className="flex-1 flex flex-col bg-[#004d4d] border-r border-[#006666] m-1 p-8 space-y-8 overflow-auto">
-                    <div className="grid grid-cols-1 gap-6 max-w-2xl">
-                        {/* Header Details */}
-                        <div className="flex items-center gap-4">
-                            <span className="w-24 text-[11px] uppercase tracking-widest">Date</span>
-                            <span className="">:</span>
-                            <input
-                                type="date"
-                                value={date}
-                                onChange={e => setDate(e.target.value)}
-                                className="bg-[#003333] border-none outline-none text-[#ffffcc] focus:bg-[#000080] px-2 text-xs"
-                            />
-                        </div>
-
-                        <div className="flex items-center gap-4 border-b border-[#006666] pb-4 mb-2">
-                             <span className="w-24 text-[11px] uppercase tracking-widest text-[#64ffff]/50">Entry Mode</span>
-                             <span className="">:</span>
-                             <div className="flex gap-4">
-                                <button 
-                                    onClick={() => setVoucherType('bill')} 
-                                    className={`px-4 py-0.5 text-[10px] uppercase font-black border ${voucherType === 'bill' ? 'bg-[#ffffcc] text-black border-[#ffffcc] shadow-[0_0_10px_rgba(255,255,204,0.3)]' : 'text-[#64ffff] border-[#006666]'}`}
-                                >Against Bill</button>
-                                <button 
-                                    onClick={() => setVoucherType('direct')} 
-                                    className={`px-4 py-0.5 text-[10px] uppercase font-black border ${voucherType === 'direct' ? 'bg-[#ffffcc] text-black border-[#ffffcc] shadow-[0_0_10px_rgba(255,255,204,0.3)]' : 'text-[#64ffff] border-[#006666]'}`}
-                                >Indirect Expense</button>
-                             </div>
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                            <span className="w-24 text-[11px] uppercase tracking-widest">Account</span>
-                            <span className="">:</span>
-                            <div className="w-80">
-                                <TallySelect
-                                    id="money-account"
-                                    value={journalId}
-                                    label={journalName}
-                                    placeholder="Select Cash / Bank Account..."
-                                    onSearch={journalsSearch || (async () => [])}
-                                    onChange={(id, lbl) => {
-                                        setJournalId(id);
-                                        setJournalName(lbl);
-                                    }}
-                                    autoFocus
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Date Field */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Transaction Date</label>
+                            <div className="relative">
+                                <input
+                                    type="date"
+                                    value={date}
+                                    onChange={e => setDate(e.target.value)}
+                                    className="w-full h-10 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm"
                                 />
                             </div>
                         </div>
 
-                        {voucherType === 'bill' && (
-                            <div className="flex items-center gap-4 animate-in fade-in slide-in-from-top-1">
-                                <span className="w-24 text-[11px] uppercase tracking-widest">Particulars</span>
-                                <span className="">:</span>
-                                <div className="w-80">
-                                    <TallySelect
-                                        id="partner-account"
-                                        value={partnerId}
-                                        label={partnerName}
-                                        placeholder={type === 'payment' ? 'Select Vendor Ledger...' : 'Select Payer Ledger...'}
-                                        onSearch={(type === 'payment' ? suppliersSearch : patientsSearch) || (async () => [])}
-                                        onChange={(id, lbl) => {
-                                            setPartnerId(id);
-                                            setPartnerName(lbl);
-                                        }}
-                                    />
+                        {/* Money Account (Bank / Cash) */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                                {isReceipt ? 'Deposit Into (Cash/Bank)' : 'Paid From (Cash/Bank)'}
+                            </label>
+                            <TallySelect
+                                id="money-account"
+                                value={journalId}
+                                label={journalName}
+                                placeholder="Select Cash / Bank Account..."
+                                onSearch={journalsSearch || (async () => [])}
+                                onChange={(id, lbl) => {
+                                    setJournalId(id);
+                                    setJournalName(lbl);
+                                }}
+                                autoFocus
+                            />
+                        </div>
+
+                        {/* Partner / Party (If bill mode) */}
+                        {voucherType === 'bill' ? (
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                                    {isReceipt ? 'Received From (Patient / Customer)' : 'Paid To (Supplier / Vendor)'}
+                                </label>
+                                <TallySelect
+                                    id="partner-account"
+                                    value={partnerId}
+                                    label={partnerName}
+                                    placeholder={isReceipt ? 'Search Patient / Customer...' : 'Search Supplier / Vendor...'}
+                                    onSearch={(isReceipt ? patientsSearch : suppliersSearch) || (async () => [])}
+                                    onChange={(id, lbl) => {
+                                        setPartnerId(id);
+                                        setPartnerName(lbl);
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Entry Mode</label>
+                                <div className="h-10 flex items-center px-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs text-slate-500">
+                                    Direct General Ledger Posting
                                 </div>
                             </div>
                         )}
                     </div>
+                </div>
 
-                    {/* DYNAMIC SUBTITLE */}
-                    <div className="mb-4">
-                        <div className="text-[10px] uppercase font-bold text-[#64ffff] opacity-40 italic tracking-widest">
-                            {voucherType === 'bill' ? 'Select bills below to reconcile payment' : 'Enter indirect expense ledgers (Rent, Travel, Office) below'}
+                {/* 2. Transaction Allocation Grid Card */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+                    <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <div>
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                                {voucherType === 'bill' ? 'Invoice Allocations' : 'Ledger Line Items'}
+                            </h3>
+                            <p className="text-xs text-slate-400">
+                                {voucherType === 'bill'
+                                    ? 'Allocate payment amounts against unpaid bills or invoices'
+                                    : 'Enter expense or revenue accounts and corresponding amounts'}
+                            </p>
                         </div>
+                        {voucherType === 'direct' && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setDirectLines([...directLines, { id: Math.random().toString(), accountId: '', accountName: '', amount: '' }])}
+                                className="h-8 rounded-lg border-slate-200 dark:border-slate-700 text-xs font-bold"
+                            >
+                                <Plus className="h-3.5 w-3.5 mr-1" /> Add Line
+                            </Button>
+                        )}
                     </div>
 
-                    {/* 3. PARTICULARS GRID */}
-                    <div className="flex-1 flex flex-col border border-[#006666] min-h-[300px] shadow-2xl">
-                        <div className="grid grid-cols-12 bg-[#006666] text-[10px] font-bold py-1">
-                            <div className="col-span-1 px-3">NO</div>
-                            <div className="col-span-8 px-3">PARTICULARS</div>
-                            <div className="col-span-3 px-3 text-right">AMOUNT</div>
-                        </div>
-
-                        <div className="flex-1 bg-[#003333] overflow-auto">
-                            {voucherType === 'bill' ? (
-                                bills.length > 0 ? (
-                                    bills.map((bill, idx) => (
-                                        <div key={bill.id} className="grid grid-cols-12 text-xs border-b border-[#004d4d]/30 hover:bg-[#000080]/50 h-8 items-center">
-                                            <div className="col-span-1 px-3 opacity-50">{idx + 1}</div>
-                                            <div className="col-span-8 px-3 flex justify-between">
-                                                <span className="text-white font-bold">{bill.number}</span>
-                                                <span className="text-[10px] italic text-[#64ffff]/60">Bal: {bill.outstanding}</span>
-                                            </div>
-                                            <div className="col-span-3">
-                                                <input
-                                                    type="number"
-                                                    value={allocations[bill.id] || ''}
-                                                    onChange={e => {
-                                                        const newMap = { ...allocations, [bill.id]: Number(e.target.value) };
-                                                        setAllocations(newMap);
-                                                        const total = (Object.values(newMap) as number[]).reduce((acc, val) => acc + (val || 0), 0);
-                                                        setAmount(total.toString());
-                                                    }}
-                                                    className="w-full bg-transparent text-right outline-none text-[#ffffcc] focus:bg-[#000080]"
-                                                />
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="p-8 text-center text-[10px] text-[#64ffff]/30 italic uppercase tracking-widest">No outstanding bills for this ledger</div>
-                                )
+                    {voucherType === 'bill' ? (
+                        <div className="overflow-x-auto">
+                            {bills.length > 0 ? (
+                                <table className="w-full text-left text-xs border-collapse">
+                                    <thead>
+                                        <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider font-bold">
+                                            <th className="px-6 py-3 w-16">#</th>
+                                            <th className="px-6 py-3">Invoice Number</th>
+                                            <th className="px-6 py-3 text-right">Outstanding Balance</th>
+                                            <th className="px-6 py-3 text-right w-64">Allocated Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                        {bills.map((bill, idx) => (
+                                            <tr key={bill.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                                                <td className="px-6 py-3.5 font-mono text-slate-400">{idx + 1}</td>
+                                                <td className="px-6 py-3.5 font-bold font-mono text-indigo-600 dark:text-indigo-400">
+                                                    {bill.number}
+                                                </td>
+                                                <td className="px-6 py-3.5 text-right font-mono text-slate-600 dark:text-slate-300">
+                                                    {effectiveCurrency}{Number(bill.outstanding || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td className="px-6 py-3.5 text-right">
+                                                    <input
+                                                        type="number"
+                                                        placeholder="0.00"
+                                                        value={allocations[bill.id] || ''}
+                                                        onChange={e => {
+                                                            const newMap = { ...allocations, [bill.id]: Number(e.target.value) };
+                                                            setAllocations(newMap);
+                                                            const total = (Object.values(newMap) as number[]).reduce((acc, val) => acc + (val || 0), 0);
+                                                            setAmount(total.toString());
+                                                        }}
+                                                        className="w-48 h-9 px-3 text-right font-mono font-bold text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                                    />
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             ) : (
-                                directLines.map((line, idx) => (
-                                    <div key={line.id} className="grid grid-cols-12 text-xs border-b border-[#004d4d]/30 hover:bg-[#000080]/50 h-8 items-center">
-                                        <div className="col-span-1 px-3 opacity-50">{idx + 1}</div>
-                                        <div className="col-span-8 px-3">
-                                            <TallySelect
-                                                id={`direct-acc-${idx}`}
-                                                value={line.accountId}
-                                                label={line.accountName}
-                                                placeholder="Select Expense Ledger..."
-                                                onSearch={accountsSearch || (async () => [])}
-                                                onChange={(id, lbl) => {
-                                                    const lines = [...directLines];
-                                                    lines[idx] = { ...lines[idx], accountId: id, accountName: lbl };
-                                                    setDirectLines(lines);
-                                                }}
-                                            />
-                                        </div>
-                                        <div className="col-span-3 px-3">
-                                            <input
-                                                type="number"
-                                                value={line.amount}
-                                                onChange={e => {
-                                                    const lines = [...directLines];
-                                                    lines[idx] = { ...lines[idx], amount: e.target.value };
-                                                    setDirectLines(lines);
-                                                    const total = lines.reduce((acc: number, ln: any) => acc + Number(ln.amount || 0), 0);
-                                                    setAmount(total.toString());
-                                                    if (e.target.value && idx === lines.length - 1) {
-                                                        setDirectLines([...lines, { id: Math.random().toString(), accountId: '', accountName: '', amount: '' }]);
-                                                    }
-                                                }}
-                                                className="w-full bg-transparent text-right outline-none text-[#ffffcc] focus:bg-[#000080]"
-                                            />
-                                        </div>
-                                    </div>
-                                ))
+                                <div className="p-12 text-center text-slate-400 space-y-2">
+                                    <AlertCircle className="h-8 w-8 mx-auto text-slate-300 dark:text-slate-600" />
+                                    <p className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                                        {partnerId ? 'No outstanding invoices for this party' : 'Select a party above to view pending invoices'}
+                                    </p>
+                                </div>
                             )}
                         </div>
-
-                        {/* Total Bar */}
-                        <div className="grid grid-cols-12 bg-[#006666] text-xs font-black py-2">
-                             <div className="col-span-9 px-4 text-right opacity-80 tracking-widest">TOTAL</div>
-                             <div className="col-span-3 px-4 text-right text-white drop-shadow-[0_0_5px_#ffffcc]">{currency} {Number(amount || 0).toLocaleString()}</div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider font-bold">
+                                        <th className="px-6 py-3 w-16">#</th>
+                                        <th className="px-6 py-3">Ledger Account</th>
+                                        <th className="px-6 py-3 text-right w-64">Amount</th>
+                                        <th className="px-6 py-3 text-center w-20">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    {directLines.map((line, idx) => (
+                                        <tr key={line.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                                            <td className="px-6 py-3.5 font-mono text-slate-400">{idx + 1}</td>
+                                            <td className="px-6 py-3.5">
+                                                <TallySelect
+                                                    id={`direct-acc-${idx}`}
+                                                    value={line.accountId}
+                                                    label={line.accountName}
+                                                    placeholder="Select Particulars Ledger..."
+                                                    onSearch={accountsSearch || (async () => [])}
+                                                    onChange={(id, lbl) => {
+                                                        const lines = [...directLines];
+                                                        lines[idx] = { ...lines[idx], accountId: id, accountName: lbl };
+                                                        setDirectLines(lines);
+                                                    }}
+                                                />
+                                            </td>
+                                            <td className="px-6 py-3.5 text-right">
+                                                <input
+                                                    type="number"
+                                                    placeholder="0.00"
+                                                    value={line.amount}
+                                                    onChange={e => {
+                                                        const lines = [...directLines];
+                                                        lines[idx] = { ...lines[idx], amount: e.target.value };
+                                                        setDirectLines(lines);
+                                                        const total = lines.reduce((acc: number, ln: any) => acc + Number(ln.amount || 0), 0);
+                                                        setAmount(total.toString());
+                                                        if (e.target.value && idx === lines.length - 1) {
+                                                            setDirectLines([...lines, { id: Math.random().toString(), accountId: '', accountName: '', amount: '' }]);
+                                                        }
+                                                    }}
+                                                    className="w-48 h-9 px-3 text-right font-mono font-bold text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                                />
+                                            </td>
+                                            <td className="px-6 py-3.5 text-center">
+                                                {directLines.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const filtered = directLines.filter((_, i) => i !== idx);
+                                                            setDirectLines(filtered);
+                                                            const total = filtered.reduce((acc: number, ln: any) => acc + Number(ln.amount || 0), 0);
+                                                            setAmount(total.toString());
+                                                        }}
+                                                        className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
+                    )}
+                </div>
 
-                    <div className="flex flex-col gap-1">
-                        <span className="text-[10px] opacity-60 uppercase tracking-widest">Narration</span>
+                {/* 3. Summary & Narration Card */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-2">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Narration / Memo</label>
                         <textarea
+                            rows={3}
                             value={memo}
                             onChange={e => setMemo(e.target.value)}
-                            className="bg-[#003333] border border-[#006666] outline-none text-[#ffffcc] p-2 text-xs min-h-[60px]"
+                            placeholder="Add reference notes or narration for ledger posting..."
+                            className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                         />
                     </div>
-                </div>
 
-                {/* Legend/Actions Side - HIDDEN ON MOBILE */}
-                <div className="hidden lg:flex w-56 bg-[#003333] flex-col p-1 gap-1 border-l border-[#006666]">
-                    <div className="bg-[#004d4d] py-4 text-center font-black text-[#ffffcc] border border-[#006666] mb-2 tracking-widest text-[11px]">GATEWAY OF ERP</div>
-                    
-                    {[
-                        { key: 'F4', label: 'CONTRA' },
-                        { key: 'F5', label: 'PAYMENT', active: type === 'payment' },
-                        { key: 'F6', label: 'RECEIPT', active: type === 'receipt' },
-                        { key: 'F7', label: 'JOURNAL' },
-                        { key: 'F8', label: 'CREDIT NOTE' },
-                        { key: 'F9', label: 'DEBIT NOTE' },
-                        { key: 'F12', label: 'CONFIGURE' }
-                    ].map(btn => (
-                        <div key={btn.key} className={`flex items-center px-2 py-1 text-[10px] cursor-pointer hover:bg-[#000080] ${btn.active ? 'bg-[#ffffcc] text-black font-black' : ''}`}>
-                            <span className="w-8 opacity-40">{btn.key}</span>
-                            <span>{btn.label}</span>
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between h-full space-y-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Voucher Amount</span>
+                            <Badge variant="outline" className="font-mono text-[10px]">
+                                Reconciled
+                            </Badge>
                         </div>
-                    ))}
-
-                    <div className="mt-auto p-4 bg-black/20 border border-[#004d4d] text-[8px] text-[#64ffff]/40 uppercase leading-loose">
-                        Node: Financial Prime<br/>
-                        License: Institutional<br/>
-                        Auth: Verified
+                        <div className="text-3xl font-black font-mono tracking-tight text-slate-900 dark:text-white">
+                            {effectiveCurrency} {Number(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <p className="text-[11px] text-slate-400">
+                            Press <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[10px]">Ctrl+A</kbd> to quickly save and post to general ledger.
+                        </p>
                     </div>
                 </div>
             </div>
 
-            {/* Save Area - FIXED BOTTOM BAR */}
-            <div className="h-10 bg-black/40 border-t border-[#006666] flex items-center justify-between px-4 mt-auto">
-                <button onClick={onCancel} className="text-xs text-red-400 font-bold hover:text-white uppercase transition-colors">Abort (Esc)</button>
-                <div className="flex gap-4">
-                    <button 
-                        onClick={() => setShowAcceptPrompt(true)} 
-                        disabled={isSubmitting || isSavedSuccessfully}
-                        className="bg-[#ffffcc] text-black px-10 h-7 text-[11px] font-black uppercase hover:bg-[#64ffff] transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,255,204,0.4)] animate-pulse hover:animate-none"
-                    >
-                        {isSubmitting ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-                        Save Voucher (Ctrl+A)
-                    </button>
+            {/* Accept Confirmation Prompt Modal */}
+            {showAcceptPrompt && (
+                <div className="fixed inset-0 z-[250] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+                        <div className="flex items-center gap-3">
+                            <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", isReceipt ? "bg-emerald-500/10 text-emerald-600" : "bg-indigo-500/10 text-indigo-600")}>
+                                <Check className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <h4 className="text-base font-bold text-slate-900 dark:text-white">Post Voucher?</h4>
+                                <p className="text-xs text-slate-500">Amount: {effectiveCurrency}{Number(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                            </div>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-300">
+                            Are you sure you want to serialize and post this voucher to the general ledger?
+                        </p>
+                        <div className="flex justify-end gap-3 pt-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowAcceptPrompt(false)}
+                                className="rounded-xl text-xs font-bold"
+                            >
+                                No (Esc)
+                            </Button>
+                            <Button
+                                size="sm"
+                                onClick={handleSave}
+                                disabled={isSubmitting}
+                                className={cn(
+                                    "rounded-xl text-white text-xs font-bold",
+                                    isReceipt ? "bg-emerald-600 hover:bg-emerald-700" : "bg-indigo-600 hover:bg-indigo-700"
+                                )}
+                            >
+                                {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
+                                Yes (Enter)
+                            </Button>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            )}
+
+            {/* Success Overlay Modal */}
+            {isSavedSuccessfully && (
+                <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center space-y-4 animate-in zoom-in-95">
+                        <div className="h-16 w-16 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
+                            <CheckCircle2 className="h-8 w-8" />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white">Voucher Saved</h3>
+                            <p className="text-xs text-slate-500 mt-1">Transaction successfully posted to double-entry ledger.</p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

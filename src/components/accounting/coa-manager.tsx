@@ -1,19 +1,15 @@
-
 'use client'
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Plus, Search, Pencil, Trash2, RefreshCw, BookOpen, ArrowRightLeft } from "lucide-react"
+import {
+    Plus, Search, Pencil, Trash2, RefreshCw,
+    BookOpen, ArrowRightLeft, Layers, Folder,
+    FolderPlus, CheckCircle2, ChevronRight,
+    ArrowUpRight, ShieldCheck, FileText
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
 import {
     Dialog,
     DialogContent,
@@ -21,18 +17,8 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
 import { deleteAccount, upsertAccount } from "@/app/actions/accounting/chart-of-accounts"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -49,16 +35,17 @@ interface Account {
 }
 
 const ACCOUNT_TYPES = [
-    { value: 'Asset', label: 'Asset', color: 'text-blue-600 bg-blue-50 border-blue-200', dot: 'bg-blue-500' },
-    { value: 'Liability', label: 'Liability', color: 'text-orange-600 bg-orange-50 border-orange-200', dot: 'bg-orange-500' },
-    { value: 'Equity', label: 'Equity', color: 'text-purple-600 bg-purple-50 border-purple-200', dot: 'bg-purple-500' },
-    { value: 'Revenue', label: 'Income / Revenue', color: 'text-green-600 bg-green-50 border-green-200', dot: 'bg-green-500' },
-    { value: 'Expense', label: 'Expense', color: 'text-red-600 bg-red-50 border-red-200', dot: 'bg-red-500' },
+    { value: 'Asset', label: 'Assets', badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20', dot: 'bg-blue-500' },
+    { value: 'Liability', label: 'Liabilities', badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20', dot: 'bg-amber-500' },
+    { value: 'Equity', label: 'Equity & Capital', badge: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20', dot: 'bg-purple-500' },
+    { value: 'Revenue', label: 'Income & Revenue', badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-500' },
+    { value: 'Expense', label: 'Operating Expenses', badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20', dot: 'bg-rose-500' },
 ]
 
 export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: Account[] }) {
     const [accounts, setAccounts] = useState<Account[]>(initialAccounts)
     const [search, setSearch] = useState("")
+    const [selectedType, setSelectedType] = useState<string>("ALL")
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
 
@@ -73,23 +60,12 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
         is_reconcilable: false
     })
 
-    const filteredAccounts = accounts.filter(acc =>
-        acc.name.toLowerCase().includes(search.toLowerCase()) ||
-        acc.code.toLowerCase().includes(search.toLowerCase())
-    ).sort((a, b) => a.code.localeCompare(b.code));
-
-    // Helper to get depth for indentation
-    const getAccountDepth = (acc: Account, allAccs: Account[]): number => {
-        let depth = 0;
-        let current = acc;
-        while (current.parent_id) {
-            const parent = allAccs.find(a => a.id === current.parent_id);
-            if (!parent) break;
-            depth++;
-            current = parent;
-        }
-        return depth;
-    };
+    const filteredAccounts = accounts.filter(acc => {
+        const matchesSearch = acc.name.toLowerCase().includes(search.toLowerCase()) ||
+            acc.code.toLowerCase().includes(search.toLowerCase());
+        const matchesType = selectedType === "ALL" || acc.type.toLowerCase() === selectedType.toLowerCase();
+        return matchesSearch && matchesType;
+    }).sort((a, b) => a.code.localeCompare(b.code));
 
     const handleOpenDialog = (account?: Account) => {
         if (account) {
@@ -112,7 +88,6 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
     const suggestNextCode = (parentId: string, type: string) => {
         const siblings = accounts.filter(a => (parentId === 'none' ? !a.parent_id : a.parent_id === parentId) && a.type === type);
         if (siblings.length === 0) {
-            // Suggesting based on parent code if possible
             const parent = accounts.find(a => a.id === parentId);
             if (parent) return `${parent.code}01`;
             return "";
@@ -130,7 +105,7 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
             name: '',
             type: parent.type,
             parent_id: parent.id,
-            is_group: false, // Default to ledger for quick add, can toggle
+            is_group: false,
             is_reconcilable: parent.type === 'Asset' || parent.type === 'Liability'
         });
         setIsDialogOpen(true);
@@ -139,7 +114,7 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
     const handleDelete = async () => {
         if (!editingAccount) return;
         
-        if (!confirm(`Are you sure you want to delete ${editingAccount.name.toUpperCase()}?`)) {
+        if (!confirm(`Are you sure you want to delete ${editingAccount.name}?`)) {
             return;
         }
 
@@ -160,9 +135,13 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
         }
     }
 
-    // Handle Alt+D for deletion when dialog is open
+    // Keyboard shortcut Alt+C to add account, Alt+D to delete
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.altKey && e.key.toLowerCase() === 'c' && !isDialogOpen) {
+                e.preventDefault();
+                handleOpenDialog();
+            }
             if (isDialogOpen && editingAccount && e.altKey && e.key.toLowerCase() === 'd') {
                 e.preventDefault();
                 handleDelete();
@@ -196,7 +175,7 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
             if (res.error) {
                 toast.error(res.error)
             } else {
-                toast.success(editingAccount ? "Account updated" : "Account created")
+                toast.success(editingAccount ? "Account updated successfully" : "Account created successfully")
                 setIsDialogOpen(false)
                 window.location.reload();
             }
@@ -207,7 +186,6 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
         }
     }
 
-    // When parent changes, inheritance logic
     const handleParentChange = (parentId: string) => {
         const parent = accounts.find(a => a.id === parentId);
         if (parent) {
@@ -225,8 +203,8 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
 
     const parentOptions = accounts.filter(a =>
         a.id !== editingAccount?.id &&
-        a.is_group && // Only groups can be parents
-        (editingAccount ? a.type === editingAccount.type : true) // Ensure type consistency if editing
+        a.is_group &&
+        (editingAccount ? a.type === editingAccount.type : true)
     );
 
     interface AccountNode extends Account {
@@ -246,56 +224,78 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
     const AccountRow = ({ node, depth }: { node: AccountNode, depth: number }) => (
         <>
             <tr className={cn(
-                "transition-all group border-[#003333]",
-                node.is_group ? "bg-[#004d4d]/10" : "hover:bg-[#004d4d]"
+                "hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group",
+                node.is_group && "bg-slate-50/50 dark:bg-slate-900/40 font-semibold"
             )}>
-                <td className="px-4 py-1.5 font-mono text-[#64ffff]/70 text-[10px]">
+                <td className="px-6 py-3 font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 w-36">
                     {node.code}
                 </td>
-                <td className="px-4 py-1.5">
-                    <div className="flex items-center gap-2" style={{ paddingLeft: `${depth * 20}px` }}>
-                        {depth > 0 && <span className="text-[#006666]">└─</span>}
+                <td className="px-6 py-3">
+                    <div className="flex items-center gap-2" style={{ paddingLeft: `${depth * 24}px` }}>
+                        {depth > 0 && (
+                            <span className="text-slate-300 dark:text-slate-600 font-mono text-xs">└─</span>
+                        )}
+                        {node.is_group ? (
+                            <Folder className="h-4 w-4 text-amber-500 shrink-0" />
+                        ) : (
+                            <BookOpen className="h-4 w-4 text-slate-400 shrink-0" />
+                        )}
                         <span className={cn(
-                            "font-bold",
-                            node.is_group ? "text-[#ffffcc] text-[12px]" : "text-[#ffffff]/80"
+                            "text-xs tracking-tight",
+                            node.is_group ? "font-bold text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-300"
                         )}>
-                            {node.name.toUpperCase()}
+                            {node.name}
                         </span>
                         {node.is_reconcilable && (
-                            <span className="px-1.5 py-0.5 text-[8px] bg-[#006666] text-[#64ffff] border border-[#008080] font-black">
-                                R
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" title="Reconcilable Ledger">
+                                REC
                             </span>
                         )}
                     </div>
                 </td>
-                <td className="px-4 py-1.5 text-center">
+                <td className="px-6 py-3 text-center w-28">
                     {node.is_group ? (
-                        <span className="text-[9px] font-black text-[#ffffcc] px-2 py-0.5 border border-[#ffffcc]/20">GROUP</span>
+                        <Badge variant="outline" className="text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
+                            GROUP
+                        </Badge>
                     ) : (
-                        <span className="text-[9px] font-black text-[#64ffff] px-2 py-0.5 border border-[#64ffff]/20 opacity-50">LEDGER</span>
+                        <Badge variant="outline" className="text-[10px] font-medium text-slate-500 border-slate-200 dark:border-slate-800">
+                            LEDGER
+                        </Badge>
                     )}
                 </td>
-                <td className="px-4 py-1.5 text-right">
-                    <div className="flex items-center justify-end gap-2 pr-2">
+                <td className="px-6 py-3 text-right w-44">
+                    <div className="flex items-center justify-end gap-1.5">
                         {node.is_group && (
-                            <button
+                            <Button
+                                size="icon"
+                                variant="ghost"
                                 onClick={() => handleQuickAdd(node)}
-                                className="h-5 w-5 flex items-center justify-center text-[#64ffff] hover:bg-[#64ffff] hover:text-black border border-[#64ffff]/20 transition-all shadow-sm"
+                                title="Add Child Account"
+                                className="h-7 w-7 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50"
                             >
-                                <Plus className="w-3 h-3" />
-                            </button>
+                                <FolderPlus className="h-3.5 w-3.5" />
+                            </Button>
                         )}
-                        <button
+                        <Button
+                            size="icon"
+                            variant="ghost"
                             onClick={() => handleOpenDialog(node)}
-                            className="h-5 w-5 flex items-center justify-center text-[#ffffcc] hover:bg-[#ffffcc] hover:text-black border border-[#ffffcc]/20 transition-all shadow-sm"
+                            title="Edit Account"
+                            className="h-7 w-7 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
                         >
-                            <Pencil className="w-3 h-3" />
-                        </button>
+                            <Pencil className="h-3.5 w-3.5" />
+                        </Button>
                         {!node.is_group && (
                             <Link href={`/hms/accounting/ledger/${node.id}`}>
-                                <button className="h-5 w-5 flex items-center justify-center text-[#64ffff] hover:bg-[#64ffff] hover:text-black border border-[#64ffff]/20 transition-all shadow-sm">
-                                    <ArrowRightLeft className="w-3 h-3" />
-                                </button>
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    title="View Ledger Statement"
+                                    className="h-7 w-7 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                                >
+                                    <ArrowRightLeft className="h-3.5 w-3.5" />
+                                </Button>
                             </Link>
                         )}
                     </div>
@@ -307,258 +307,294 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
         </>
     );
 
+    const totalGroups = accounts.filter(a => a.is_group).length;
+    const totalLedgers = accounts.filter(a => !a.is_group).length;
+
     return (
-        <div className="min-h-screen bg-[#002b2b] text-[#ffffcc] font-mono select-none flex flex-col overflow-hidden">
-            {/* Tally Header Bar */}
-            <div className="h-8 bg-[#004d4d] flex items-center justify-between px-4 border-b border-[#006666] text-[10px] font-bold">
-                <div className="flex items-center gap-4">
-                    <span className="text-[#64ffff]">CHART OF ACCOUNTS</span>
-                    <span className="text-[#ffffcc]">System Integrated Report</span>
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 p-6 lg:p-8 space-y-6">
+            
+            {/* Top Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-2xl bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                            <Layers className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Chart of Accounts</h1>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                Institutional General Ledger structure, account hierarchy & balance classification
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                <div className="flex items-center gap-4">
-                    <span className="text-[#64ffff]">Financial Year: 2025-26</span>
-                    <span className="text-[#ffffcc]">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}</span>
+
+                <div className="flex items-center gap-3">
+                    <Button
+                        onClick={() => handleOpenDialog()}
+                        className="h-10 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-lg shadow-indigo-600/20 active:scale-95 transition-all"
+                    >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Account
+                        <span className="ml-2 px-1.5 py-0.5 rounded bg-indigo-700/50 text-[10px] font-mono font-normal">Alt+C</span>
+                    </Button>
                 </div>
             </div>
 
-            {/* Gateway Container */}
-            <div className="flex-1 flex gap-1 p-1 overflow-hidden">
-                {/* Left Side: Ledger Content */}
-                <div className="flex-1 bg-[#004d4d] border border-[#006666] flex flex-col overflow-hidden shadow-2xl">
-                    <div className="h-10 bg-[#006666] flex items-center px-4 justify-between border-b border-[#008080]">
-                        <div className="flex items-center gap-6">
-                            <span className="text-[12px] font-black tracking-tight">LIST OF ACCOUNTS</span>
-                            <div className="relative group">
-                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#64ffff]" />
-                                <input
-                                    type="text"
-                                    placeholder="SEARCH BY NAME OR CODE..."
-                                    value={search}
-                                    onChange={e => setSearch(e.target.value)}
-                                    className="h-6 pl-7 pr-2 bg-[#002b2b] border border-[#008080] rounded text-[10px] text-[#ffffcc] focus:outline-none focus:border-[#64ffff] w-72 transition-all placeholder:text-[#64ffff]/30"
-                                />
+            {/* Metric KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Accounts</span>
+                    <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">{accounts.length}</div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">Active GL nodes registered in system</p>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Account Groups</span>
+                    <div className="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">{totalGroups}</div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">Parent classifications & sub-headers</p>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Active Ledgers</span>
+                    <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono">{totalLedgers}</div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">Transaction postable ledger accounts</p>
+                </div>
+            </div>
+
+            {/* Filter & Search Toolbar */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+                <div className="relative w-full sm:w-80">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                        type="text"
+                        placeholder="Search by code or account name..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        className="pl-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-xs font-medium"
+                    />
+                </div>
+
+                {/* Account Type Filters */}
+                <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+                    {['ALL', 'Asset', 'Liability', 'Equity', 'Revenue', 'Expense'].map(type => (
+                        <button
+                            key={type}
+                            type="button"
+                            onClick={() => setSelectedType(type)}
+                            className={cn(
+                                "px-3 py-1.5 text-xs font-bold rounded-xl transition-all whitespace-nowrap",
+                                selectedType.toLowerCase() === type.toLowerCase()
+                                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm"
+                                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800/50"
+                            )}
+                        >
+                            {type === 'ALL' ? 'All Types' : type}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Account Hierarchy Sections */}
+            <div className="space-y-6">
+                {ACCOUNT_TYPES.map(type => {
+                    if (selectedType !== "ALL" && selectedType.toLowerCase() !== type.value.toLowerCase()) {
+                        return null;
+                    }
+
+                    const rootNodes = buildTree(filteredAccounts, null, type.value);
+                    if (rootNodes.length === 0 && search !== "") return null;
+                    if (rootNodes.length === 0 && search === "") return null;
+
+                    return (
+                        <div key={type.value} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+                            <div className="px-6 py-4 bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={cn("w-2.5 h-2.5 rounded-full", type.dot)} />
+                                    <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">
+                                        {type.label}
+                                    </h3>
+                                </div>
+                                <Badge variant="outline" className={cn("text-[10px] font-bold font-mono", type.badge)}>
+                                    {filteredAccounts.filter(a => a.type === type.value).length} accounts
+                                </Badge>
+                            </div>
+
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-xs border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider font-bold">
+                                            <th className="px-6 py-3 w-36">Code</th>
+                                            <th className="px-6 py-3">Account Particulars</th>
+                                            <th className="px-6 py-3 text-center w-28">Type</th>
+                                            <th className="px-6 py-3 text-right w-44">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                                        {rootNodes.map(node => (
+                                            <AccountRow key={node.id} node={node} depth={0} />
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <span className="text-[10px] text-white/50">F2: PERIOD | F10: ACCOUNT INFO</span>
-                        </div>
-                    </div>
-
-                    <div className="flex-1 overflow-auto bg-[#002b2b]/50 scroll-smooth">
-                        {ACCOUNT_TYPES.map(type => {
-                            const rootNodes = buildTree(filteredAccounts, null, type.value);
-                            if (rootNodes.length === 0 && search !== "") return null;
-                            if (rootNodes.length === 0 && search === "") return null;
-
-                            return (
-                                <div key={type.value} className="mb-4">
-                                    <div className="bg-[#004d4d] px-4 py-1.5 flex items-center gap-3 border-y border-[#006666] sticky top-0 z-10 shadow-md">
-                                        <div className={cn("w-2 h-2 rounded-full", type.dot)}></div>
-                                        <span className="text-[11px] font-black text-[#64ffff] tracking-[0.2em] uppercase">
-                                            {type.label}
-                                        </span>
-                                    </div>
-
-                                    <table className="w-full text-left text-[11px] border-collapse table-fixed">
-                                        <thead className="bg-[#003333] text-[#64ffff] text-[9px] font-black uppercase sticky top-7 z-10">
-                                            <tr>
-                                                <th className="px-4 py-2 w-32 border-b border-[#004d4d]">Code</th>
-                                                <th className="px-4 py-2 border-b border-[#004d4d]">Particulars</th>
-                                                <th className="px-4 py-2 w-24 text-center border-b border-[#004d4d]">Status</th>
-                                                <th className="px-4 py-2 w-32 text-right border-b border-[#004d4d]">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-[#003333]/30">
-                                            {rootNodes.map(node => (
-                                                <AccountRow key={node.id} node={node} depth={0} />
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    {/* Footer Stats Bar */}
-                    <div className="h-8 bg-[#003333] border-t border-[#006666] flex items-center justify-between px-6 text-[9px] font-bold">
-                        <div className="flex gap-8 uppercase">
-                            <span className="text-[#64ffff]">TOTAL COUNTS:</span>
-                            <span>{accounts.length} NODES</span>
-                            <span className="text-[#64ffff]">GROUPS:</span>
-                            <span>{accounts.filter(a => a.is_group).length}</span>
-                            <span className="text-[#64ffff]">LEDGERS:</span>
-                            <span>{accounts.filter(a => !a.is_group).length}</span>
-                        </div>
-                        <div className="flex gap-4">
-                            <span className="text-[#64ffff] animate-pulse">SYSTEM SECURED</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Right Side: Gateway Simulation */}
-                <div className="w-48 bg-[#003333] border border-[#006666] flex flex-col p-1 gap-1">
-                    <div className="bg-[#004d4d] flex flex-col items-center py-4 border border-[#006666]">
-                        <span className="text-[12px] font-black text-[#ffffcc]">GATEWAY of TALLY</span>
-                        <div className="h-px w-full bg-[#006666] my-2" />
-                        <span className="text-[10px] text-[#64ffff]">Menu Options</span>
-                    </div>
-
-                    <div className="flex-1 space-y-1">
-                        {[
-                            { f: 'F1', l: 'Select Cmp', onClick: () => {} },
-                            { f: 'F2', l: 'Period', onClick: () => {} },
-                            { f: 'Alt+C', l: 'Add New', onClick: () => handleOpenDialog(), active: true },
-                            { f: 'F7', l: 'Journal', onClick: () => {} },
-                            { f: 'F5', l: 'Payment', onClick: () => {} },
-                            { f: 'F6', l: 'Receipt', onClick: () => {} },
-                        ].map(btn => (
-                            <button 
-                                key={btn.f} 
-                                onClick={btn.onClick}
-                                className={cn(
-                                    "w-full flex items-center h-8 px-2 text-[10px] transition-all",
-                                    btn.active ? "bg-[#ffffcc] text-black font-black" : "hover:bg-[#004d4d] text-white"
-                                )}
-                            >
-                                <span className="w-8 opacity-50">{btn.f}</span>
-                                <span className="flex-1 text-left uppercase">{btn.l}</span>
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="bg-[#004d4d] p-3 border border-[#006666]">
-                        <p className="text-[8px] text-[#64ffff]/60 uppercase tracking-widest leading-relaxed">
-                            Node: Accounts Master<br />
-                            Auth: Institutional Admin
-                        </p>
-                    </div>
-                </div>
+                    );
+                })}
             </div>
 
-            {/* Redesigned Tally Master Dialog */}
+            {/* Add / Edit Account Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="p-0 border-4 border-[#008080] bg-[#004d4d] max-w-[500px] gap-0 text-[#ffffcc] font-mono shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-                    {/* Header bar of the dialog */}
-                    <div className="h-8 bg-[#006666] flex items-center px-4 justify-between border-b-2 border-[#008080]">
-                        <span className="text-[11px] font-black flex items-center gap-2">
-                             {editingAccount ? "ALT" : "NEW"} : {formData.is_group ? "GROUP" : "LEDGER"} CREATION
-                        </span>
-                        <span className="text-[9px] opacity-70">SECURE SYSTEM ACCESS</span>
-                    </div>
+                <DialogContent className="max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-lg font-black text-slate-900 dark:text-white">
+                            {editingAccount ? "Edit Account Ledger" : "Create New Account Ledger"}
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-slate-500">
+                            Configure General Ledger code, parent classification, and reconciliation rules.
+                        </DialogDescription>
+                    </DialogHeader>
 
-                    <div className="p-8 space-y-5 bg-[#002b2b]">
-                        <div className="flex gap-4">
-                            <span className="w-32 text-[#64ffff] text-[11px]">Type Select</span>
-                            <span className="w-2">:</span>
-                            <div className="flex gap-4">
+                    <div className="space-y-4 py-2">
+                        {/* Type Toggle: Ledger vs Group */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Account Classification</label>
+                            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
                                 <button
+                                    type="button"
                                     onClick={() => setFormData({ ...formData, is_group: false })}
                                     className={cn(
-                                        "px-2 py-0.5 text-[10px] font-black uppercase transition-all",
-                                        !formData.is_group ? "bg-[#ffffcc] text-black" : "bg-[#004d4d] text-[#64ffff]"
+                                        "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all",
+                                        !formData.is_group ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm" : "text-slate-500"
                                     )}
-                                >Ledger</button>
+                                >
+                                    Posting Ledger
+                                </button>
                                 <button
+                                    type="button"
                                     onClick={() => setFormData({ ...formData, is_group: true })}
                                     className={cn(
-                                        "px-2 py-0.5 text-[10px] font-black uppercase transition-all",
-                                        formData.is_group ? "bg-[#ffffcc] text-black" : "bg-[#004d4d] text-[#64ffff]"
+                                        "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all",
+                                        formData.is_group ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm" : "text-slate-500"
                                     )}
-                                >Group</button>
+                                >
+                                    Account Group
+                                </button>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
-                            <span className="w-32 text-[#64ffff] text-[11px]">Name</span>
-                            <span className="w-2">:</span>
-                            <input
+                        {/* Name */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Account Name</label>
+                            <Input
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                placeholder="e.g. Petty Cash, Office Supplies, Patient Receivables"
+                                className="h-10 rounded-xl text-xs font-semibold"
                                 autoFocus
-                                className="flex-1 bg-[#002b2b] border-none text-[#ffffcc] focus:bg-[#ffffcc] focus:text-black px-2 py-1 uppercase font-bold text-[13px] outline-none"
                             />
                         </div>
 
-                        <div className="flex items-center gap-4">
-                            <span className="w-32 text-[#64ffff] text-[11px]">Under</span>
-                            <span className="w-2">:</span>
+                        {/* Under (Parent) */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Parent Group (Under)</label>
                             <select
                                 value={formData.parent_id}
                                 onChange={e => handleParentChange(e.target.value)}
-                                className="flex-1 bg-[#002b2b] border-none text-[11px] text-[#ffffcc] focus:bg-[#ffffcc] focus:text-black px-2 py-1 outline-none appearance-none font-bold"
+                                className="w-full h-10 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                             >
-                                <option value="none">Primary / Root</option>
+                                <option value="none">Primary / Root (No Parent)</option>
                                 {parentOptions.map(p => (
-                                    <option key={p.id} value={p.id}>{p.name.toUpperCase()}</option>
+                                    <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
                                 ))}
                             </select>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-x-4">
-                            <div className="flex items-center gap-4">
-                                <span className="w-32 text-[#64ffff] text-[11px]">Code</span>
-                                <span className="w-2">:</span>
-                                <input
+                        {/* Code & Nature */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Account Code</label>
+                                <Input
                                     value={formData.code}
                                     onChange={e => setFormData({ ...formData, code: e.target.value })}
-                                    className="flex-1 bg-[#002b2b] border-none text-[#64ffff] focus:bg-[#ffffcc] focus:text-black px-2 py-0.5 text-[11px] outline-none"
+                                    placeholder="e.g. 1001"
+                                    className="h-10 rounded-xl text-xs font-mono font-bold"
                                 />
                             </div>
 
-                            <div className="flex items-center gap-4">
-                                <span className="w-32 text-[#64ffff] text-[11px]">Nature</span>
-                                <span className="w-2">:</span>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Nature</label>
                                 <select
                                     value={formData.type}
                                     onChange={e => setFormData({ ...formData, type: e.target.value })}
                                     disabled={formData.parent_id !== 'none'}
-                                    className="flex-1 bg-[#002b2b] border-none text-[11px] text-[#ffffcc] focus:bg-[#ffffcc] focus:text-black px-2 py-0.5 outline-none appearance-none font-black"
+                                    className="w-full h-10 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 disabled:opacity-50"
                                 >
                                     {ACCOUNT_TYPES.map(t => (
-                                        <option key={t.value} value={t.value}>{t.label.toUpperCase()}</option>
+                                        <option key={t.value} value={t.value}>{t.label}</option>
                                     ))}
                                 </select>
                             </div>
                         </div>
 
+                        {/* Reconcilable Toggle */}
                         {!formData.is_group && (
-                            <div className="flex items-center gap-4">
-                                <span className="w-32 text-[#64ffff] text-[11px]">Reconciliation</span>
-                                <span className="w-2">:</span>
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                                <div className="space-y-0.5">
+                                    <span className="text-xs font-bold text-slate-900 dark:text-white">Bank Reconciliation</span>
+                                    <p className="text-[11px] text-slate-400">Allow matching statement transactions</p>
+                                </div>
                                 <button
+                                    type="button"
                                     onClick={() => setFormData({ ...formData, is_reconcilable: !formData.is_reconcilable })}
                                     className={cn(
-                                        "px-3 py-0.5 text-[10px] font-black uppercase",
-                                        formData.is_reconcilable ? "bg-emerald-600 text-white" : "bg-[#004d4d] text-[#64ffff]"
+                                        "px-3 py-1 rounded-lg text-xs font-bold transition-all",
+                                        formData.is_reconcilable
+                                            ? "bg-emerald-600 text-white"
+                                            : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
                                     )}
                                 >
-                                    {formData.is_reconcilable ? "Yes" : "No"}
+                                    {formData.is_reconcilable ? "Enabled" : "Disabled"}
                                 </button>
                             </div>
                         )}
                     </div>
 
-                    <div className="h-10 bg-[#003333] border-t-2 border-[#008080] flex items-center justify-between px-6">
-                        <div className="flex items-center gap-4">
-                            <button onClick={() => setIsDialogOpen(false)} className="text-red-400 hover:text-white text-[10px] font-black uppercase">Quit (Esc)</button>
-                            {editingAccount && (
-                                <button 
-                                    onClick={handleDelete}
-                                    className="text-orange-400 hover:text-white text-[10px] font-black uppercase border-l border-[#008080] pl-4"
-                                >
-                                    Delete (Alt+D)
-                                </button>
-                            )}
+                    <DialogFooter className="flex items-center justify-between gap-2 pt-2">
+                        {editingAccount ? (
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                onClick={handleDelete}
+                                disabled={isLoading}
+                                className="rounded-xl text-xs font-bold mr-auto"
+                            >
+                                <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+                            </Button>
+                        ) : <div />}
+
+                        <div className="flex items-center gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setIsDialogOpen(false)}
+                                className="rounded-xl text-xs font-bold"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                onClick={handleSubmit}
+                                disabled={isLoading}
+                                className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold"
+                            >
+                                {isLoading ? <RefreshCw className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
+                                {editingAccount ? "Save Changes" : "Create Account"}
+                            </Button>
                         </div>
-                        <button
-                            onClick={handleSubmit}
-                            disabled={isLoading}
-                            className="bg-[#ffffcc] text-black px-6 py-1 text-[10px] font-black uppercase hover:bg-[#64ffff] transition-all flex items-center gap-2"
-                        >
-                            {isLoading && <RefreshCw className="h-3 w-3 animate-spin" />}
-                            Accept (Ctrl+A)
-                        </button>
-                    </div>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

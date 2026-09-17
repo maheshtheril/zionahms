@@ -21,7 +21,7 @@ async function main() {
         // 1. Ensure core modules exist and are active
         const modules = [
             { key: 'hms', name: 'Hospital' },
-            { key: 'finance', name: 'Gateway of Tally' },
+            { key: 'finance', name: 'Financial Accounting' },
             { key: 'inventory', name: 'Inventory & Procurement' },
             { key: 'crm', name: 'CRM & HR' },
             { key: 'configuration', name: 'Settings' }
