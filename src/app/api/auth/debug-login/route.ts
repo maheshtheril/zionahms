@@ -5,7 +5,15 @@ import bcrypt from "bcryptjs"
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+    // ─── CRITICAL SECURITY GATE ───────────────────────────────────────────────
     const { searchParams } = new URL(request.url)
+    const providedSecret = searchParams.get('secret')
+    const adminSecret = process.env.ADMIN_RECOVERY_SECRET
+    if (!adminSecret || !providedSecret || providedSecret !== adminSecret) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     const email = (searchParams.get('email') || 'maheshtheril@live.com').trim().toLowerCase()
     const password = (searchParams.get('password') || 'Admin@12345').trim()
 
@@ -90,7 +98,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             success: false,
             error: e.message,
-            stack: e.stack,
             stepLogs
         }, { status: 500 })
     }

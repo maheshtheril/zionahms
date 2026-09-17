@@ -70,7 +70,7 @@ export default async function TenantLayout({
                 <div className="p-4 border-t border-gray-100">
                     <form action={async () => {
                         'use server';
-                        await signOut({ redirectTo: '/login' });
+                        await signOut({ redirectTo: '/login?reauth=1' });
                     }}>
                         <button className="flex items-center justify-center gap-3 w-full px-4 py-3 text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all shadow-sm hover:shadow-md font-medium group">
                             <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform" />
@@ -97,7 +97,7 @@ export default async function TenantLayout({
                     <div className="flex gap-2">
                         <form action={async () => {
                             'use server';
-                            await signOut({ redirectTo: '/login' });
+                            await signOut({ redirectTo: '/login?reauth=1' });
                         }}>
                             <button className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors" title="Sign Out">
                                 <LogOut className="h-5 w-5" />

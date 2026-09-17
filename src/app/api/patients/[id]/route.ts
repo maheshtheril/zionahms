@@ -2,15 +2,26 @@
 
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/auth'
 
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    // --- Auth Guard + Tenant Isolation ---
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const tenantId = (session.user as any).tenantId;
+
     const { id } = await params
     try {
-        const patient = await prisma.hms_patient.findUnique({
-            where: { id },
+        const patient = await prisma.hms_patient.findFirst({
+            where: {
+                id,
+                tenant_id: tenantId, // ← Tenant-scoped: prevents cross-tenant IDOR
+            },
             select: {
                 id: true,
                 first_name: true,

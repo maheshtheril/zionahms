@@ -4,7 +4,7 @@ import crypto from 'crypto';
 
 import { prisma } from "@/lib/prisma"
 import { signIn, signOut } from "@/auth"
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import bcrypt from 'bcryptjs';
 import { initializeTenantMasters } from "@/lib/services/tenant-init";
 import { SYSTEM_DEFAULT_CURRENCY_CODE } from "@/lib/currency-constants";
@@ -74,14 +74,26 @@ export async function loginAction(prevState: any, formData: FormData) {
 export async function logout() {
     console.log("[Auth Action] Logging out...");
     try {
-        await signOut({ redirectTo: '/login' });
-    } catch (err) {
+        try {
+            const cookieStore = await cookies();
+            const allCookies = cookieStore.getAll();
+            for (const c of allCookies) {
+                if (c.name.includes('auth') || c.name.includes('session')) {
+                    cookieStore.delete(c.name);
+                }
+            }
+        } catch (cookieErr) {
+            console.warn("[Auth Action] Cookie deletion error:", cookieErr);
+        }
+        await signOut({ redirectTo: '/login?reauth=1' });
+    } catch (err: any) {
         // Next.js redirects act as errors, so we need to rethrow them if it's a redirect
-        if ((err as Error).message === 'NEXT_REDIRECT') {
+        if (err?.message === 'NEXT_REDIRECT' || err?.digest?.includes('NEXT_REDIRECT')) {
             throw err;
         }
         console.error("[Auth Action] Logout failed:", err);
-        throw err;
+        const { redirect } = await import("next/navigation");
+        redirect('/login?reauth=1');
     }
 }
 

@@ -6,6 +6,12 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest) {
     try {
         const session = await auth()
+        const user = session?.user as any;
+        // Only admins should see session diagnostic info
+        if (!session?.user?.id || (!user?.isAdmin && !user?.isTenantAdmin)) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+        }
+
         const cookieList = req.cookies.getAll()
 
         return NextResponse.json({
@@ -20,6 +26,6 @@ export async function GET(req: NextRequest) {
             }
         })
     } catch (e: any) {
-        return NextResponse.json({ error: e.message, stack: e.stack }, { status: 500 })
+        return NextResponse.json({ error: e.message }, { status: 500 })
     }
 }

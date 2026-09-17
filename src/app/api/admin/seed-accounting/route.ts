@@ -4,10 +4,17 @@ import { ensureDefaultAccounts } from "@/lib/account-seeder";
 import { ensureDefaultJournals } from "@/lib/journal-seeder";
 import { seedCompanyTaxes } from "@/lib/services/tax-seed";
 import { initializeTenantMasters } from "@/lib/services/tenant-init";
+import { auth } from "@/auth";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+    const session = await auth();
+    const user = session?.user as any;
+    if (!session?.user?.id || (!user?.isAdmin && !user?.isTenantAdmin)) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const report: any[] = [];
 
     try {

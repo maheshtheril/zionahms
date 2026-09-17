@@ -5,7 +5,17 @@ import bcrypt from "bcryptjs"
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+    // ─── CRITICAL SECURITY GATE ───────────────────────────────────────────────
+    // This endpoint creates/resets a super-admin account. It must NEVER be
+    // callable without the server-side admin secret.
     const { searchParams } = new URL(request.url)
+    const providedSecret = searchParams.get('secret')
+    const adminSecret = process.env.ADMIN_RECOVERY_SECRET
+    if (!adminSecret || !providedSecret || providedSecret !== adminSecret) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     const email = searchParams.get('email') || 'maheshtheril@live.com'
     const targetTenantId = searchParams.get('tenantId')
     const password = searchParams.get('password') || 'Admin@12345'
@@ -117,6 +127,6 @@ export async function GET(request: NextRequest) {
             allHospitalPatientCounts: patientCounts
         })
     } catch (e: any) {
-        return NextResponse.json({ error: e.message, stack: e.stack }, { status: 500 })
+        return NextResponse.json({ error: e.message }, { status: 500 })
     }
 }

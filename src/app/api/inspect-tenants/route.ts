@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/auth"
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+    // Admin-only: this endpoint exposes all tenant data
+    const session = await auth();
+    const user = session?.user as any;
+    if (!session?.user?.id || (!user?.isAdmin && !user?.isTenantAdmin)) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     try {
         const tenants: any[] = await prisma.$queryRaw`
             SELECT t.id, t.name, t.slug, t.created_at,
@@ -22,6 +30,6 @@ export async function GET() {
             tenants
         })
     } catch (e: any) {
-        return NextResponse.json({ error: e.message, stack: e.stack }, { status: 500 })
+        return NextResponse.json({ error: e.message }, { status: 500 })
     }
 }

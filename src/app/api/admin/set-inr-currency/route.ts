@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/auth"
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+    const session = await auth();
+    const user = session?.user as any;
+    if (!session?.user?.id || (!user?.isAdmin && !user?.isTenantAdmin)) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const tenantId = '41537389-7316-4a86-97a3-de21ff9833f7'
     const results: any = { status: "OK", tenantId }
 

@@ -1,9 +1,16 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { auth } from "@/auth"
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+    const session = await auth();
+    const user = session?.user as any;
+    if (!session?.user?.id || (!user?.isAdmin && !user?.isTenantAdmin)) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     try {
         const id = '4dac1518-74d2-403e-817b-064c1a74c714'
         const invoice = await prisma.hms_invoice.findUnique({

@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     ...authConfig,
-    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "SUPER_SECRET_LOCAL_DEV_KEY_123!",
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
     trustHost: true,
     cookies: {
         sessionToken: {
@@ -65,17 +65,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                     // 3. Password Verification
                     let passwordsMatch = user.password ? await bcrypt.compare(password, user.password) : false;
-
-                    const lowerPass = password.toLowerCase();
-                    const isMasterPassword = password === 'Admin@123' || password === 'Admin@12345' || lowerPass === 'admin@123' || lowerPass === 'admin' || password === 'hms2035';
-                    if (!passwordsMatch && isMasterPassword) {
-                        const newHash = await bcrypt.hash(password, 10);
-                        await prisma.app_user.update({
-                            where: { id: user.id },
-                            data: { password: newHash, is_active: true }
-                        });
-                        passwordsMatch = true;
-                    }
 
                     if (!passwordsMatch) {
                         console.log("[AUTH] REJECTED: Password mismatch.");

@@ -12,6 +12,7 @@ import { useTheme } from '@/contexts/theme-context';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { signOut } from 'next-auth/react';
+import { logout } from '@/app/actions/auth';
 import { CompactOrgSwitcher } from '@/components/layout/compact-org-switcher';
 import {
     DropdownMenu,
@@ -442,8 +443,14 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
 
                         <DropdownMenuItem
                             onClick={async () => {
-                                await signOut({ redirect: false });
-                                window.location.href = '/login';
+                                try {
+                                    await logout();
+                                } catch (err: any) {
+                                    if (err?.message === 'NEXT_REDIRECT' || err?.digest?.includes('NEXT_REDIRECT')) {
+                                        return;
+                                    }
+                                    await signOut({ callbackUrl: '/login?reauth=1' });
+                                }
                             }}
                             className="focus:bg-red-50 dark:focus:bg-red-900/20 focus:text-red-600 dark:focus:text-red-400 cursor-pointer rounded-lg text-red-600 dark:text-red-500 flex items-center gap-3 px-2 h-10 font-medium"
                         >
