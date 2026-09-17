@@ -1,25 +1,21 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-// import { seedRoles } from '../../../prisma/seed-roles';
-// Note: We need to adapt seed-roles to be importable or copy logic. 
-// For simplicity, I will implement a basic seed here or ensure the seed file is safe.
-// Actually, let's just create a simple success check.
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        // Simple check if DB works
-        const count = await prisma.app_user.count();
+        await prisma.$queryRaw`SELECT 1`;
         return NextResponse.json({
-            success: true,
-            message: "Database is connected!",
-            userCount: count,
-            info: "To seed data, we might need to run a dedicated script."
+            status: "healthy",
+            timestamp: new Date().toISOString(),
+            uptime: Math.floor(process.uptime())
         });
     } catch (error: any) {
         return NextResponse.json({
-            success: false,
-            error: error.message
-        }, { status: 500 });
+            status: "unhealthy",
+            timestamp: new Date().toISOString()
+        }, { status: 503 });
     }
 }

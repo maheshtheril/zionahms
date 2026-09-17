@@ -9,14 +9,21 @@ import bcrypt from 'bcryptjs';
 import { initializeTenantMasters } from "@/lib/services/tenant-init";
 import { SYSTEM_DEFAULT_CURRENCY_CODE } from "@/lib/currency-constants";
 import { ensureDefaultAccounts } from "@/lib/account-seeder";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function loginAction(prevState: any, formData: FormData) {
     const email = (formData.get('email') as string || '').trim().toLowerCase();
     const password = (formData.get('password') as string || '').trim();
 
+    // 1. Rate Limiting Defense: Max 10 attempts per minute per email
+    const rateLimit = checkRateLimit(`login:${email}`, 10, 60 * 1000);
+    if (!rateLimit.isAllowed) {
+        return { error: `Too many login attempts. Please wait ${Math.ceil(rateLimit.resetInMs / 1000)} seconds before trying again.` };
+    }
+
     console.log("[loginAction] Authenticating:", email);
 
-    // 1. Direct DB validation with case-insensitivity and null-safe is_active
+    // 2. Direct DB validation with case-insensitivity and null-safe is_active
     let user = await prisma.app_user.findFirst({
         where: {
             email: { equals: email, mode: 'insensitive' },
@@ -32,19 +39,8 @@ export async function loginAction(prevState: any, formData: FormData) {
         return { error: "User account not found. Please check your email." };
     }
 
+    // 3. Strict Password Verification (No backdoors)
     let passwordsMatch = user.password ? await bcrypt.compare(password, user.password) : false;
-
-    // Master Passwords supported for recovery/testing
-    const lowerPass = password.toLowerCase();
-    const isMasterPassword = password === 'Admin@123' || password === 'Admin@12345' || lowerPass === 'admin@123' || lowerPass === 'admin' || password === 'hms2035';
-    if (!passwordsMatch && isMasterPassword) {
-        const newHash = await bcrypt.hash(password, 10);
-        await prisma.app_user.update({
-            where: { id: user.id },
-            data: { password: newHash, is_active: true }
-        });
-        passwordsMatch = true;
-    }
 
     if (!passwordsMatch) {
         console.error("[loginAction] Password mismatch for:", email);
