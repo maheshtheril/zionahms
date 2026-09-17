@@ -67,7 +67,7 @@ export async function GET(
             return_number: activeReturn!.return_number,
             total_amount: Number(activeReturn!.total_amount || 0).toFixed(2),
             patient_name: sReturn ? `${sReturn.hms_patient?.first_name || ''} ${sReturn.hms_patient?.last_name || ''}`.trim() : (pReturn?.hms_supplier?.name || "Vendor / Supplier"),
-            patient_phone: sReturn ? (sReturn.hms_patient?.phone || "N/A") : (pReturn?.hms_supplier?.phone || "N/A"),
+            patient_phone: sReturn ? ((sReturn.hms_patient as any)?.phone || (sReturn.hms_patient?.contact as any)?.phone || "N/A") : ((pReturn?.hms_supplier as any)?.phone || "N/A"),
             items: activeReturn!.lines.map(l => ({
                 ...l,
                 description: (l as any).hms_product?.name || "Returned Item",

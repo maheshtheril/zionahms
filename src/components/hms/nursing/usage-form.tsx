@@ -81,7 +81,6 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
     }, [searchQuery]);
 
     const router = useRouter()
-    const { toast } = useToast()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isConfirming, setIsConfirming] = useState<string | null>(null)
 

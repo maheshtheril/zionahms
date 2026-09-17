@@ -32,9 +32,10 @@ export function ClassicVoucherEditor({
     accountsSearch,
     journalsSearch,
     getBills,
-    currency = currencySymbol
+    currency
 }: ClassicVoucherEditorProps) {
     const { currencySymbol } = useLocalization();
+    const effectiveCurrency = currency || currencySymbol;
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [voucherType, setVoucherType] = useState<'bill' | 'direct'>(type === 'payment' ? 'bill' : 'direct');
 

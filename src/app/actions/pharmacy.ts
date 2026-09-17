@@ -110,8 +110,7 @@ export async function addStockBatch(data: {
                     tenant_id: tenantId,
                     company_id: companyId,
                     name: 'Main Pharmacy Store',
-                    code: 'PHARMA-MAIN',
-                    is_active: true
+                    code: 'PHARMA-MAIN'
                 }
             });
 

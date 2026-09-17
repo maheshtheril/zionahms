@@ -544,8 +544,8 @@ export function AppointmentForm({
                 : regStatus.status === 'expired'
                     ? "Patient's registration has expired. Please renew or waive the fee before booking."
                     : "Registration fee is unpaid. Please collect or waive it before saving.";
-            toast.success("⛔ Registration Fee Required", { description: msg,
-                variant: "destructive",
+            toast.error("⛔ Registration Fee Required", { 
+                description: msg,
                 duration: 6000,
             });
             return;

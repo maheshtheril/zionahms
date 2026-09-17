@@ -68,7 +68,7 @@ function NewDirectReturnContent() {
                 const prodRes = await getProductsPremium();
                 if (prodRes.success && prodRes.data) {
                     setProducts(prodRes.data);
-                    setProductOptions(prodRes.data.map(p => ({ id: p.id, label: `${p.name} (Stock: ${p.totalStock})` })));
+                    setProductOptions(prodRes.data.map((p: any) => ({ id: p.id, label: `${p.name} (Stock: ${p.totalStock})` })));
                 }
 
                 if (receiptIdParam) {
@@ -303,7 +303,7 @@ function NewDirectReturnContent() {
                                                     onChange={(val, opt) => handleProductSelect(idx, val, opt)}
                                                     onSearch={async (q) => {
                                                         const res = await getProductsPremium(q, 1, supplierId || undefined);
-                                                        return (res?.data || []).map(p => ({ id: p.id, label: `${p.name} (Stock: ${p.totalStock})` }));
+                                                        return (res?.data || []).map((p: any) => ({ id: p.id, label: `${p.name} (Stock: ${p.totalStock})` }));
                                                     }}
                                                     placeholder="Search product..."
                                                     className="bg-background border-border rounded-lg text-xs"

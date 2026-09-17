@@ -14,7 +14,7 @@ export async function getStorageLocationsTree() {
         // Fetch all active locations for the company
         const locations = await prisma.hms_storage_locations.findMany({
             where: {
-                company_id: session.user.companyId,
+                company_id: session.user.companyId || undefined,
                 is_active: true
             },
             orderBy: { name: 'asc' }
@@ -58,7 +58,7 @@ export async function getStorageLocationsFlat() {
     try {
         const locations = await prisma.hms_storage_locations.findMany({
             where: {
-                company_id: session.user.companyId,
+                company_id: session.user.companyId || undefined,
                 is_active: true
             },
             orderBy: { name: 'asc' }

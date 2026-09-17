@@ -110,7 +110,7 @@ export default async function NewInvoicePage({ searchParams }: PageProps) {
         currency: (session.user as any).currencySymbol || '\u20B9',
         allowRateEdit: hmsSettingsRes?.success ? hmsSettingsRes.settings.allowRateEdit : true,
         isRegistrationFee: Boolean(effectivePatientId && !appointmentId && consolidatedMedicines.some(i => i.isRegistration || i.name?.includes('Registration'))),
-        externalProvisionalNo: `INV-${new Date().getFullYear()}-${String((await prisma.hms_invoice.count({ where: { company_id: session.user.companyId } })) + 1).padStart(4, '0')}`,
+        externalProvisionalNo: `INV-${new Date().getFullYear()}-${String((await prisma.hms_invoice.count({ where: { company_id: session.user.companyId || undefined } })) + 1).padStart(4, '0')}`,
         defaultTaxMode: (companySettings?.hms_billing_mode as any) || 'exclusive',
         currentUser: session?.user
     };

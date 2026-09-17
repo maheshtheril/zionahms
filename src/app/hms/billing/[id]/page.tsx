@@ -221,7 +221,7 @@ export default async function InvoiceDetailsPage({
                                     const bMeta = typeof invoice.billing_metadata === 'string' ? JSON.parse(invoice.billing_metadata || '{}') : (invoice.billing_metadata || {});
                                     if (Array.isArray(bMeta.items)) displayLines = bMeta.items;
                                     else if (Array.isArray(bMeta.line_items)) displayLines = bMeta.line_items;
-                                    else if (Array.isArray((invoice.metadata as any)?.items)) displayLines = (invoice.metadata as any).items;
+                                    else if (Array.isArray((invoice as any)?.metadata?.items)) displayLines = (invoice as any).metadata.items;
                                 }
                             }
 

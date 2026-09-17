@@ -295,7 +295,7 @@ function LabTestForm({ initialData, allTests, onSubmit, onClose }: any) {
                         type="checkbox"
                         id="is_panel"
                         checked={!!formData.is_panel} 
-                        onChange={(e) => setFormData(prev => ({...prev, is_panel: e.target.checked}))}
+                        onChange={(e) => setFormData((prev: any) => ({...prev, is_panel: e.target.checked}))}
                         className="w-5 h-5 accent-indigo-600 cursor-pointer"
                     />
                     <label htmlFor="is_panel" className="text-sm font-bold text-indigo-900 cursor-pointer">

@@ -25,9 +25,9 @@ export async function verifyFaceAndPunchIn(input: {
         const companyId = session.user.companyId || tenantId;
 
         // Fetch user & clinician profile image if available
-        const user = await prisma.hms_user.findUnique({
+        const user = await prisma.app_user.findUnique({
             where: { id: userId },
-            select: { id: true, name: true, email: true, avatar_url: true }
+            select: { id: true, name: true, email: true }
         });
 
         if (!user) {

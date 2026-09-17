@@ -116,7 +116,7 @@ export async function punchIn(data: PunchData) {
 
         if (!isLocalNetwork) {
             const branches = await prisma.hms_branch.findMany({
-                where: { company_id: session.user.companyId, is_active: true }
+                where: { company_id: session.user.companyId || undefined, is_active: true }
             });
 
             let isWithinAnyGeofence = false;

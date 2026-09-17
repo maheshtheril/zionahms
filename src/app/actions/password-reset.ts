@@ -89,8 +89,8 @@ export async function requestPasswordReset(email: string) {
             user.email,
             token,
             user.full_name || user.name || 'User',
-            tenant?.logo_url,
-            tenant?.app_name,
+            tenant?.logo_url || undefined,
+            tenant?.app_name || undefined,
             appUrl
         )
 

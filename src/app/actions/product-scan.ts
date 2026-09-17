@@ -8,7 +8,7 @@ import { getAIConfig } from "./settings";
 import { getDynamicAIModels, formatFriendlyAiError } from "@/lib/ai-models";
 
 async function getGenAIClient(companyId: string, tenantId: string) {
-    const config = await getAIConfig(companyId, tenantId);
+    const config = (await getAIConfig(companyId, tenantId)) as any;
     if (!config?.enabled && config !== null) {
         throw new Error("AI Scanning is disabled in Settings.");
     }
@@ -23,7 +23,7 @@ async function getGenerativeModelWithFallback(genAI: GoogleGenerativeAI) {
     const dynamicNames = await getDynamicAIModels(genAI.apiKey);
     const models = dynamicNames.map(name => ({ name, version: "v1beta" as const }));
     // Add ultimate fallback just in case
-    models.push({ name: "gemini-pro", version: "v1" as const });
+    models.push({ name: "gemini-pro", version: "v1beta" as const });
 
     let lastError = null;
     for (const modelCfg of models) {

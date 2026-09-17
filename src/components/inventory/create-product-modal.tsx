@@ -19,6 +19,7 @@ interface CreateProductModalProps {
     categories: any[]
     manufacturers: any[]
     uomCategories: any[]
+    storageLocations?: any[]
 }
 
 export function CreateProductModal({

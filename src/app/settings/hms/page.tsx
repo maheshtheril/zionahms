@@ -2,7 +2,7 @@
 // RE-SYNC: 2026-04-16T19:17:00
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
-import { getHMSSettings, getPaymentGatewaySettings, getWhatsAppSettings, getPDFSettings } from "@/app/actions/settings"
+import { getHMSSettings, getPaymentGatewaySettings, getWhatsAppSettings, getPDFSettings, getAISettings } from "@/app/actions/settings"
 import { HMSSettingsForm } from "./hms-settings-form"
 import { Activity } from "lucide-react"
 import { prisma } from "@/lib/prisma"
@@ -15,9 +15,9 @@ export default async function HMSSettingsPage({ searchParams }: { searchParams: 
 
     const sParams = await searchParams;
     const searchCompanyId = typeof sParams?.companyId === 'string' ? sParams.companyId : undefined;
-    const companyId = searchCompanyId || session.user.companyId;
+    const companyId = searchCompanyId || session.user.companyId || undefined;
 
-    const [res, doctors, gatewayRes, whatsappRes, pdfRes, company] = await Promise.all([
+    const [res, doctors, gatewayRes, whatsappRes, pdfRes, company, aiRes] = await Promise.all([
         getHMSSettings(companyId, session.user.tenantId),
         prisma.hms_clinicians.findMany({
             where: { company_id: companyId!, is_active: true },
@@ -34,7 +34,8 @@ export default async function HMSSettingsPage({ searchParams }: { searchParams: 
         prisma.company.findUnique({
             where: { id: companyId! },
             select: { name: true, logo_url: true, metadata: true }
-        })
+        }),
+        getAISettings(companyId!, session.user.tenantId)
     ]);
 
     if (!res.success) {
@@ -68,7 +69,7 @@ export default async function HMSSettingsPage({ searchParams }: { searchParams: 
                 whatsappSettings={whatsappRes.success ? whatsappRes.settings : null}
                 pdfSettings={pdfRes.success ? pdfRes.settings : null}
                 searchUsage={typeof sParams?.usage === 'string' ? sParams.usage : undefined}
-                aiSettings={res.aiSettings}
+                aiSettings={aiRes.success ? aiRes.settings : null}
                 company={company}
             />
         </div>

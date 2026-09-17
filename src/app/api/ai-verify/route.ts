@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
         
         if (!keyToTest) {
             const config = await getAIConfig(session.user.companyId || "", session.user.tenantId || "");
-            keyToTest = config?.apiKey || process.env.GOOGLE_GENERATIVE_AI_API_KEY || "";
+            keyToTest = (config as any)?.apiKey || process.env.GOOGLE_GENERATIVE_AI_API_KEY || "";
         }
 
         console.log(`[AI-DIAGNOSTIC] TESTING KEY: ${keyToTest.substring(0, 5)}... (Length: ${keyToTest.length})`);
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         const dynamicModels = await getDynamicAIModels(keyToTest);
         const testConfigs = dynamicModels.map(mName => ({ model: mName, apiVersion: "v1beta" as const }));
         // Add a fallback config just in case
-        testConfigs.push({ model: "gemini-pro-latest", apiVersion: "v1" as const });
+        testConfigs.push({ model: "gemini-pro-latest", apiVersion: "v1beta" as const });
 
         let lastError = "";
         for (const config of testConfigs) {

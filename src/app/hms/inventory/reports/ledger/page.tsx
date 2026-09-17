@@ -68,7 +68,7 @@ export default function StockLedgerPage() {
                 setEditingEntry(null);
                 loadData();
             } else {
-                toast.error(res.error || "Update failed");
+                toast.error((res as any).error || "Update failed");
             }
         } catch (err: any) {
             toast.error(err.message);
@@ -86,7 +86,7 @@ export default function StockLedgerPage() {
                 toast.success("Entry Deleted & Stock Reverted");
                 loadData();
             } else {
-                toast.error(res.error);
+                toast.error((res as any).error || "Delete failed");
             }
         } catch (err: any) {
             toast.error(err.message);

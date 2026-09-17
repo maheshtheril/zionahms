@@ -34,14 +34,14 @@ export default async function NewSalesReturnPage({ searchParams }: PageProps) {
         const invRes = await getInvoice(invoiceId as string);
         if (invRes) {
             initialInvoice = invRes;
-            initialPatientId = invRes.patient_id;
+            initialPatientId = invRes.patient_id || '';
         }
     }
 
     // 3. Fetch Patients (Optimized)
     const patientList = await prisma.hms_patient.findMany({
         where: {
-            company_id: session.user.companyId,
+            company_id: session.user.companyId || undefined,
             status: 'active'
         },
         select: {
@@ -71,7 +71,7 @@ export default async function NewSalesReturnPage({ searchParams }: PageProps) {
         initialInvoice: JSON.parse(JSON.stringify(initialInvoice)),
         currency: (session.user as any).currencySymbol || '\u20B9',
         mode: 'return' as const,
-        externalProvisionalNo: `SRT-${new Date().getFullYear()}-${String((await prisma.hms_sales_return.count({ where: { company_id: session.user.companyId } })) + 1).padStart(4, '0')}`
+        externalProvisionalNo: `SRT-${new Date().getFullYear()}-${String((await prisma.hms_sales_return.count({ where: { company_id: session.user.companyId || undefined } })) + 1).padStart(4, '0')}`
     };
 
     return (

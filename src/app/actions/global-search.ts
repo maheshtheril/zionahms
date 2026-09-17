@@ -33,7 +33,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
                     { first_name: { contains: q, mode: 'insensitive' } },
                     { last_name: { contains: q, mode: 'insensitive' } },
                     { patient_number: { contains: q, mode: 'insensitive' } },
-                    { contact: { contains: q } },
+                    { contact: { path: ['phone'], string_contains: q } },
                 ],
             },
             take: 5,

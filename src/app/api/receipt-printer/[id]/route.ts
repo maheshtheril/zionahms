@@ -82,7 +82,7 @@ export async function GET(
             tax_amount: totalTax.toFixed(2),
             total_amount: (totalSubtotal + totalTax).toFixed(2),
             patient_name: receipt.hms_supplier?.name || "Vendor / Supplier",
-            patient_phone: receipt.hms_supplier?.phone || (receipt.metadata as any)?.reference || "N/A",
+            patient_phone: (receipt.hms_supplier as any)?.phone || (receipt.metadata as any)?.reference || "N/A",
             items: mappedLines,
             created_at: receipt.receipt_date || receipt.created_at
         };

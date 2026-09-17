@@ -20,6 +20,7 @@ export default async function AppointmentsPage() {
     tomorrow.setDate(tomorrow.getDate() + 1)
 
     const isAdmin = session?.user?.isAdmin || (session?.user as any)?.isTenantAdmin;
+    const userId = session?.user?.id;
 
     const [
         todayCount,
@@ -33,7 +34,7 @@ export default async function AppointmentsPage() {
         prisma.hms_appointments.count({
             where: {
                 tenant_id: tenantId,
-                ...(!isAdmin && { created_by: session.user.id }),
+                ...(!isAdmin && userId ? { created_by: userId } : {}),
                 starts_at: {
                     gte: today,
                     lt: tomorrow
@@ -43,7 +44,7 @@ export default async function AppointmentsPage() {
         prisma.hms_appointments.count({
             where: {
                 tenant_id: tenantId,
-                ...(!isAdmin && { created_by: session.user.id }),
+                ...(!isAdmin && userId ? { created_by: userId } : {}),
                 status: 'in_progress'
             }
         }),
@@ -106,7 +107,7 @@ export default async function AppointmentsPage() {
     const weekCount = await prisma.hms_appointments.count({
         where: {
             tenant_id: tenantId,
-            ...(!isAdmin && { created_by: session.user.id }),
+            ...(!isAdmin && userId ? { created_by: userId } : {}),
             starts_at: {
                 gte: weekStart
             }

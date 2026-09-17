@@ -186,7 +186,8 @@ export async function updateTenantSettings(data: {
     logoUrl?: string,
     dbUrl?: string,
     registrationEnabled?: boolean,
-    dateFormat?: string
+    dateFormat?: string,
+    appUrl?: string
 }) {
     const session = await auth();
     const canManage = await checkPermission('hms:admin');
@@ -231,13 +232,13 @@ export async function updateTenantSettings(data: {
 
 import { checkPermission } from "./rbac"
 
-export async function getHMSSettings() {
+export async function getHMSSettings(overrideCompanyId?: string, overrideTenantId?: string) {
     const session = await auth();
-    if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
+    const companyId = overrideCompanyId || session?.user?.companyId;
+    const tenantId = overrideTenantId || session?.user?.tenantId;
+    if (!companyId || !tenantId) return { error: "Unauthorized" };
 
     try {
-        const companyId = session.user.companyId;
-        const tenantId = session.user.tenantId;
 
         const hmsConfigRecord = await prisma.hms_settings.findFirst({
             where: {
@@ -1330,8 +1331,8 @@ export async function getPDFConfig(providedCompanyId: string, providedTenantId: 
     // 2. Resolve Active ID: Explicit templateId > Explicit Mapping > Default Flag > Most Recent > 'default'
     let activeId = templateId || settings.usageDefaults?.[normUsage];
     
-    if (!activeId || !usageTemplates.some(t => t.id === activeId)) {
-        const bestTemplate = usageTemplates.sort((a, b) => {
+    if (!activeId || !usageTemplates.some((t: any) => t.id === activeId)) {
+        const bestTemplate = usageTemplates.sort((a: any, b: any) => {
             // Priority 1: Recency (Absolute Authority)
             const timeA = new Date(a.updated_at || 0).getTime();
             const timeB = new Date(b.updated_at || 0).getTime();
@@ -1387,13 +1388,14 @@ export async function getPDFConfig(providedCompanyId: string, providedTenantId: 
 
 
 export async function updatePDFSettings(templateData: {
-    id: string;
-    name: string;
-    usage: string;
-    config: any;
+    id?: string;
+    name?: string;
+    usage?: string;
+    config?: any;
     metadata?: any;
     isDefault?: boolean;
     companyId?: string;
+    [key: string]: any;
 }) {
     const session = await auth();
     const companyId = templateData.companyId || session?.user?.companyId;
@@ -1824,7 +1826,7 @@ export async function getAISettings(companyId: string, tenantId?: string) {
     }
 }
 
-export async function updateAISettings(data: { enabled: boolean, apiKey?: string }) {
+export async function updateAISettings(data: { enabled: boolean, apiKey?: string, reset?: boolean }) {
     const session = await auth();
     const companyId = session?.user?.companyId;
     const tenantId = session?.user?.tenantId;
@@ -1840,7 +1842,7 @@ export async function updateAISettings(data: { enabled: boolean, apiKey?: string
         const configValue = {
             ...(existing?.value as any || {}),
             enabled: data.enabled,
-            apiKey: data.apiKey || (existing?.value as any)?.apiKey || "",
+            apiKey: data.reset ? "" : (data.apiKey !== undefined ? data.apiKey : ((existing?.value as any)?.apiKey || "")),
             updatedAt: new Date().toISOString()
         };
 

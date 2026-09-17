@@ -41,7 +41,6 @@ export default async function PayslipPage({ searchParams }: { searchParams: Prom
                 {/* Print Action Bar */}
                 <div className="mb-4 flex justify-end print:hidden">
                     <button 
-                        onClick="window.print()" 
                         className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-indigo-700 transition"
                     >
                         <Printer className="w-4 h-4" /> Print Payslip

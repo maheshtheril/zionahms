@@ -33,9 +33,10 @@ export function BatchSelectorDialog({
   productName,
   batches,
   onSelect,
-  currency = currencySymbol
+  currency
 }: BatchSelectorDialogProps) {
-    const { currencySymbol } = useLocalization();
+  const { currencySymbol } = useLocalization();
+  const displayCurrency = currency || currencySymbol;
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -180,7 +181,7 @@ export function BatchSelectorDialog({
                           <div className="flex flex-col">
                             <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">MRP</span>
                             <span className="text-[10px] font-black text-slate-900 dark:text-white tracking-tight">
-                              {currency}{Number(batch.mrp).toFixed(2)}
+                              {displayCurrency}{Number(batch.mrp).toFixed(2)}
                             </span>
                           </div>
                         )}

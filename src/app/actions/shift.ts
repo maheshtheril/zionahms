@@ -359,9 +359,7 @@ export async function getShiftsForAudit(startDate?: Date, endDate?: Date) {
                     lte: endDate || new Date()
                 }
             },
-            include: {
-                // We'll join with user to see who handled the shift
-            },
+
             orderBy: {
                 end_time: 'desc'
             }
@@ -444,8 +442,7 @@ export async function recordShiftExpense(amount: number, description: string) {
                 tenant_id: session.user.tenantId!,
                 company_id: session.user.companyId!,
                 amount: amount,
-                payment_date: new Date(),
-                payment_method: 'cash',
+                method: 'cash',
                 created_by: session.user.id,
                 metadata: {
                     type: 'outbound',

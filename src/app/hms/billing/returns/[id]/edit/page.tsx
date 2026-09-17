@@ -47,7 +47,7 @@ export default async function EditSalesReturnPage({
             where: { company_id: session.user.companyId },
             include: { tax_rates: true }
         }),
-        getPDFConfig()
+        getPDFConfig(session.user.companyId || session.user.tenantId, session.user.tenantId)
     ]);
 
     return (

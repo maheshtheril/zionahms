@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { generateMonthlyPayslip, setStaffSalary } from '@/app/actions/payroll'
+import { calculateMonthlyPayroll, setStaffSalary } from '@/app/actions/payroll'
 import { FileText, Loader2, DollarSign } from 'lucide-react'
 
 export function PayrollActions({ userId, monthYear, currentSalary }: { userId: string, monthYear: string, currentSalary?: number }) {
@@ -16,7 +16,7 @@ export function PayrollActions({ userId, monthYear, currentSalary }: { userId: s
         }
         setIsLoading(true)
         try {
-            const res = await generateMonthlyPayslip(userId, monthYear)
+            const res = await calculateMonthlyPayroll(userId, monthYear)
             if (res?.error) alert(res.error)
         } catch (error) {
             console.error(error)
@@ -29,7 +29,7 @@ export function PayrollActions({ userId, monthYear, currentSalary }: { userId: s
     async function handleSetSalary() {
         setIsSetting(true)
         try {
-            const res = await setStaffSalary(userId, Number(baseSalary))
+            const res = await setStaffSalary(userId, { baseSalary: Number(baseSalary), allowances: {}, deductions: {} })
             if (res?.error) alert(res.error)
             else alert("Salary updated successfully")
         } catch (error) {

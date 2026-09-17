@@ -23,6 +23,7 @@ interface ProductTableClientProps {
     categories: any[];
     manufacturers: any[];
     uomCategories: any[];
+    storageLocations?: any[];
     query?: string;
     currentPage: number;
 }

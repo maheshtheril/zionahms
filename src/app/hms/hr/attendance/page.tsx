@@ -73,7 +73,7 @@ export default async function HRAttendancePage() {
                                     <td className="p-4 text-emerald-600 font-medium">
                                         <div className="flex items-center gap-2">
                                             {format(checkInTime, "HH:mm")}
-                                            {log.location_in && <MapPin className="w-3 h-3 text-muted-foreground" title="Location Tracked" />}
+                                            {log.location_in && <span title="Location Tracked"><MapPin className="w-3 h-3 text-muted-foreground" /></span>}
                                         </div>
                                     </td>
                                     <td className="p-4 text-orange-600 font-medium">

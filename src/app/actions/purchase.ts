@@ -530,23 +530,17 @@ export async function getCompanyDefaults() {
 
         // 2. Try Company Country Default
         const company = await prisma.company.findUnique({
-            where: { id: session.user.companyId },
-            include: {
-                countries: {
-                    include: {
-                        country_default_currency: {
-                            include: {
-                                currencies: true
-                            }
-                        }
-                    }
-                }
-            }
-        })
+            where: { id: session.user.companyId }
+        });
 
-        const countryCurrency = company?.countries?.country_default_currency?.[0]?.currencies?.code
-        if (countryCurrency) {
-            return { currency: countryCurrency }
+        if (company?.country_id) {
+            const countryCurrency = await prisma.country_default_currency.findFirst({
+                where: { country_id: company.country_id },
+                include: { currencies: true }
+            });
+            if (countryCurrency?.currencies?.code) {
+                return { currency: countryCurrency.currencies.code };
+            }
         }
 
         return { currency: 'USD' }

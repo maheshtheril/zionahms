@@ -20,7 +20,7 @@ export async function getMenuItems() {
     };
     if (!session?.user) return getFallbackMenuItems(false);
 
-    const isAdmin = session?.user?.isAdmin || (session?.user as any)?.isTenantAdmin;
+    const isAdmin = (session?.user as any)?.isAdmin || (session?.user as any)?.isTenantAdmin;
     const userId = session?.user?.id;
     const tenantId = session?.user?.tenantId;
     let industry = ''; // we can fetch this if needed

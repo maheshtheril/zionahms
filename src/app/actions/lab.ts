@@ -533,8 +533,7 @@ export async function exportLabTestsAsJson() {
                 price: true,
                 units: true,
                 reference_range: true,
-                method: true,
-                is_active: true
+                method: true
             }
         })
         return { success: true, data: tests }
@@ -643,7 +642,7 @@ export async function createWalkinLabOrder(payload: any) {
             data: {
                 id: orderId,
                 tenant_id: session.user.tenantId,
-                company_id: session.user.companyId || null,
+                company_id: session.user.companyId || session.user.tenantId,
                 order_number: `LAB-${Date.now()}`,
                 patient_id: patientId,
                 status: 'requested',

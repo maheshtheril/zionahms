@@ -90,7 +90,8 @@ export function CompactInvoiceEditor({
   mode,
   externalProvisionalNo,
   initialReturn = null,
-  currentUser = null
+  currentUser = null,
+  pendingConsumablesCount = 0
 }: {
   patients?: any[],
   billableItems?: any[],
@@ -109,7 +110,8 @@ export function CompactInvoiceEditor({
   mode?: 'sale' | 'return',
   externalProvisionalNo?: string,
   initialReturn?: any,
-  currentUser?: any
+  currentUser?: any,
+  pendingConsumablesCount?: number
 }) {
   const isReturn = mode === 'return';
   // INTERNAL SAFETY NORMALIZATION: Handle nulls passed via JSX props

@@ -279,11 +279,14 @@ export function HMSSettingsForm({
         toast.success("Testing AI...", { description: "Connecting to Google Gemini..." });
 
         try {
-            const formData = new FormData();
-            formData.append('apiKey', aiApiKey);
-            const result = await testAIConnection(formData);
+            const res = await fetch('/api/ai-verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ testKey: aiApiKey })
+            });
+            const result = await res.json();
             if (result.success) {
-                toast.success("AI Test SUCCESS ✓", { description: "Connected to Gemini Pro 1.5 successfully." });
+                toast.success("AI Test SUCCESS ✓", { description: "Connected to Gemini successfully." });
                 setHasExistingAiKey(true);
             } else {
                 toast.error("AI Test FAILED ✗", { description: result.error || "Connection error. Please check your key." });

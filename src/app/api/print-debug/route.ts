@@ -7,24 +7,19 @@ export async function GET(request: Request) {
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { searchParams } = new URL(request.url);
-    const companyId = searchParams.get("companyId") || session.user.companyId;
+    const companyId = searchParams.get("companyId") || session.user.companyId || undefined;
     const tenantId = session.user.tenantId;
 
     try {
-        const company = await prisma.company.findUnique({
+        const company = companyId ? await prisma.company.findUnique({
             where: { id: companyId },
-            select: { id: true, name: true, parent_id: true }
-        });
-
-        const parentId = company?.parent_id;
+            select: { id: true, name: true }
+        }) : null;
 
         const templates = await prisma.hms_print_template.findMany({
             where: {
                 tenant_id: tenantId,
-                OR: [
-                    { company_id: companyId },
-                    { company_id: parentId }
-                ].filter(Boolean) as any
+                ...(companyId ? { company_id: companyId } : {})
             },
             orderBy: { updated_at: 'desc' }
         });
@@ -33,10 +28,7 @@ export async function GET(request: Request) {
             where: {
                 tenant_id: tenantId,
                 key: { in: ['registration_config', 'pdf_print_config'] },
-                OR: [
-                    { company_id: companyId },
-                    { company_id: parentId }
-                ].filter(Boolean) as any
+                ...(companyId ? { company_id: companyId } : {})
             }
         });
 
@@ -44,7 +36,6 @@ export async function GET(request: Request) {
             context: {
                 companyId,
                 tenantId,
-                parentId,
                 companyName: company?.name
             },
             modern_templates: templates.map(t => ({

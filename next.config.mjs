@@ -61,9 +61,6 @@ const nextConfig = {
     },
     optimizePackageImports: ['lucide-react', 'date-fns', 'recharts', 'framer-motion'],
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   // PERMANENT CACHE BUSTING: Forces the browser to refresh all resources on every restart.
   generateBuildId: async () => {
     return `ziona-hms-${Date.now()}`;

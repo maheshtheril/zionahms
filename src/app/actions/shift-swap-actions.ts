@@ -21,30 +21,18 @@ export async function requestShiftSwap(input: {
 
         // Verify target roster exists
         const roster = await prisma.hms_staff_roster.findUnique({
-            where: { id: targetRosterId },
-            include: { hms_staff_shift: true }
+            where: { id: targetRosterId }
         });
 
         if (!roster) return { error: "Roster entry not found" };
 
-        // Save shift swap request in roster metadata
-        const currentMeta = (roster.metadata as any) || {};
-        const swapRequest = {
-            id: `swap-${Date.now()}`,
-            requesterId: session.user.id,
-            requestedShiftId,
-            reason,
-            status: 'pending',
-            requestedAt: new Date().toISOString()
-        };
+        const swapNote = `[SWAP_REQUEST: Requester=${session.user.id}, Shift=${requestedShiftId}, Reason=${reason || 'N/A'}]`;
 
         await prisma.hms_staff_roster.update({
             where: { id: targetRosterId },
             data: {
-                metadata: {
-                    ...currentMeta,
-                    swap_requests: [...(currentMeta.swap_requests || []), swapRequest]
-                }
+                notes: roster.notes ? `${roster.notes} | ${swapNote}` : swapNote,
+                status: 'swap_pending'
             }
         });
 

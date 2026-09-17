@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     try {
         const session = await auth();
         const config = await getAIConfig(session?.user?.companyId || "", session?.user?.tenantId || "");
-        const key = config?.apiKey || process.env.GOOGLE_GENERATIVE_AI_API_KEY || "";
+        const key = (config as any)?.apiKey || process.env.GOOGLE_GENERATIVE_AI_API_KEY || "";
 
         if (!key) {
             return NextResponse.json({

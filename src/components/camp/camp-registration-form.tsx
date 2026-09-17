@@ -141,7 +141,7 @@ export default function CampRegistrationForm({ branding }: { branding: BrandingI
             transition: { duration: 0.6, ease: 'easeOut' }
         },
         exit: { opacity: 0, y: -30, transition: { duration: 0.3 } }
-    }
+    } as any
 
     const slideVariants = {
         enter: (dir: number) => ({

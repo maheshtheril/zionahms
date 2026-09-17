@@ -54,7 +54,7 @@ export async function getPatientAdvanceBalance(patientId: string) {
             where: {
                 partner_id: patientId,
                 company_id: companyId,
-                account_chart: {
+                accounts: {
                     code: '1200' // Accounts Receivable (or Advance Acc)
                 }
             },
@@ -66,8 +66,8 @@ export async function getPatientAdvanceBalance(patientId: string) {
 
         // AR/Advance is naturally a Debit for what they OWE us.
         // If Credit > Debit, it means they have an Advance.
-        const debits = Number(ledgerSummary._sum.debit || 0);
-        const credits = Number(ledgerSummary._sum.credit || 0);
+        const debits = Number(ledgerSummary._sum?.debit || 0);
+        const credits = Number(ledgerSummary._sum?.credit || 0);
         
         const advanceBalance = credits - debits;
 

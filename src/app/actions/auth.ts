@@ -10,6 +10,7 @@ import { initializeTenantMasters } from "@/lib/services/tenant-init";
 import { SYSTEM_DEFAULT_CURRENCY_CODE } from "@/lib/currency-constants";
 import { ensureDefaultAccounts } from "@/lib/account-seeder";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { seedCompanyTaxes } from "@/lib/services/tax-seed";
 
 export async function loginAction(prevState: any, formData: FormData) {
     const email = (formData.get('email') as string || '').trim().toLowerCase();

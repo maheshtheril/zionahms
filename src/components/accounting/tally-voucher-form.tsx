@@ -170,9 +170,10 @@ export function TallyPaymentForm({
     accountsSearch,
     journalsSearch,
     getBills,
-    currency = currencySymbol
+    currency
 }: TallyPaymentFormProps) {
     const { currencySymbol } = useLocalization();
+    const effectiveCurrency = currency || currencySymbol;
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [voucherType, setVoucherType] = useState<'bill' | 'direct'>(type === 'payment' ? 'bill' : 'direct');
     const [showAcceptPrompt, setShowAcceptPrompt] = useState(false);

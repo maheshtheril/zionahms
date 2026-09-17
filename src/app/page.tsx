@@ -10,7 +10,7 @@ export default async function Home() {
   }
 
   // ROLE & PERMISSION BASED REDIRECTS
-  const role = session.user.role?.toLowerCase();
+  const role = session.user.role?.toLowerCase() || '';
 
   // 1. Admins should not be auto-redirected to specific functional dashboards (they likely want the Menu)
   if (!session.user.isAdmin && role !== 'admin' && role !== 'super_admin') {

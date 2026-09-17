@@ -24,7 +24,6 @@ interface CreateReceiptDialogProps {
 export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateReceiptDialogProps) {
     const { currencySymbol } = useLocalization();
     const router = useRouter();
-    const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Form State

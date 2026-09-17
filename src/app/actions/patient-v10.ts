@@ -169,7 +169,7 @@ export async function createPatientV10(patientId: string | null | any, formData:
 
                 // [RCM-AUDIT] Restore Automatic billing for new patients (Conditional on Master Disable)
                 const settingsRes = await getHMSSettings();
-                const isRegistrationDisabled = settingsRes.success && settingsRes.settings?.disableRegistrationBilling;
+                const isRegistrationDisabled = settingsRes.success && (settingsRes.settings as any)?.disableRegistrationBilling;
 
                 const shouldCharge = !isRegistrationDisabled && (formData.get('charge_registration') === 'on' || !isUpdate);
                 if (shouldCharge) {

@@ -241,6 +241,7 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                     type: 'outbound' as const,
                     partner_id: selectedVendorId,
                     amount: totalAllocated,
+                    method: 'CASH',
                     date: values.date,
                     allocations: allocationList,
                     journalId: values.journalId,
@@ -296,7 +297,7 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                             form.reset();
                             setMode('GENERAL');
                             setSelectedVendorId("");
-                            setAllocationList([]);
+                            setAllocations({});
                         }}
                         className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black uppercase tracking-widest text-xs rounded-2xl h-14 px-10 shadow-lg shadow-emerald-500/20 hover:shadow-xl transition-all active:scale-95"
                     >
@@ -523,7 +524,7 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                                                             type="number"
                                                             step="any"
                                                             {...field}
-                                                            value={field.value !== undefined && field.value !== null && field.value !== 0 ? field.value : (field.value === 0 ? '0.00' : '')}
+                                                            value={(field.value !== undefined && field.value !== null && field.value !== 0) ? (field.value as any) : (field.value === 0 ? '0.00' : '')}
                                                             onChange={(e) => {
                                                                 const val = e.target.value;
                                                                 field.onChange(val === '' ? '' : parseFloat(val) || 0);

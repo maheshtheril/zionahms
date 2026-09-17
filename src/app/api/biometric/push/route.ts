@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Find user by employee code / MRN / user_id
-        const user = await prisma.hms_user.findFirst({
+        const user = await prisma.app_user.findFirst({
             where: {
                 OR: [
                     { id: userCode },
