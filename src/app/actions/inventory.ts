@@ -1091,22 +1091,23 @@ export async function updateProduct(formData: FormData) {
             }
         });
 
-        // Update Supplier Link
-        // First delete existing primary link (simplification)
-        await prisma.hms_product_supplier.deleteMany({
-            where: { product_id: id, is_primary: true }
-        });
-
-        if (supplierId) {
-            await prisma.hms_product_supplier.create({
-                data: {
-                    tenant_id: session.user.tenantId,
-                    company_id: session.user.companyId,
-                    product_id: id,
-                    supplier_id: supplierId,
-                    is_primary: true
-                }
+        if (formData.has("supplierId")) {
+            // First delete existing primary link (simplification)
+            await prisma.hms_product_supplier.deleteMany({
+                where: { product_id: id, is_primary: true }
             });
+
+            if (supplierId) {
+                await prisma.hms_product_supplier.create({
+                    data: {
+                        tenant_id: session.user.tenantId,
+                        company_id: session.user.companyId,
+                        product_id: id,
+                        supplier_id: supplierId,
+                        is_primary: true
+                    }
+                });
+            }
         }
 
         // --- RELATIONAL STORAGE LOCATION (WMS) ---
@@ -1114,67 +1115,69 @@ export async function updateProduct(formData: FormData) {
         const locRack = formData.get("locRack") as string;
         const locShelf = formData.get("locShelf") as string;
 
-        if (locZone || locRack || locShelf) {
-            let parentId: string | null = null;
-            
-            // 1. Zone
-            if (locZone) {
-                let zone = await prisma.hms_storage_locations.findFirst({
-                    where: { name: { equals: locZone, mode: 'insensitive' }, type: 'ZONE', company_id: session.user.companyId }
-                });
-                if (!zone) {
-                    zone = await prisma.hms_storage_locations.create({
-                        data: { tenant_id: session.user.tenantId, company_id: session.user.companyId, name: locZone, type: 'ZONE' }
+        if (formData.has("locZone") || formData.has("locRack") || formData.has("locShelf")) {
+            if (locZone || locRack || locShelf) {
+                let parentId: string | null = null;
+                
+                // 1. Zone
+                if (locZone) {
+                    let zone = await prisma.hms_storage_locations.findFirst({
+                        where: { name: { equals: locZone, mode: 'insensitive' }, type: 'ZONE', company_id: session.user.companyId }
+                    });
+                    if (!zone) {
+                        zone = await prisma.hms_storage_locations.create({
+                            data: { tenant_id: session.user.tenantId, company_id: session.user.companyId, name: locZone, type: 'ZONE' }
+                        });
+                    }
+                    parentId = zone.id;
+                }
+                
+                // 2. Rack
+                if (locRack) {
+                    let rack = await prisma.hms_storage_locations.findFirst({
+                        where: { name: { equals: locRack, mode: 'insensitive' }, type: 'RACK', parent_id: parentId, company_id: session.user.companyId }
+                    });
+                    if (!rack) {
+                        rack = await prisma.hms_storage_locations.create({
+                            data: { tenant_id: session.user.tenantId, company_id: session.user.companyId, name: locRack, type: 'RACK', parent_id: parentId }
+                        });
+                    }
+                    parentId = rack.id;
+                }
+                
+                // 3. Shelf
+                if (locShelf) {
+                    let shelf = await prisma.hms_storage_locations.findFirst({
+                        where: { name: { equals: locShelf, mode: 'insensitive' }, type: 'SHELF', parent_id: parentId, company_id: session.user.companyId }
+                    });
+                    if (!shelf) {
+                        shelf = await prisma.hms_storage_locations.create({
+                            data: { tenant_id: session.user.tenantId, company_id: session.user.companyId, name: locShelf, type: 'SHELF', parent_id: parentId }
+                        });
+                    }
+                    parentId = shelf.id;
+                }
+                
+                if (parentId) {
+                    // Remove existing primary link
+                    await prisma.hms_product_storage_link.deleteMany({
+                        where: { product_id: id, is_primary: true }
+                    });
+                    
+                    await prisma.hms_product_storage_link.create({
+                        data: {
+                            product_id: id,
+                            location_id: parentId,
+                            is_primary: true
+                        }
                     });
                 }
-                parentId = zone.id;
-            }
-            
-            // 2. Rack
-            if (locRack) {
-                let rack = await prisma.hms_storage_locations.findFirst({
-                    where: { name: { equals: locRack, mode: 'insensitive' }, type: 'RACK', parent_id: parentId, company_id: session.user.companyId }
-                });
-                if (!rack) {
-                    rack = await prisma.hms_storage_locations.create({
-                        data: { tenant_id: session.user.tenantId, company_id: session.user.companyId, name: locRack, type: 'RACK', parent_id: parentId }
-                    });
-                }
-                parentId = rack.id;
-            }
-            
-            // 3. Shelf
-            if (locShelf) {
-                let shelf = await prisma.hms_storage_locations.findFirst({
-                    where: { name: { equals: locShelf, mode: 'insensitive' }, type: 'SHELF', parent_id: parentId, company_id: session.user.companyId }
-                });
-                if (!shelf) {
-                    shelf = await prisma.hms_storage_locations.create({
-                        data: { tenant_id: session.user.tenantId, company_id: session.user.companyId, name: locShelf, type: 'SHELF', parent_id: parentId }
-                    });
-                }
-                parentId = shelf.id;
-            }
-            
-            if (parentId) {
-                // Remove existing primary link
+            } else {
+                // Remove existing primary link if all are cleared explicitly
                 await prisma.hms_product_storage_link.deleteMany({
                     where: { product_id: id, is_primary: true }
                 });
-                
-                await prisma.hms_product_storage_link.create({
-                    data: {
-                        product_id: id,
-                        location_id: parentId,
-                        is_primary: true
-                    }
-                });
             }
-        } else {
-            // Remove existing primary link if all are cleared
-            await prisma.hms_product_storage_link.deleteMany({
-                where: { product_id: id, is_primary: true }
-            });
         }
 
         // Update Tax Rule
@@ -1230,7 +1233,7 @@ export async function updateProduct(formData: FormData) {
         return { success: true };
     } catch (error) {
         console.error("Failed to update product:", error);
-        return { error: "Failed to update product" };
+        return { error: "Failed to update product: " + (error as Error).message };
     }
 }
 

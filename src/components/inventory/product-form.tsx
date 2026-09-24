@@ -306,6 +306,24 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                             </div>
                         </div>
 
+                        {/* Supplier */}
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase">Supplier</label>
+                            <div className="flex gap-1">
+                                <select
+                                    name="supplierId"
+                                    defaultValue={initialData?.supplierId}
+                                    className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-black outline-none transition-all text-sm"
+                                >
+                                    <option value="">Select Supplier...</option>
+                                    {suppliers?.map(s => (
+                                        <option key={s.id} value={s.id}>{s.name}</option>
+                                    ))}
+                                </select>
+                                <button type="button" onClick={() => setModalOpen('supplier')} className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50"><Plus className="h-4 w-4" /></button>
+                            </div>
+                        </div>
+
 
 
                         {/* Pricing Row - Master Defaults */}
