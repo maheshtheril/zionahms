@@ -31,7 +31,7 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Modal State
-    const [modalOpen, setModalOpen] = useState<'none' | 'category' | 'manufacturer' | 'uom'>('none');
+    const [modalOpen, setModalOpen] = useState<'none' | 'category' | 'manufacturer' | 'uom' | 'supplier'>('none');
 
     // Image Upload State
     const [imageUrl, setImageUrl] = useState<string | null>(initialData?.imageUrl || null);
@@ -919,3 +919,4 @@ function BatchAdjustForm({ batch, onSuccess }: { batch: any, onSuccess: () => vo
         </form>
     );
 }
+

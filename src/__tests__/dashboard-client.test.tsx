@@ -1,7 +1,19 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 import { describe, it, expect, vi } from 'vitest'
-import { DashboardClient } from '../components/hms/dashboard-client'
+
+// Mock subcomponents and contexts to keep client unit test completely decoupled from DB
+vi.mock('@/components/appointments/appointment-form', () => ({
+  AppointmentForm: () => <div data-testid="appointment-form-mock" />
+}))
+
+vi.mock('@/components/hms/create-patient-form', () => ({
+  CreatePatientForm: () => <div data-testid="create-patient-form-mock" />
+}))
+
+vi.mock('@/contexts/localization-context', () => ({
+  useLocalization: () => ({ currencySymbol: '$' })
+}))
 
 // Mock next/link
 vi.mock('next/link', () => {
@@ -26,6 +38,8 @@ vi.mock('next-auth', () => ({
   default: () => ({}),
   getServerSession: () => Promise.resolve({ user: { name: 'Test User' } }),
 }))
+
+import { DashboardClient } from '../components/hms/dashboard-client'
 
 describe('DashboardClient', () => {
   it('renders stats correctly', () => {

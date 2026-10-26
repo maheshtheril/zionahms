@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/auth"
+import { logPhiAccess } from "@/lib/hipaa-audit"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, Calendar, User, Phone, MapPin, Clock, FileText, Plus, Edit, Mail, Package, Activity, Receipt, CreditCard, History, Bed as BedIcon } from "lucide-react"
@@ -76,6 +78,21 @@ export default async function PatientDetailPage(props: { params: Promise<any> })
 
     if (!patient) {
         return notFound()
+    }
+
+    // HIPAA § 164.312(b) Non-blocking ePHI Audit Log
+    const session = await auth()
+    if (session?.user?.tenantId) {
+        logPhiAccess({
+            patientId: patient.id,
+            tenantId: session.user.tenantId,
+            actorId: session.user.id || null,
+            actorName: session.user.name || 'Staff Clinician',
+            actorRole: (session.user as any)?.role || 'Clinician',
+            action: 'VIEW',
+            resource: 'PATIENT_CHART',
+            reason: 'Clinical Chart Consultation'
+        }).catch(e => console.error('[HIPAA-AUDIT] Non-blocking view log:', e))
     }
 
     // Fetch Nursing Consumption History (Linked to Encounters/Appointments)

@@ -73,3 +73,6 @@ backups/*.sql
 backups/*.json
 tsc_fresh.txt
 tsc_errors.txt
+
+/*.bat
+/apps/
