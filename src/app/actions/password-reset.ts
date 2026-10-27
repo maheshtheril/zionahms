@@ -47,6 +47,7 @@ export async function requestPasswordReset(email: string) {
         // Store new reset token
         await prisma.email_verification_tokens.create({
             data: {
+                id: crypto.randomUUID(),
                 user_id: user.id,
                 email: user.email,
                 token: token,
@@ -136,8 +137,8 @@ export async function resetPasswordWithToken(token: string, newPassword: string)
 
         if (new Date() > tokenRecord.expires_at) {
             // Clean up expired token
-            await prisma.email_verification_tokens.delete({
-                where: { id: tokenRecord.id }
+            await prisma.email_verification_tokens.deleteMany({
+                where: { token: token }
             }).catch(() => {})
             return { error: 'This password reset link has expired. Please request a new one.' }
         }
@@ -145,9 +146,14 @@ export async function resetPasswordWithToken(token: string, newPassword: string)
         // Securely hash password with bcrypt
         const hashedPassword = await bcrypt.hash(newPassword, 10)
 
-        // Update user password and ensure account is active
-        await prisma.app_user.update({
-            where: { id: tokenRecord.user_id },
+        // Update user password and ensure account is active (updates both user record and any duplicates matching email)
+        await prisma.app_user.updateMany({
+            where: {
+                OR: [
+                    { id: tokenRecord.user_id },
+                    { email: tokenRecord.email }
+                ]
+            },
             data: {
                 password: hashedPassword,
                 is_active: true
@@ -155,8 +161,8 @@ export async function resetPasswordWithToken(token: string, newPassword: string)
         })
 
         // Delete used token (one-time use security guarantee)
-        await prisma.email_verification_tokens.delete({
-            where: { id: tokenRecord.id }
+        await prisma.email_verification_tokens.deleteMany({
+            where: { token: token }
         })
 
         return { success: true, message: 'Password updated successfully. You can now log in.' }
