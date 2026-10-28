@@ -779,7 +779,6 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                                     <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Select Lab Tests</label>
                                     
                                     <SearchableSelect
-                                        usePortal={false}
                                         placeholder="Search to add lab test (e.g. CBC)..."
                                         options={availableTests
                                             .filter((t: any) => !newOrderTestIds.includes(t.id))
@@ -796,40 +795,7 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                                         value={null}
                                     />
 
-                                    {/* Quick Select Popular Tests */}
-                                    {availableTests && availableTests.length > 0 && (
-                                        <div className="space-y-1.5 mt-2">
-                                            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Quick Suggestions:</div>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {availableTests.slice(0, 8).map((t: any) => {
-                                                    const isSelected = newOrderTestIds.includes(t.id);
-                                                    return (
-                                                        <button
-                                                            key={t.id}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                if (isSelected) {
-                                                                    setNewOrderTestIds(newOrderTestIds.filter((tid: string) => tid !== t.id));
-                                                                } else {
-                                                                    setNewOrderTestIds([...newOrderTestIds, t.id]);
-                                                                }
-                                                            }}
-                                                            className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition-all flex items-center gap-1 ${
-                                                                isSelected 
-                                                                    ? 'bg-violet-600 text-white border-violet-600 shadow-sm' 
-                                                                    : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:border-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20'
-                                                            }`}
-                                                        >
-                                                            {isSelected ? '✓ ' : '+ '}
-                                                            {t.name}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-
-{newOrderTestIds.length > 0 && (
+                                    {newOrderTestIds.length > 0 && (
                                         <div className="flex flex-wrap gap-2 mt-3 p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
                                             {newOrderTestIds.map(id => {
                                                 const test = availableTests.find((t: any) => t.id === id);

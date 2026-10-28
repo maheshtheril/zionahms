@@ -418,11 +418,6 @@ export function SearchableSelect({
                                 e.stopPropagation();
                                 handleSelect(option);
                             }}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleSelect(option);
-                            }}
                             className={`
                                 relative cursor-pointer select-none py-3 pl-3 pr-9 
                                 ${index === activeIndex 
