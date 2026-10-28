@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { updateLabOrderStatus, uploadAndAttachLabReport, deleteLabReport, createWalkinLabOrder, seedStandardLabTests } from "@/app/actions/lab"
 import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 import { SearchableSelect } from "@/components/ui/searchable-select"
+import { searchPatients } from "@/app/actions/patient-search"
 import { DashboardDateFilter } from "../dashboard-date-filter"
 
 interface LabDashboardProps {
@@ -33,6 +34,7 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
     const [isWalkInGuest, setIsWalkInGuest] = useState(false)
     const [walkInDetails, setWalkInDetails] = useState({ name: '', phone: '', age: '', gender: 'Male', doctor_name: '' })
     const [newOrderPatientId, setNewOrderPatientId] = useState('')
+    const [selectedPatientLabel, setSelectedPatientLabel] = useState('')
     const [newOrderTestIds, setNewOrderTestIds] = useState<string[]>([])
     const [isCreatingOrder, setIsCreatingOrder] = useState(false)
 
@@ -52,6 +54,7 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
             if (res.success) {
                 setIsNewOrderModalOpen(false);
                 setNewOrderPatientId('');
+                setSelectedPatientLabel('');
                 setWalkInDetails({ name: '', phone: '', age: '', gender: 'Male', doctor_name: '' });
                 setNewOrderTestIds([]);
                 router.refresh();
@@ -693,99 +696,179 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                 </div>
             )}
 
-            {/* New Walk-in Order Modal */}
+            {/* New Walk-in Order Modal - Enlarged & Searchable */}
             <AnimatePresence>
                 {isNewOrderModalOpen && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-sm"
                     >
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            initial={{ opacity: 0, scale: 0.96, y: 16 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-white/10"
+                            exit={{ opacity: 0, scale: 0.96, y: 16 }}
+                            className="bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[90vh] flex flex-col rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-white/10"
                         >
-                            <div className="p-6 border-b border-slate-100 dark:border-white/10 flex items-center justify-between">
-                                <h3 className="text-xl font-black text-slate-900 dark:text-white">Create Walk-in Lab Order</h3>
-                                <button onClick={() => setIsNewOrderModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                            {/* Modal Header */}
+                            <div className="p-6 md:px-8 border-b border-slate-100 dark:border-white/10 flex items-center justify-between shrink-0 bg-white dark:bg-slate-900">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-violet-600/10 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 flex items-center justify-center font-bold">
+                                        <FlaskConical className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black text-slate-900 dark:text-white">Create Walk-in Lab Order</h3>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Search across all registered hospital patients or register a walk-in guest</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => setIsNewOrderModalOpen(false)} 
+                                    className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors"
+                                >
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
-                            <div className="p-6 space-y-6">
-                                {/* Toggle */}
-                                <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl">
+
+                            {/* Modal Scrollable Body */}
+                            <div className="p-6 md:p-8 space-y-6 overflow-y-auto flex-1">
+                                {/* Mode Toggle */}
+                                <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-2xl">
                                     <button
+                                        type="button"
                                         onClick={() => setIsWalkInGuest(false)}
-                                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${!isWalkInGuest ? 'bg-white dark:bg-slate-800 text-indigo-600 shadow-sm' : 'text-slate-500'}`}
+                                        className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${!isWalkInGuest ? 'bg-white dark:bg-slate-800 text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                                     >
-                                        Registered Patient
+                                        Registered Hospital Patient
                                     </button>
                                     <button
+                                        type="button"
                                         onClick={() => setIsWalkInGuest(true)}
-                                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${isWalkInGuest ? 'bg-white dark:bg-slate-800 text-pink-600 shadow-sm' : 'text-slate-500'}`}
+                                        className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${isWalkInGuest ? 'bg-white dark:bg-slate-800 text-pink-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                                     >
-                                        Walk-in Guest
+                                        Walk-in Guest / Outside Patient
                                     </button>
                                 </div>
 
                                 {!isWalkInGuest ? (
                                     <div className="space-y-2">
-                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Select Patient</label>
-                                        <select 
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                Select Patient
+                                            </label>
+                                            <span className="text-xs text-slate-400">Search by Name, Phone, or Patient ID (e.g. PAT-...)</span>
+                                        </div>
+                                        <SearchableSelect
+                                            placeholder="Type name, phone number, or ID (e.g. Ambika, 9840..., PAT-864)..."
                                             value={newOrderPatientId}
-                                            onChange={(e) => setNewOrderPatientId(e.target.value)}
-                                            className="w-full h-12 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-violet-500"
-                                        >
-                                            <option value="">-- Choose Patient --</option>
-                                            {patients.map(p => (
-                                                <option key={p.id} value={p.id}>{p.first_name} {p.last_name} ({p.patient_number})</option>
-                                            ))}
-                                        </select>
+                                            valueLabel={selectedPatientLabel}
+                                            onChange={(val, opt) => {
+                                                setNewOrderPatientId(val || '');
+                                                setSelectedPatientLabel(opt?.label || '');
+                                            }}
+                                            onSearch={async (query: string) => {
+                                                const results = await searchPatients(query);
+                                                return (results || []).map((p: any) => {
+                                                    const phone = p.contact?.phone || p.contact?.mobile || '';
+                                                    return {
+                                                        id: p.id,
+                                                        label: `${p.first_name} ${p.last_name || ''} (${p.patient_number})`.trim(),
+                                                        subLabel: `${phone ? `📞 ${phone} • ` : ''}${p.gender || ''}`
+                                                    };
+                                                });
+                                            }}
+                                            options={(patients || []).map((p: any) => {
+                                                const phone = p.contact?.phone || p.contact?.mobile || '';
+                                                return {
+                                                    id: p.id,
+                                                    label: `${p.first_name} ${p.last_name || ''} (${p.patient_number})`.trim(),
+                                                    subLabel: `${phone ? `📞 ${phone} • ` : ''}${p.gender || ''}`
+                                                };
+                                            })}
+                                        />
                                     </div>
                                 ) : (
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-1">
-                                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Patient Name *</label>
-                                                <input type="text" value={walkInDetails.name} onChange={e => setWalkInDetails({...walkInDetails, name: e.target.value})} className="w-full h-10 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 text-sm focus:ring-2 focus:ring-violet-500" placeholder="e.g. John Doe" />
+                                    <div className="space-y-4 bg-slate-50/60 dark:bg-white/[0.02] p-5 rounded-2xl border border-slate-200/60 dark:border-white/5">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Patient Full Name *</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={walkInDetails.name} 
+                                                    onChange={e => setWalkInDetails({...walkInDetails, name: e.target.value})} 
+                                                    className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-sm font-medium focus:ring-2 focus:ring-violet-500" 
+                                                    placeholder="e.g. Rahul Sharma" 
+                                                />
                                             </div>
-                                            <div className="space-y-1">
-                                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Phone</label>
-                                                <input type="text" value={walkInDetails.phone} onChange={e => setWalkInDetails({...walkInDetails, phone: e.target.value})} className="w-full h-10 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 text-sm focus:ring-2 focus:ring-violet-500" placeholder="e.g. 1234567890" />
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Phone Number</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={walkInDetails.phone} 
+                                                    onChange={e => setWalkInDetails({...walkInDetails, phone: e.target.value})} 
+                                                    className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-sm font-medium focus:ring-2 focus:ring-violet-500" 
+                                                    placeholder="e.g. 9876543210" 
+                                                />
                                             </div>
-                                            <div className="space-y-1">
-                                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Age</label>
-                                                <input type="number" value={walkInDetails.age} onChange={e => setWalkInDetails({...walkInDetails, age: e.target.value})} className="w-full h-10 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 text-sm focus:ring-2 focus:ring-violet-500" placeholder="e.g. 35" />
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="space-y-1.5">
+                                                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Age</label>
+                                                    <input 
+                                                        type="number" 
+                                                        value={walkInDetails.age} 
+                                                        onChange={e => setWalkInDetails({...walkInDetails, age: e.target.value})} 
+                                                        className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-sm font-medium focus:ring-2 focus:ring-violet-500" 
+                                                        placeholder="e.g. 35" 
+                                                    />
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Gender</label>
+                                                    <select 
+                                                        value={walkInDetails.gender} 
+                                                        onChange={e => setWalkInDetails({...walkInDetails, gender: e.target.value})} 
+                                                        className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 text-sm font-medium focus:ring-2 focus:ring-violet-500"
+                                                    >
+                                                        <option>Male</option>
+                                                        <option>Female</option>
+                                                        <option>Other</option>
+                                                    </select>
+                                                </div>
                                             </div>
-                                            <div className="space-y-1">
-                                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Gender</label>
-                                                <select value={walkInDetails.gender} onChange={e => setWalkInDetails({...walkInDetails, gender: e.target.value})} className="w-full h-10 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 text-sm focus:ring-2 focus:ring-violet-500">
-                                                    <option>Male</option>
-                                                    <option>Female</option>
-                                                    <option>Other</option>
-                                                </select>
-                                            </div>
-                                            <div className="space-y-1 col-span-2">
-                                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Referring Doctor</label>
-                                                <input type="text" value={walkInDetails.doctor_name} onChange={e => setWalkInDetails({...walkInDetails, doctor_name: e.target.value})} className="w-full h-10 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 text-sm focus:ring-2 focus:ring-violet-500" placeholder="e.g. Dr. Smith" />
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Referring Doctor</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={walkInDetails.doctor_name} 
+                                                    onChange={e => setWalkInDetails({...walkInDetails, doctor_name: e.target.value})} 
+                                                    className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-sm font-medium focus:ring-2 focus:ring-violet-500" 
+                                                    placeholder="e.g. Dr. John Smith (Self / External)" 
+                                                />
                                             </div>
                                         </div>
                                     </div>
                                 )}
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Select Lab Tests</label>
+
+                                {/* Lab Tests Selection */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                            Select Lab Tests
+                                        </label>
+                                        {newOrderTestIds.length > 0 && (
+                                            <span className="text-xs font-bold text-violet-600 dark:text-violet-400">
+                                                {newOrderTestIds.length} test{newOrderTestIds.length > 1 ? 's' : ''} selected
+                                            </span>
+                                        )}
+                                    </div>
                                     
                                     <SearchableSelect
-                                        placeholder="Search to add lab test (e.g. CBC)..."
+                                        placeholder="Search and add lab tests (e.g. Complete Blood Count, Lipid Profile, Liver Function)..."
                                         options={availableTests
                                             .filter((t: any) => !newOrderTestIds.includes(t.id))
                                             .map((t: any) => ({ 
                                                 id: t.id, 
                                                 label: t.name, 
-                                                subLabel: `Rs. ${t.price || 0}` 
+                                                subLabel: `₹${Number(t.price || 0).toLocaleString()}` 
                                             }))}
                                         onChange={(val) => {
                                             if (val && !newOrderTestIds.includes(val)) {
@@ -796,27 +879,47 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                                     />
 
                                     {newOrderTestIds.length > 0 && (
-                                        <div className="flex flex-wrap gap-2 mt-3 p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
-                                            {newOrderTestIds.map(id => {
-                                                const test = availableTests.find((t: any) => t.id === id);
-                                                return (
-                                                    <div key={id} className="flex items-center gap-2 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm">
-                                                        <span>{test?.name}</span>
-                                                        <button 
-                                                            type="button"
-                                                            onClick={() => setNewOrderTestIds(newOrderTestIds.filter(tid => tid !== id))} 
-                                                            className="text-violet-500 hover:text-violet-900 dark:hover:text-violet-100 bg-white/50 dark:bg-black/20 rounded-full p-0.5 transition-colors"
-                                                        >
-                                                            <X size={14} />
-                                                        </button>
-                                                    </div>
-                                                )
-                                            })}
+                                        <div className="space-y-3 mt-3">
+                                            <div className="flex flex-wrap gap-2.5 p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 max-h-48 overflow-y-auto">
+                                                {newOrderTestIds.map(id => {
+                                                    const test = availableTests.find((t: any) => t.id === id);
+                                                    return (
+                                                        <div key={id} className="flex items-center gap-2 bg-violet-100 dark:bg-violet-900/40 text-violet-800 dark:text-violet-200 pl-3 pr-2 py-1.5 rounded-xl text-sm font-semibold shadow-sm border border-violet-200/50 dark:border-violet-700/30">
+                                                            <span>{test?.name || id}</span>
+                                                            {test?.price ? (
+                                                                <span className="text-xs font-bold bg-violet-200 dark:bg-violet-800/60 px-1.5 py-0.5 rounded text-violet-900 dark:text-violet-100">
+                                                                    ₹{test.price}
+                                                                </span>
+                                                            ) : null}
+                                                            <button 
+                                                                type="button"
+                                                                onClick={() => setNewOrderTestIds(newOrderTestIds.filter(tid => tid !== id))} 
+                                                                className="text-violet-500 hover:text-violet-900 dark:hover:text-violet-100 hover:bg-violet-200 dark:hover:bg-violet-700/50 rounded-lg p-1 transition-colors"
+                                                            >
+                                                                <X size={14} />
+                                                            </button>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+
+                                            {/* Cost Summary */}
+                                            <div className="flex items-center justify-between p-3.5 bg-violet-50/60 dark:bg-violet-950/20 rounded-xl border border-violet-100 dark:border-violet-900/30 text-xs">
+                                                <span className="font-medium text-slate-600 dark:text-slate-300">
+                                                    Total {newOrderTestIds.length} test{newOrderTestIds.length > 1 ? 's' : ''} in this order
+                                                </span>
+                                                <span className="font-extrabold text-sm text-violet-700 dark:text-violet-300">
+                                                    Est. Total: ₹{availableTests
+                                                        .filter((t: any) => newOrderTestIds.includes(t.id))
+                                                        .reduce((acc: number, curr: any) => acc + (Number(curr.price) || 0), 0)
+                                                        .toLocaleString()}
+                                                </span>
+                                            </div>
                                         </div>
                                     )}
 
                                     {availableTests.length === 0 && (
-                                        <div className="flex flex-col items-center justify-center p-6 gap-3 text-center border-2 border-dashed border-slate-200 dark:border-white/5 rounded-xl mt-4">
+                                        <div className="flex flex-col items-center justify-center p-6 gap-3 text-center border-2 border-dashed border-slate-200 dark:border-white/5 rounded-2xl mt-4">
                                             <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No lab tests configured yet.</p>
                                             <button 
                                                 type="button"
@@ -834,21 +937,36 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                                     )}
                                 </div>
                             </div>
-                            <div className="p-6 bg-slate-50 dark:bg-white/5 border-t border-slate-100 dark:border-white/10 flex justify-end gap-3">
-                                <button
-                                    onClick={() => setIsNewOrderModalOpen(false)}
-                                    className="px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-white/10 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleCreateWalkinOrder}
-                                    disabled={(!isWalkInGuest && !newOrderPatientId) || (isWalkInGuest && !walkInDetails.name) || newOrderTestIds.length === 0 || isCreatingOrder}
-                                    className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-bold shadow-xl shadow-violet-600/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-                                >
-                                    {isCreatingOrder ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
-                                    Create Order
-                                </button>
+
+                            {/* Modal Footer */}
+                            <div className="p-6 md:px-8 bg-slate-50 dark:bg-white/5 border-t border-slate-100 dark:border-white/10 flex items-center justify-between shrink-0">
+                                <div className="text-xs text-slate-500 dark:text-slate-400">
+                                    {newOrderTestIds.length > 0 ? (
+                                        <span>
+                                            Ready to order <strong className="text-slate-800 dark:text-white">{newOrderTestIds.length}</strong> test{newOrderTestIds.length > 1 ? 's' : ''}
+                                        </span>
+                                    ) : (
+                                        <span>Select at least 1 test to proceed</span>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsNewOrderModalOpen(false)}
+                                        className="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-white/10 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleCreateWalkinOrder}
+                                        disabled={(!isWalkInGuest && !newOrderPatientId) || (isWalkInGuest && !walkInDetails.name) || newOrderTestIds.length === 0 || isCreatingOrder}
+                                        className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-bold text-sm shadow-xl shadow-violet-600/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                                    >
+                                        {isCreatingOrder ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
+                                        Create Order
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>
