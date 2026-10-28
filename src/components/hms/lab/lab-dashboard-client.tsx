@@ -765,6 +765,14 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                                             onChange={(val, opt) => {
                                                 setNewOrderPatientId(val || '');
                                                 setSelectedPatientLabel(opt?.label || '');
+                                                if (val) {
+                                                    setTimeout(() => {
+                                                        const labInput = document.getElementById('lab-test-search-input');
+                                                        if (labInput) {
+                                                            labInput.focus();
+                                                        }
+                                                    }, 150);
+                                                }
                                             }}
                                             onSearch={async (query: string) => {
                                                 const results = await searchPatients(query);
@@ -840,6 +848,15 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                                                     type="text" 
                                                     value={walkInDetails.doctor_name} 
                                                     onChange={e => setWalkInDetails({...walkInDetails, doctor_name: e.target.value})} 
+                                                    onKeyDown={e => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            const labInput = document.getElementById('lab-test-search-input');
+                                                            if (labInput) {
+                                                                labInput.focus();
+                                                            }
+                                                        }
+                                                    }}
                                                     className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-sm font-medium focus:ring-2 focus:ring-violet-500" 
                                                     placeholder="e.g. Dr. John Smith (Self / External)" 
                                                 />
@@ -862,6 +879,7 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                                     </div>
                                     
                                     <SearchableSelect
+                                        inputId="lab-test-search-input"
                                         placeholder="Search and add lab tests (e.g. Complete Blood Count, Lipid Profile, Liver Function)..."
                                         options={availableTests
                                             .filter((t: any) => !newOrderTestIds.includes(t.id))
@@ -873,6 +891,12 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                                         onChange={(val) => {
                                             if (val && !newOrderTestIds.includes(val)) {
                                                 setNewOrderTestIds([...newOrderTestIds, val]);
+                                                setTimeout(() => {
+                                                    const labInput = document.getElementById('lab-test-search-input');
+                                                    if (labInput) {
+                                                        labInput.focus();
+                                                    }
+                                                }, 150);
                                             }
                                         }}
                                         value={null}
