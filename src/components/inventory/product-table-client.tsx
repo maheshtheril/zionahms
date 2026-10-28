@@ -47,16 +47,21 @@ export function ProductTableClient({
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
 
-    // Multi-select logic
+    // Multi-select logic with strict unique ID validation
+    const validProductIds: string[] = (products || []).map(p => p.id).filter(Boolean);
+    const isAllSelected = validProductIds.length > 0 && validProductIds.every(id => selectedIds.includes(id));
+    const isSomeSelected = selectedIds.length > 0 && !isAllSelected;
+
     const toggleAll = () => {
-        if (selectedIds.length === products.length) {
+        if (isAllSelected) {
             setSelectedIds([]);
         } else {
-            setSelectedIds(products.map(p => p.id));
+            setSelectedIds(validProductIds);
         }
     };
 
     const toggleOne = (id: string) => {
+        if (!id) return;
         setSelectedIds(prev =>
             prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
         );
@@ -96,24 +101,55 @@ export function ProductTableClient({
             )}
 
             <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative transition-all duration-300 ${isPending ? 'opacity-50 pointer-events-none filter blur-[1px]' : 'opacity-100'}`}>
+                {/* Bulk Actions Top Banner */}
+                {selectedIds.length > 0 && (
+                    <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-2.5 flex items-center justify-between text-xs transition-all">
+                        <div className="flex items-center gap-3">
+                            <span className="inline-flex items-center justify-center h-6 px-2.5 rounded-full bg-indigo-600 text-white font-bold text-[11px]">
+                                {selectedIds.length}
+                            </span>
+                            <span className="font-semibold text-slate-800">
+                                {selectedIds.length === 1 ? '1 product selected' : `${selectedIds.length} products selected`}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                size="sm"
+                                onClick={() => setIsBulkModalOpen(true)}
+                                className="h-8 px-3.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs"
+                            >
+                                <Settings2 className="h-3.5 w-3.5" />
+                                Batch Categorize
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setSelectedIds([])}
+                                className="h-8 px-3 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg text-xs font-medium"
+                            >
+                                Clear Selection
+                            </Button>
+                        </div>
+                    </div>
+                )}
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-gray-50/50 border-b border-gray-100 text-[10px] uppercase tracking-[0.2em] text-slate-400 font-black">
                                 <th className="p-4 w-12 text-center group/all pointer-events-auto">
                                     <Checkbox
-                                        checked={selectedIds.length > 0 && selectedIds.length === products.length}
+                                        checked={isAllSelected ? true : isSomeSelected ? "indeterminate" : false}
                                         onCheckedChange={toggleAll}
-                                        className="h-5 w-5 border-slate-400 dark:border-white/20 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600 transition-all shadow-sm"
+                                        className="h-4 w-4 border-slate-300 dark:border-white/20 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600 transition-all shadow-xs"
                                     />
                                     <span className="absolute left-14 top-1/2 -translate-y-1/2 opacity-0 group-hover/all:opacity-100 transition-opacity bg-slate-900 text-white px-2 py-1 rounded text-[8px] whitespace-nowrap z-50">Select All Products</span>
                                 </th>
                                 <th className="p-4 flex items-center gap-2">
                                     <span>Product Info</span>
                                     {selectedIds.length === 0 && (
-                                        <span className="ml-4 normal-case tracking-normal text-[9px] text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full animate-bounce flex items-center gap-1">
+                                        <span className="ml-3 normal-case tracking-normal text-[10px] text-slate-400 font-medium flex items-center gap-1">
                                             <MousePointerClick className="h-3 w-3" />
-                                            Select items for bulk operations
+                                            Click checkboxes to select items
                                         </span>
                                     )}
                                 </th>
@@ -289,40 +325,39 @@ export function ProductTableClient({
                     </div>
                 )}
 
-                {/* WORLD CLASS FLOATING ACTION BAR */}
+                {/* FLOATING ACTION DOCK */}
                 <AnimatePresence mode="wait">
                     {selectedIds.length > 0 && !isBulkModalOpen && (
                         <motion.div
-                            initial={{ y: 50, opacity: 0 }}
+                            initial={{ y: 20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: 50, opacity: 0 }}
-                            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] pointer-events-none w-full max-w-fit"
+                            exit={{ y: 20, opacity: 0 }}
+                            className="fixed bottom-6 right-8 z-[100] pointer-events-none"
                         >
-                            <div className="bg-white dark:bg-slate-950 border-2 border-indigo-500 shadow-[0_20px_50px_rgba(79,70,229,0.3)] rounded-[2rem] px-8 py-4 flex items-center gap-8 pointer-events-auto backdrop-blur-xl">
-                                <div className="flex items-center gap-3 pr-8 border-r border-slate-200 dark:border-white/10">
-                                    <div className="h-10 w-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                                        <Layers className="h-5 w-5 text-white" />
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest leading-none mb-1">Bulk Operations</p>
-                                        <p className="text-xl font-black text-slate-900 dark:text-white italic tracking-tighter leading-none">{selectedIds.length} Product{selectedIds.length > 1 ? "s" : ""} Selected</p>
-                                    </div>
+                            <div className="bg-slate-900 text-white border border-slate-700 shadow-2xl rounded-2xl px-5 py-3 flex items-center gap-4 pointer-events-auto backdrop-blur-xl">
+                                <div className="flex items-center gap-2.5 pr-4 border-r border-slate-700">
+                                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                    <span className="text-xs font-bold text-slate-200">
+                                        {selectedIds.length} Product{selectedIds.length > 1 ? "s" : ""} Selected
+                                    </span>
                                 </div>
 
                                 <div className="flex items-center gap-2">
                                     <Button
+                                        size="sm"
                                         onClick={() => setIsBulkModalOpen(true)}
-                                        className="h-12 px-6 bg-slate-900 hover:bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center gap-2 transition-all active:scale-95 shadow-xl"
+                                        className="h-8 px-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md"
                                     >
-                                        <Settings2 className="h-4 w-4" />
+                                        <Settings2 className="h-3.5 w-3.5" />
                                         Batch Categorize
                                     </Button>
-                                    <Button
+                                    <button
                                         onClick={() => setSelectedIds([])}
-                                        className="h-12 w-12 bg-slate-100 hover:bg-rose-600 text-slate-400 hover:text-white rounded-2xl transition-all flex items-center justify-center group"
+                                        className="h-8 w-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all flex items-center justify-center"
+                                        title="Clear selection"
                                     >
-                                        <X className="h-5 w-5 transition-transform group-hover:rotate-90" />
-                                    </Button>
+                                        <X className="h-4 w-4" />
+                                    </button>
                                 </div>
                             </div>
                         </motion.div>

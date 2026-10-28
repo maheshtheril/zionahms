@@ -172,6 +172,7 @@ export async function getProductsPremium(query?: string, page: number = 1, suppl
 
             processed.push({
                 ...rest,
+                id: p.id || rest.id || crypto.randomUUID(),
                 price: Number(p.price || 0),
                 totalStock,
                 stockStatus: totalStock === 0 ? 'Out of Stock' : totalStock < 10 ? 'Low Stock' : 'In Stock',

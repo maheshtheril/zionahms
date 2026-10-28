@@ -179,7 +179,7 @@ async function ProductStatsSummary({ query }: { query?: string }) {
                 </div>
                 <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Products</p>
-                    <h3 className="text-2xl font-black text-slate-900">{meta?.total?.toLocaleString() || 0} Nodes</h3>
+                    <h3 className="text-2xl font-black text-slate-900">{meta?.total?.toLocaleString() || 0} Products</h3>
                 </div>
             </div>
             
@@ -198,7 +198,7 @@ async function ProductStatsSummary({ query }: { query?: string }) {
                     <Search className="h-6 w-6" />
                 </div>
                 <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sector Page</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Page</p>
                     <h3 className="text-2xl font-black text-slate-900">{meta.page} of {meta.totalPages}</h3>
                 </div>
             </div>

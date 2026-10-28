@@ -91,7 +91,7 @@ export function BulkEditModal({
                                 Bulk <span className="text-indigo-400">Processor</span>
                             </DialogTitle>
                             <DialogDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                                Updating {selectedIds.length} registry nodes simultaneously
+                                Updating {selectedIds.length} products simultaneously
                             </DialogDescription>
                         </div>
                     </div>
@@ -137,7 +137,7 @@ export function BulkEditModal({
                                 onChange={(e) => setIsService(e.target.value === 'true')}
                             >
                                 <option value="false">Physical Item</option>
-                                <option value="true">Service Node</option>
+                                <option value="true">Service Item</option>
                             </select>
                         </div>
 
