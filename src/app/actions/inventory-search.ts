@@ -147,6 +147,7 @@ export async function getProductsPremium(query?: string, page: number = 1, suppl
             let locZone = '';
             let locRack = '';
             let locShelf = '';
+            let locBin = '';
             
             const linkedLoc = p.hms_product_storage_link?.[0]?.location;
             if (linkedLoc) {
@@ -164,6 +165,11 @@ export async function getProductsPremium(query?: string, page: number = 1, suppl
                 }
             }
 
+            if (!locZone && metadata.storageLocation) locZone = metadata.storageLocation;
+            if (!locRack && metadata.rack) locRack = metadata.rack;
+            if (!locShelf && metadata.shelf) locShelf = metadata.shelf;
+            if (!locBin && metadata.bin) locBin = metadata.bin;
+
             processed.push({
                 ...rest,
                 price: Number(p.price || 0),
@@ -178,14 +184,21 @@ export async function getProductsPremium(query?: string, page: number = 1, suppl
                 uom_id: uomId,
                 tracking: metadata.tracking || 'none',
                 reorderLevel: Number(metadata.reorder_level || 0),
-                storageLocation: metadata.storageLocation || '',
+                storageLocation: metadata.storageLocation || locZone || '',
                 locZone,
                 locRack,
                 locShelf,
+                locBin,
+                rack: metadata.rack || locRack || '',
+                shelf: metadata.shelf || locShelf || '',
+                bin: metadata.bin || locBin || '',
                 default_cost: Number(metadata.cost_price || p.default_cost || 0),
                 mrp: Number(metadata.mrp || p.price || 0),
                 taxRateId: p.product_tax_rules?.[0]?.tax_rate_id || '',
-                composition: metadata.composition || '',
+                composition: metadata.composition || metadata.generic_name || '',
+                drugSchedule: metadata.drug_schedule || 'General',
+                storageCondition: metadata.storage_condition || 'Room Temperature',
+                rxRequired: metadata.rx_required ?? true,
                 batches: p.hms_product_batch || []
             });
         }
@@ -234,7 +247,16 @@ export async function getProduct(id: string) {
             default_cost: Number(metadata.cost_price || product.default_cost || 0),
             categoryId: product.hms_product_category_rel[0]?.category_id || '',
             manufacturerId: product.manufacturer_id || '',
-            stock_levels: product.hms_stock_levels
+            stock_levels: product.hms_stock_levels,
+            storageLocation: (metadata.storageLocation as string) || (metadata.storage_location as string) || '',
+            rack: (metadata.rack as string) || '',
+            shelf: (metadata.shelf as string) || '',
+            bin: (metadata.bin as string) || '',
+            composition: (metadata.composition as string) || (metadata.generic_name as string) || '',
+            drugSchedule: (metadata.drug_schedule as string) || 'General',
+            storageCondition: (metadata.storage_condition as string) || 'Room Temperature',
+            rxRequired: metadata.rx_required ?? true,
+            reorderLevel: Number(metadata.reorder_level || 0)
         });
     } catch (error) { return null; }
 }

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { QuickCategoryForm, QuickManufacturerForm } from "@/components/inventory/quick-create-wrappers"
 import {
-    Box, Tag, DollarSign, Layers, Image as ImageIcon, Barcode, Factory, Check, Zap, Info, Plus, X, Cpu, History, ArrowUpDown, TrendingUp, TrendingDown, Trash2, Pencil
+    Box, Tag, DollarSign, Layers, Image as ImageIcon, Barcode, Factory, Check, Zap, Info, Plus, X, Cpu, History, ArrowUpDown, TrendingUp, TrendingDown, Trash2, Pencil, MapPin, Pill, ThermometerSnowflake, ShieldAlert
 } from "lucide-react"
 import { toast } from "sonner"
 import { useLocalization } from "@/contexts/localization-context";
@@ -378,6 +378,193 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                             </div>
                             {/* Empty space to keep grid consistent */}
                             <div className="hidden md:block"></div>
+                        </div>
+
+                        {/* 📍 Physical Storage Location Card (Pharmacy & Central Store) */}
+                        <div className="md:col-span-3 p-4 bg-emerald-50/50 dark:bg-emerald-950/20 border-2 border-emerald-200/80 dark:border-emerald-800/40 rounded-2xl space-y-3 shadow-sm">
+                            <div className="flex items-center justify-between border-b border-emerald-200/60 dark:border-emerald-800/40 pb-2">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 rounded-lg">
+                                        <MapPin className="h-4 w-4" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xs font-black text-emerald-950 dark:text-emerald-200 uppercase tracking-wider">
+                                            Pharmacy & Physical Storage Location
+                                        </h3>
+                                        <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
+                                            Specify exact store, rack, shelf, and bin coordinates for dispensing
+                                        </p>
+                                    </div>
+                                </div>
+                                <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-emerald-200/60 dark:bg-emerald-800/50 text-emerald-800 dark:text-emerald-200 rounded-full">
+                                    Hospital Storage
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                {/* Store / Godown */}
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                                        Store / Location
+                                    </label>
+                                    <input
+                                        name="storageLocation"
+                                        defaultValue={initialData?.storageLocation || initialData?.locZone || ''}
+                                        placeholder="e.g. Pharmacy Main Store"
+                                        list="store-locations-list"
+                                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/50 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm"
+                                    />
+                                    <datalist id="store-locations-list">
+                                        <option value="Pharmacy Main Store" />
+                                        <option value="OPD Pharmacy Dispensary" />
+                                        <option value="IPD Pharmacy Store" />
+                                        <option value="Emergency Crash Cart" />
+                                        <option value="OT Pharmacy Store" />
+                                        <option value="Ziona Main Store" />
+                                    </datalist>
+                                </div>
+
+                                {/* Rack Number */}
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                                        Rack No.
+                                    </label>
+                                    <input
+                                        name="rack"
+                                        defaultValue={initialData?.rack || initialData?.locRack || ''}
+                                        placeholder="e.g. Rack A1, R-02"
+                                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/50 rounded-xl text-xs font-mono font-bold text-emerald-800 dark:text-emerald-300 focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm"
+                                    />
+                                </div>
+
+                                {/* Shelf Number */}
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                                        Shelf No.
+                                    </label>
+                                    <input
+                                        name="shelf"
+                                        defaultValue={initialData?.shelf || initialData?.locShelf || ''}
+                                        placeholder="e.g. Shelf 5, S-03"
+                                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/50 rounded-xl text-xs font-mono font-bold text-emerald-800 dark:text-emerald-300 focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm"
+                                    />
+                                </div>
+
+                                {/* Bin / Box Number */}
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                                        Bin / Box No.
+                                    </label>
+                                    <input
+                                        name="bin"
+                                        defaultValue={initialData?.bin || initialData?.locBin || ''}
+                                        placeholder="e.g. Bin 14, Tray B"
+                                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/50 rounded-xl text-xs font-mono font-bold text-emerald-800 dark:text-emerald-300 focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 💊 Clinical Drug & Dispensing Details Card */}
+                        <div className="md:col-span-3 p-4 bg-indigo-50/50 dark:bg-indigo-950/20 border-2 border-indigo-200/80 dark:border-indigo-800/40 rounded-2xl space-y-3 shadow-sm">
+                            <div className="flex items-center justify-between border-b border-indigo-200/60 dark:border-indigo-800/40 pb-2">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 rounded-lg">
+                                        <Pill className="h-4 w-4" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xs font-black text-indigo-950 dark:text-indigo-200 uppercase tracking-wider">
+                                            Clinical Drug & Dispensing Details
+                                        </h3>
+                                        <p className="text-[10px] text-indigo-700 dark:text-indigo-400 font-medium">
+                                            Generic salt composition, regulatory drug schedule, and cold chain safety
+                                        </p>
+                                    </div>
+                                </div>
+                                <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-indigo-200/60 dark:bg-indigo-800/50 text-indigo-800 dark:text-indigo-200 rounded-full">
+                                    Pharmacy Master
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                {/* Generic Name / Composition */}
+                                <div className="space-y-1 md:col-span-2">
+                                    <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                                        Generic Name / Active Chemical Composition
+                                    </label>
+                                    <input
+                                        name="composition"
+                                        defaultValue={initialData?.composition || ''}
+                                        placeholder="e.g. Paracetamol 500mg, Amoxicillin 500mg + Clavulanic Acid 125mg"
+                                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800/50 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm"
+                                    />
+                                </div>
+
+                                {/* Drug Schedule */}
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                                        Drug Schedule
+                                    </label>
+                                    <select
+                                        name="drugSchedule"
+                                        defaultValue={initialData?.drugSchedule || 'General'}
+                                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800/50 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm"
+                                    >
+                                        <option value="General">General / OTC</option>
+                                        <option value="Schedule H">Schedule H (Prescription Required)</option>
+                                        <option value="Schedule H1">Schedule H1 (High-Risk Antibiotic / Habit-Forming)</option>
+                                        <option value="Schedule X">Schedule X / Narcotic (Double Lock Register)</option>
+                                        <option value="Schedule G">Schedule G (Medical Supervision)</option>
+                                        <option value="High-Alert">High-Alert Medication</option>
+                                    </select>
+                                </div>
+
+                                {/* Storage Temperature / Condition */}
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                                        Storage Temperature / Condition
+                                    </label>
+                                    <select
+                                        name="storageCondition"
+                                        defaultValue={initialData?.storageCondition || 'Room Temperature'}
+                                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800/50 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm"
+                                    >
+                                        <option value="Room Temperature">Room Temperature (15°C - 25°C)</option>
+                                        <option value="Cold Chain (2-8°C)">Refrigerated / Cold Chain (2°C - 8°C)</option>
+                                        <option value="Deep Freeze (-20°C)">Deep Freeze (-20°C)</option>
+                                        <option value="Protect from Light">Protect from Direct Light</option>
+                                        <option value="Controlled Locker">Locked Narcotics Cabinet</option>
+                                    </select>
+                                </div>
+
+                                {/* Reorder Level */}
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                                        Reorder Level (Min Stock Alert)
+                                    </label>
+                                    <input
+                                        name="reorderLevel"
+                                        type="number"
+                                        step="1"
+                                        defaultValue={Number(initialData?.reorder_level || initialData?.reorderLevel || 10)}
+                                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800/50 rounded-xl text-xs font-bold text-indigo-700 dark:text-indigo-300 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm"
+                                    />
+                                </div>
+
+                                {/* Prescription Required */}
+                                <div className="flex items-center gap-2.5 p-2 bg-white dark:bg-slate-900 rounded-xl border border-indigo-200 dark:border-indigo-800/50 self-end shadow-sm">
+                                    <input
+                                        type="checkbox"
+                                        name="rxRequired"
+                                        id="rxRequired"
+                                        defaultChecked={initialData?.rxRequired ?? true}
+                                        className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
+                                    />
+                                    <label htmlFor="rxRequired" className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                        Prescription Required (Rx)
+                                    </label>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">

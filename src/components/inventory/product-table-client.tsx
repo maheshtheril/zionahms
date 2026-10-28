@@ -90,7 +90,7 @@ export function ProductTableClient({
                 <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-[2px] rounded-2xl animate-in fade-in duration-200">
                     <div className="bg-white/90 shadow-xl border border-indigo-100 px-6 py-4 rounded-full flex items-center gap-3 transform -translate-y-4">
                         <div className="h-5 w-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-sm font-bold text-indigo-900 tracking-widest uppercase">Syncing Database...</span>
+                        <span className="text-sm font-bold text-indigo-900 tracking-widest uppercase">Updating Catalog...</span>
                     </div>
                 </div>
             )}
@@ -106,14 +106,14 @@ export function ProductTableClient({
                                         onCheckedChange={toggleAll}
                                         className="h-5 w-5 border-slate-400 dark:border-white/20 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600 transition-all shadow-sm"
                                     />
-                                    <span className="absolute left-14 top-1/2 -translate-y-1/2 opacity-0 group-hover/all:opacity-100 transition-opacity bg-slate-900 text-white px-2 py-1 rounded text-[8px] whitespace-nowrap z-50">Select All Sector Products</span>
+                                    <span className="absolute left-14 top-1/2 -translate-y-1/2 opacity-0 group-hover/all:opacity-100 transition-opacity bg-slate-900 text-white px-2 py-1 rounded text-[8px] whitespace-nowrap z-50">Select All Products</span>
                                 </th>
                                 <th className="p-4 flex items-center gap-2">
                                     <span>Product Info</span>
                                     {selectedIds.length === 0 && (
                                         <span className="ml-4 normal-case tracking-normal text-[9px] text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full animate-bounce flex items-center gap-1">
                                             <MousePointerClick className="h-3 w-3" />
-                                            Enable Bulk Mode by selecting items
+                                            Select items for bulk operations
                                         </span>
                                     )}
                                 </th>
@@ -134,7 +134,7 @@ export function ProductTableClient({
                                             <div className="p-4 bg-gray-50 rounded-full">
                                                 <Package className="h-8 w-8 opacity-40" />
                                             </div>
-                                            <p className="text-xs font-black uppercase tracking-widest italic opacity-60">Zero nodes found in this sector</p>
+                                            <p className="text-xs font-black uppercase tracking-widest italic opacity-60">No products found in catalog</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -157,15 +157,30 @@ export function ProductTableClient({
                                                     {(product.name || '??').substring(0, 2).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <button
-                                                        onClick={() => setEditingProduct(product)}
-                                                        className="font-black text-slate-900 group-hover:text-indigo-600 transition-colors text-left text-sm tracking-tight"
-                                                    >
-                                                        {product.name || 'Unnamed Product'}
-                                                    </button>
-                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <button
+                                                            onClick={() => setEditingProduct(product)}
+                                                            className="font-black text-slate-900 group-hover:text-indigo-600 transition-colors text-left text-sm tracking-tight"
+                                                        >
+                                                            {product.name || 'Unnamed Product'}
+                                                        </button>
+                                                        {product.drugSchedule && product.drugSchedule !== 'General' && (
+                                                            <span className={`text-[8px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider border ${
+                                                                product.drugSchedule.includes('Schedule X') ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                                                                product.drugSchedule.includes('Schedule H') ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                                                'bg-purple-50 text-purple-700 border-purple-200'
+                                                            }`}>
+                                                                {product.drugSchedule}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                                        {product.composition && (
+                                                            <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                                                                <span className="text-[9px] uppercase font-bold text-slate-400">Gen:</span> {product.composition}
+                                                            </span>
+                                                        )}
                                                         {product.is_service && <span className="text-[8px] bg-amber-50 text-amber-600 px-1 rounded font-black uppercase tracking-widest border border-amber-100">Service</span>}
-                                                        <p className="text-[10px] font-bold text-slate-400 truncate max-w-[150px] uppercase tracking-tighter opacity-70 italic">{product.description || 'Global Registry Item'}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -176,13 +191,25 @@ export function ProductTableClient({
                                         <td className="p-4">
                                             <div className="space-y-1.5">
                                                 <span className="font-black text-[10px] text-indigo-500 font-mono bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100 uppercase italic tracking-widest block w-max">{product.sku}</span>
-                                                {(product.locZone || product.locRack || product.locShelf) && (
-                                                    <div className="flex items-center gap-1 text-[9px] font-bold text-slate-500 tracking-wider bg-slate-50 px-1.5 py-0.5 rounded w-max border border-slate-100">
-                                                        <MapPin className="h-2.5 w-2.5" />
-                                                        {product.locZone || '-'} 
-                                                        {product.locRack ? <span className="text-slate-300 mx-0.5">›</span> : ''} {product.locRack || ''} 
-                                                        {product.locShelf ? <span className="text-slate-300 mx-0.5">›</span> : ''} {product.locShelf || ''}
+                                                {(product.storageLocation || product.locZone || product.rack || product.locRack || product.shelf || product.locShelf || product.bin) ? (
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg border border-emerald-200/80 dark:border-emerald-800/40 w-max shadow-xs">
+                                                            <MapPin className="h-3 w-3 text-emerald-600 shrink-0" />
+                                                            <span className="truncate max-w-[200px]">
+                                                                {product.storageLocation || product.locZone || 'Store'}
+                                                                {(product.rack || product.locRack) && ` › R:${product.rack || product.locRack}`}
+                                                                {(product.shelf || product.locShelf) && ` › S:${product.shelf || product.locShelf}`}
+                                                                {product.bin && ` › B:${product.bin}`}
+                                                            </span>
+                                                        </div>
+                                                        {product.storageCondition && product.storageCondition !== 'Room Temperature' && (
+                                                            <div className="text-[9px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-100 flex items-center gap-1 w-max">
+                                                                <span>❄️</span> {product.storageCondition}
+                                                            </div>
+                                                        )}
                                                     </div>
+                                                ) : (
+                                                    <span className="text-[10px] text-slate-400 italic block">📍 Unassigned</span>
                                                 )}
                                             </div>
                                         </td>
@@ -195,7 +222,7 @@ export function ProductTableClient({
                                                     <span className={`font-black uppercase tracking-widest ${product.stockStatus === 'Low Stock' || product.totalStock === 0 ? 'text-rose-600' : 'text-slate-500'}`}>
                                                         {product.totalStock} {product.uom}
                                                     </span>
-                                                    <span className={`text-[8px] font-black uppercase tracking-widest scale-90 ${product.totalStock > 0 ? 'text-emerald-500' : 'text-rose-400'}`}>{product.stockStatus === 'In Stock' ? 'Operational' : product.stockStatus}</span>
+                                                    <span className={`text-[8px] font-black uppercase tracking-widest scale-90 ${product.totalStock > 0 ? 'text-emerald-500' : 'text-rose-400'}`}>{product.stockStatus === 'In Stock' ? 'In Stock' : product.stockStatus}</span>
                                                 </div>
                                                 <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                                                     <div
@@ -244,19 +271,19 @@ export function ProductTableClient({
 
                 {meta && meta.totalPages > 1 && (
                     <div className="p-6 border-t border-gray-100 flex items-center justify-between bg-slate-50/50">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sector {meta.page} of {meta.totalPages} • {meta.total?.toLocaleString() || 0} Total Registry Nodes</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Page {meta.page} of {meta.totalPages} • {meta.total?.toLocaleString() || 0} Total Products</p>
                         <div className="flex gap-2">
                             <Link
                                 href={currentPage > 1 ? `?page=${currentPage - 1}&query=${query || ''}` : '#'}
                                 className={`h-8 px-6 flex items-center font-black uppercase text-[9px] tracking-widest border-2 rounded-xl transition-all ${currentPage <= 1 ? 'opacity-30 pointer-events-none' : 'border-slate-200 hover:border-slate-400'}`}
                             >
-                                Previous Wave
+                                Previous Page
                             </Link>
                             <Link
                                 href={currentPage < meta.totalPages ? `?page=${currentPage + 1}&query=${query || ''}` : '#'}
                                 className={`h-8 px-6 flex items-center bg-slate-900 text-white font-black uppercase text-[9px] tracking-widest rounded-xl transition-all ${currentPage >= meta.totalPages ? 'opacity-30 pointer-events-none' : 'hover:bg-indigo-600'}`}
                             >
-                                Next Wave
+                                Next Page
                             </Link>
                         </div>
                     </div>
@@ -277,8 +304,8 @@ export function ProductTableClient({
                                         <Layers className="h-5 w-5 text-white" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest leading-none mb-1">Batch Active</p>
-                                        <p className="text-xl font-black text-slate-900 dark:text-white italic tracking-tighter leading-none">{selectedIds.length} Selection</p>
+                                        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest leading-none mb-1">Bulk Operations</p>
+                                        <p className="text-xl font-black text-slate-900 dark:text-white italic tracking-tighter leading-none">{selectedIds.length} Product{selectedIds.length > 1 ? "s" : ""} Selected</p>
                                     </div>
                                 </div>
 

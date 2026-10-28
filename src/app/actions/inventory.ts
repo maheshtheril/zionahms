@@ -834,6 +834,12 @@ export async function createProduct(formData: FormData) {
     const storageLocation = formData.get("storageLocation") as string;
     const reorderLevel = formData.get("reorderLevel") as string;
     const composition = formData.get("composition") as string;
+    const rack = (formData.get("rack") as string) || '';
+    const shelf = (formData.get("shelf") as string) || '';
+    const bin = (formData.get("bin") as string) || '';
+    const drugSchedule = (formData.get("drugSchedule") as string) || 'General';
+    const storageCondition = (formData.get("storageCondition") as string) || 'Room Temperature';
+    const rxRequired = formData.get("rxRequired") === 'on' || formData.get("rxRequired") === 'true';
 
     if (!name || !sku) {
         return { error: "Name and SKU are required" };
@@ -856,6 +862,12 @@ export async function createProduct(formData: FormData) {
             cost_price: costPrice,
             mrp: mrp,
             storageLocation: storageLocation || null,
+            rack: rack || null,
+            shelf: shelf || null,
+            bin: bin || null,
+            drug_schedule: drugSchedule,
+            storage_condition: storageCondition,
+            rx_required: rxRequired,
             reorder_level: parseFloat(reorderLevel) || 0,
             composition: composition || null,
             purchase_tax_rate: taxRateValue > 0 ? taxRateValue : undefined
@@ -1028,6 +1040,12 @@ export async function updateProduct(formData: FormData) {
     const storageLocation = formData.get("storageLocation") as string;
     const reorderLevel = formData.get("reorderLevel") as string;
     const composition = formData.get("composition") as string;
+    const rack = (formData.get("rack") as string) || '';
+    const shelf = (formData.get("shelf") as string) || '';
+    const bin = (formData.get("bin") as string) || '';
+    const drugSchedule = (formData.get("drugSchedule") as string) || 'General';
+    const storageCondition = (formData.get("storageCondition") as string) || 'Room Temperature';
+    const rxRequired = formData.get("rxRequired") === 'on' || formData.get("rxRequired") === 'true';
     const isService = formData.get("is_service") === 'on';
 
     console.log("updateProduct received formData:", { id, name, taxRateId, categoryId });
@@ -1060,6 +1078,12 @@ export async function updateProduct(formData: FormData) {
             cost_price: costPrice,
             mrp: mrp,
             storageLocation: storageLocation || null,
+            rack: rack || null,
+            shelf: shelf || null,
+            bin: bin || null,
+            drug_schedule: drugSchedule,
+            storage_condition: storageCondition,
+            rx_required: rxRequired,
             reorder_level: parseFloat(reorderLevel) || 0,
             composition: composition || null,
             purchase_tax_rate: taxRateValue > 0 ? taxRateValue : undefined
