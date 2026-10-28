@@ -636,32 +636,59 @@ export async function createWalkinLabOrder(payload: any) {
     
     try {
         const orderId = crypto.randomUUID();
-        const patientId = payload.patient_id || crypto.randomUUID(); 
-        
+        const patientId = payload.patientId || payload.patient_id || undefined;
+        const isWalkIn = !patientId && !!payload.walkinDetails;
+
+        const testIds: string[] = payload.testIds || 
+            (Array.isArray(payload.tests) ? payload.tests.map((t: any) => typeof t === 'string' ? t : t.id) : []);
+
+        if (!testIds || testIds.length === 0) {
+            return { success: false, error: 'No lab tests selected' };
+        }
+
+        const companyId = session.user.companyId || session.user.tenantId;
+
+        // Fetch tests to get accurate pricing
+        const labTests = await prisma.hms_lab_test.findMany({
+            where: { id: { in: testIds } }
+        });
+        const testMap = new Map(labTests.map(t => [t.id, t]));
+
         const order = await prisma.hms_lab_order.create({
             data: {
                 id: orderId,
                 tenant_id: session.user.tenantId,
-                company_id: session.user.companyId || session.user.tenantId,
-                order_number: `LAB-${Date.now()}`,
+                company_id: companyId,
+                order_number: `LAB-${Date.now().toString().slice(-6)}`,
                 patient_id: patientId,
                 status: 'requested',
                 priority: 'normal',
+                metadata: isWalkIn ? {
+                    is_walkin: true,
+                    walkin_details: payload.walkinDetails
+                } : {},
                 hms_lab_order_line: {
-                    create: payload.tests.map((test: any) => ({
-                        id: crypto.randomUUID(),
-                        tenant_id: session.user.tenantId,
-                        test_id: test.id,
-                        status: 'requested',
-                        price: test.price || 0
-                    }))
+                    create: testIds.map((tid: string) => {
+                        const testItem = testMap.get(tid);
+                        return {
+                            id: crypto.randomUUID(),
+                            tenant_id: session.user.tenantId,
+                            company_id: companyId,
+                            test_id: tid,
+                            status: 'requested',
+                            price: testItem?.price || 0
+                        };
+                    })
                 }
             }
         });
         
+        revalidatePath('/hms/lab');
+        revalidatePath('/hms/lab/dashboard');
+
         return { success: true, data: JSON.parse(JSON.stringify(order)) };
     } catch (e: any) {
+        console.error('Error creating walk-in lab order:', e);
         return { success: false, error: e.message };
     }
 }
-
