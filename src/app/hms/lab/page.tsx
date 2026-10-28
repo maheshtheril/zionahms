@@ -91,7 +91,7 @@ export default async function LabDashboardPage({
         getBillableItems(),
         getTaxConfiguration(),
         prisma.hms_lab_test.findMany({
-            where: { tenant_id: tenantId },
+            where: tenantId ? { tenant_id: tenantId } : {},
             select: { id: true, name: true, price: true }
         })
     ])
@@ -99,7 +99,14 @@ export default async function LabDashboardPage({
     const patients = patientsRes;
     const billableItems = itemsRes.success ? itemsRes.data : [];
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
-    const availableTests = labTestsRes;
+    let availableTests = labTestsRes;
+    if (!availableTests || availableTests.length === 0) {
+        availableTests = await prisma.hms_lab_test.findMany({
+            select: { id: true, name: true, price: true },
+            take: 50,
+            orderBy: { name: 'asc' }
+        });
+    }
 
     // Transform Data
     const formattedOrders = orders.map(order => {
