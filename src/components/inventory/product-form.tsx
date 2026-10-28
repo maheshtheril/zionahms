@@ -5,7 +5,7 @@ import { uploadProductImage } from "@/app/actions/upload-image"
 import { useState, useRef, useEffect, useActionState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { QuickCategoryForm, QuickManufacturerForm } from "@/components/inventory/quick-create-wrappers"
+import { QuickCategoryForm, QuickManufacturerForm, QuickLocationForm } from "@/components/inventory/quick-create-wrappers"
 import {
     Box, Tag, DollarSign, Layers, Image as ImageIcon, Barcode, Factory, Check, Zap, Info, Plus, X, Cpu, History, ArrowUpDown, TrendingUp, TrendingDown, Trash2, Pencil, MapPin, Pill, ThermometerSnowflake, ShieldAlert
 } from "lucide-react"
@@ -19,19 +19,21 @@ interface ProductFormProps {
     categories: { id: string, name: string, default_tax_rate_id: string | null }[];
     manufacturers: { id: string, name: string }[];
     uomCategories: any[];
+    locations?: { id: string, name: string, code?: string, location_type?: string }[];
     initialData?: any;
     batches?: any[];
     onSuccess?: (createdId?: string, createdName?: string) => void;
     onCancel?: () => void;
 }
 
-export function ProductForm({ suppliers, taxRates, uoms, categories, manufacturers, uomCategories, initialData, batches: initialBatches = [], onSuccess, onCancel }: ProductFormProps) {
+export function ProductForm({ suppliers, taxRates, uoms, categories, manufacturers, uomCategories, locations = [], initialData, batches: initialBatches = [], onSuccess, onCancel }: ProductFormProps) {
     const { currencySymbol } = useLocalization();
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Modal State
-    const [modalOpen, setModalOpen] = useState<'none' | 'category' | 'manufacturer' | 'uom' | 'supplier'>('none');
+    const [modalOpen, setModalOpen] = useState<'none' | 'category' | 'manufacturer' | 'uom' | 'supplier' | 'location'>('none');
+    const [selectedStore, setSelectedStore] = useState(initialData?.storageLocation || initialData?.locZone || '');
 
     // Image Upload State
     const [imageUrl, setImageUrl] = useState<string | null>(initialData?.imageUrl || null);
@@ -402,26 +404,47 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                             </div>
 
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                {/* Store / Godown */}
+                                {/* Store / Godown Master */}
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase">
-                                        Store / Location
-                                    </label>
-                                    <input
-                                        name="storageLocation"
-                                        defaultValue={initialData?.storageLocation || initialData?.locZone || ''}
-                                        placeholder="e.g. Pharmacy Main Store"
-                                        list="store-locations-list"
-                                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/50 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm"
-                                    />
-                                    <datalist id="store-locations-list">
-                                        <option value="Pharmacy Main Store" />
-                                        <option value="OPD Pharmacy Dispensary" />
-                                        <option value="IPD Pharmacy Store" />
-                                        <option value="Emergency Crash Cart" />
-                                        <option value="OT Pharmacy Store" />
-                                        <option value="Ziona Main Store" />
-                                    </datalist>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                                            Store / Godown Master
+                                        </label>
+                                        <Link
+                                            href="/hms/inventory/locations"
+                                            target="_blank"
+                                            className="text-[9px] font-bold text-emerald-700 hover:text-emerald-900 hover:underline"
+                                            title="Open Godowns Master catalog"
+                                        >
+                                            Master List →
+                                        </Link>
+                                    </div>
+                                    <div className="flex gap-1.5 items-center">
+                                        <select
+                                            name="storageLocation"
+                                            value={selectedStore}
+                                            onChange={(e) => setSelectedStore(e.target.value)}
+                                            className="w-full px-2.5 py-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/50 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500 outline-none shadow-xs cursor-pointer truncate"
+                                        >
+                                            <option value="">Select Hospital Store...</option>
+                                            {(locations || []).map(loc => (
+                                                <option key={loc.id} value={loc.name}>
+                                                    {loc.name} {loc.code ? `[${loc.code}]` : ''}
+                                                </option>
+                                            ))}
+                                            {selectedStore && !(locations || []).some(l => l.name?.toLowerCase() === selectedStore?.toLowerCase()) && (
+                                                <option value={selectedStore}>{selectedStore} (Current)</option>
+                                            )}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            onClick={() => setModalOpen('location')}
+                                            className="p-2 border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl shadow-xs transition-colors shrink-0"
+                                            title="Add New Store / Godown to Master"
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Rack Number */}
@@ -724,7 +747,9 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
                         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 m-4 animate-in zoom-in-95 duration-200">
                             <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-lg font-bold text-gray-900 capitalize">New {modalOpen}</h3>
+                                <h3 className="text-lg font-bold text-gray-900">
+                                    {modalOpen === 'location' ? 'New Hospital Store / Godown Master' : `New ${modalOpen}`}
+                                </h3>
                                 <button onClick={() => setModalOpen('none')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                                     <X className="h-4 w-4 text-gray-500" />
                                 </button>
@@ -736,6 +761,10 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
 
                             {modalOpen === 'manufacturer' && (
                                 <QuickManufacturerForm onSuccess={handleQuickSuccess} />
+                            )}
+
+                            {modalOpen === 'location' && (
+                                <QuickLocationForm onSuccess={handleQuickSuccess} />
                             )}
 
 

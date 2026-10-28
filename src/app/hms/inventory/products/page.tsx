@@ -1,4 +1,4 @@
-import { getProductsPremium, getSuppliers, getTaxRates, getUOMs, getCategories, getManufacturers, getUOMCategories } from "@/app/actions/inventory"
+import { getProductsPremium, getSuppliers, getTaxRates, getUOMs, getCategories, getManufacturers, getUOMCategories, getLocations } from "@/app/actions/inventory"
 import { auth } from "@/auth"
 import Link from "next/link"
 import {
@@ -84,7 +84,7 @@ async function CreateProductActions() {
         categories,
         manufacturers,
         uomCategories,
-        storageLocations
+        locations
     ] = await Promise.all([
         getSuppliers(),
         getTaxRates(),
@@ -92,7 +92,7 @@ async function CreateProductActions() {
         getCategories(),
         getManufacturers(),
         getUOMCategories(),
-        import("@/app/actions/storage-locations").then(m => m.getStorageLocationsFlat())
+        getLocations()
     ]);
 
     const { serialize } = await import("@/lib/utils");
@@ -105,7 +105,7 @@ async function CreateProductActions() {
             categories={serialize(categories)}
             manufacturers={serialize(manufacturers)}
             uomCategories={serialize(uomCategories)}
-            storageLocations={serialize(storageLocations.data || [])}
+            locations={serialize(locations || [])}
         />
     )
 }
@@ -133,7 +133,7 @@ async function ProductTable({ query, currentPage }: { query?: string, currentPag
         categories,
         manufacturers,
         uomCategories,
-        storageLocations
+        locations
     ] = await Promise.all([
         getSuppliers(),
         getTaxRates(),
@@ -141,7 +141,7 @@ async function ProductTable({ query, currentPage }: { query?: string, currentPag
         getCategories(),
         getManufacturers(),
         getUOMCategories(),
-        import("@/app/actions/storage-locations").then(m => m.getStorageLocationsFlat())
+        getLocations()
     ]);
 
     const { serialize } = await import("@/lib/utils");
@@ -157,7 +157,7 @@ async function ProductTable({ query, currentPage }: { query?: string, currentPag
             categories={serialize(categories)}
             manufacturers={serialize(manufacturers)}
             uomCategories={serialize(uomCategories)}
-            storageLocations={serialize(storageLocations.data || [])}
+            locations={serialize(locations || [])}
             query={query}
             currentPage={currentPage}
         />

@@ -19,7 +19,8 @@ interface CreateProductModalProps {
     categories: any[]
     manufacturers: any[]
     uomCategories: any[]
-    storageLocations?: any[]
+    locations?: any[]
+    defaultOpen?: boolean
 }
 
 export function CreateProductModal({
@@ -28,7 +29,8 @@ export function CreateProductModal({
     uoms,
     categories,
     manufacturers,
-    uomCategories
+    uomCategories,
+    locations = []
 }: CreateProductModalProps) {
     const [isOpen, setIsOpen] = useState(false)
     const router = useRouter()
@@ -64,6 +66,7 @@ export function CreateProductModal({
                             categories={categories}
                             manufacturers={manufacturers}
                             uomCategories={uomCategories}
+                            locations={locations}
                             onSuccess={handleSuccess}
                             onCancel={() => setIsOpen(false)}
                         />

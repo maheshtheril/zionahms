@@ -19,6 +19,7 @@ interface EditProductModalProps {
     categories: any[];
     manufacturers: any[];
     uomCategories: any[];
+    locations?: any[];
     batches?: any[];
     isOpen: boolean;
     onClose: () => void;
@@ -33,6 +34,7 @@ export function EditProductModal({
     categories,
     manufacturers,
     uomCategories,
+    locations = [],
     batches = [],
     isOpen,
     onClose
@@ -57,6 +59,7 @@ export function EditProductModal({
                         categories={categories}
                         manufacturers={manufacturers}
                         uomCategories={uomCategories}
+                        locations={locations}
                         initialData={product}
                         batches={batches}
                         onSuccess={() => {

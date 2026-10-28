@@ -719,11 +719,41 @@ export async function getLocations() {
     const session = await auth();
     if (!session?.user?.companyId) return [];
     try {
-        return await prisma.global_stock_location.findMany({
+        let locs = await prisma.global_stock_location.findMany({
             where: { company_id: session.user.companyId, is_active: true },
             orderBy: { name: 'asc' },
             select: { id: true, name: true, location_type: true, code: true }
         });
+
+        if (locs.length === 0) {
+            const defaultStores = [
+                { name: 'Pharmacy Main Store', code: 'PHARM-MAIN', location_type: 'internal' },
+                { name: 'Central Medical Store', code: 'CMS-01', location_type: 'internal' },
+                { name: 'OPD Pharmacy Dispensary', code: 'OPD-PHARM', location_type: 'dispensary' },
+                { name: 'IPD Pharmacy Store', code: 'IPD-PHARM', location_type: 'internal' },
+                { name: 'Emergency Crash Cart', code: 'EMERG-01', location_type: 'emergency' },
+                { name: 'OT Pharmacy Store', code: 'OT-PHARM', location_type: 'internal' }
+            ];
+            for (const s of defaultStores) {
+                await prisma.global_stock_location.create({
+                    data: {
+                        tenant_id: session.user.tenantId || session.user.companyId,
+                        company_id: session.user.companyId,
+                        name: s.name,
+                        code: s.code,
+                        location_type: s.location_type,
+                        is_active: true
+                    }
+                }).catch(() => {});
+            }
+            locs = await prisma.global_stock_location.findMany({
+                where: { company_id: session.user.companyId, is_active: true },
+                orderBy: { name: 'asc' },
+                select: { id: true, name: true, location_type: true, code: true }
+            });
+        }
+
+        return locs;
     } catch (error) {
         console.error("Failed to fetch locations:", error);
         return [];
@@ -913,9 +943,9 @@ export async function createProduct(formData: FormData) {
         }
 
         // --- RELATIONAL STORAGE LOCATION (WMS) ---
-        const locZone = formData.get("locZone") as string;
-        const locRack = formData.get("locRack") as string;
-        const locShelf = formData.get("locShelf") as string;
+        const locZone = (formData.get("locZone") as string) || (formData.get("storageLocation") as string);
+        const locRack = (formData.get("locRack") as string) || (formData.get("rack") as string);
+        const locShelf = (formData.get("locShelf") as string) || (formData.get("shelf") as string);
 
         if (locZone || locRack || locShelf) {
             let parentId: string | null = null;
@@ -1135,11 +1165,11 @@ export async function updateProduct(formData: FormData) {
         }
 
         // --- RELATIONAL STORAGE LOCATION (WMS) ---
-        const locZone = formData.get("locZone") as string;
-        const locRack = formData.get("locRack") as string;
-        const locShelf = formData.get("locShelf") as string;
+        const locZone = (formData.get("locZone") as string) || (formData.get("storageLocation") as string);
+        const locRack = (formData.get("locRack") as string) || (formData.get("rack") as string);
+        const locShelf = (formData.get("locShelf") as string) || (formData.get("shelf") as string);
 
-        if (formData.has("locZone") || formData.has("locRack") || formData.has("locShelf")) {
+        if (locZone || locRack || locShelf) {
             if (locZone || locRack || locShelf) {
                 let parentId: string | null = null;
                 

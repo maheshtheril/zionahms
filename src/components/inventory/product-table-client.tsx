@@ -24,6 +24,7 @@ interface ProductTableClientProps {
     manufacturers: any[];
     uomCategories: any[];
     storageLocations?: any[];
+    locations?: any[];
     query?: string;
     currentPage: number;
 }
@@ -38,6 +39,7 @@ export function ProductTableClient({
     categories,
     manufacturers,
     uomCategories,
+    locations = [],
     query,
     currentPage
 }: ProductTableClientProps) {
@@ -376,6 +378,7 @@ export function ProductTableClient({
                     categories={categories}
                     manufacturers={manufacturers}
                     uomCategories={uomCategories}
+                    locations={locations}
                     batches={editingProduct.batches || []}
                     onSuccess={() => {
                         setEditingProduct(null);

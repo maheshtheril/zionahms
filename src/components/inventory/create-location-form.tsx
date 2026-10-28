@@ -15,7 +15,7 @@ export function CreateLocationForm() {
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-fit sticky top-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Plus className="h-4 w-4" />
-                New Location
+                New Godown / Store Location
             </h2>
             <form action={action} className="space-y-4">
                 {state && 'error' in state && state.error && (
@@ -25,46 +25,48 @@ export function CreateLocationForm() {
                 )}
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Location Name <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Store / Godown Name <span className="text-red-500">*</span></label>
                     <input
                         name="name"
                         required
-                        placeholder="e.g. Main Warehouse, Shelf A5"
+                        placeholder="e.g. Pharmacy Main Store, Central Medical Store"
                         className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Short Code</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Store Code</label>
                     <input
                         name="code"
-                        placeholder="e.g. WH-01"
-                        className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all uppercase"
+                        placeholder="e.g. PHARM-01, CMS-01"
+                        className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all uppercase font-mono"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Store / Location Type</label>
                     <select
                         name="type"
                         className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
                     >
-                        <option value="internal">Internal Warehouse</option>
-                        <option value="transit">Transit</option>
+                        <option value="internal">Internal Warehouse / Godown</option>
+                        <option value="dispensary">Pharmacy Dispensary / Counter</option>
+                        <option value="emergency">Emergency / Crash Cart</option>
+                        <option value="transit">Transit / Transfer Location</option>
                         <option value="supplier">Vendor Location</option>
                         <option value="customer">Customer Location</option>
-                        <option value="scrap">Scrap / Loss</option>
+                        <option value="scrap">Scrap / Quarantine</option>
                     </select>
                 </div>
                 <button
                     type="submit"
                     disabled={isPending}
-                    className="w-full py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 >
                     {isPending ? (
-                        <>Processing...</>
+                        <>Saving Location...</>
                     ) : (
                         <>
                             <Plus className="h-4 w-4" />
-                            Add Location
+                            Add Store to Master
                         </>
                     )}
                 </button>
