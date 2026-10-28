@@ -46,6 +46,7 @@ interface SearchableSelectProps {
     inputId?: string;
     usePortal?: boolean;
     autoFocus?: boolean;
+    openOnlyOnType?: boolean;
     onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }
 
@@ -65,6 +66,7 @@ export function SearchableSelect({
     inputId,
     usePortal = true,
     autoFocus = false,
+    openOnlyOnType = false,
     onKeyDown,
 }: SearchableSelectProps) {
     const [open, setOpen] = React.useState(false);
@@ -242,7 +244,11 @@ export function SearchableSelect({
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         setQuery(val);
-        setOpen(true);
+        if (openOnlyOnType) {
+            setOpen(val.trim().length > 0);
+        } else {
+            setOpen(true);
+        }
 
         // Instant synchronous filter of propOptions so stale options (like CBC + ESR) disappear on the exact millisecond of typing!
         const lowerSearch = val.toLowerCase().trim();
@@ -518,11 +524,17 @@ export function SearchableSelect({
                                 placeholder={selectedOption ? selectedOption.label : placeholder}
                                 value={query}
                                 onChange={handleInputChange}
-                                onPointerDown={() => !open && setOpen(true)}
+                                onPointerDown={() => {
+                                    if (!openOnlyOnType || query.trim().length > 0) {
+                                        if (!open) setOpen(true);
+                                    }
+                                }}
                                 onKeyDown={handleKeyDown}
                                 onFocus={() => {
                                     if (!disabled) {
-                                        setOpen(true);
+                                        if (!openOnlyOnType || query.trim().length > 0) {
+                                            setOpen(true);
+                                        }
                                         inputRef.current?.select();
                                         // Fetch immediately on focus if query is empty for better DX
                                         if (!query) {
@@ -569,7 +581,7 @@ export function SearchableSelect({
             </div>
 
             {/* Render Dropdown via Portal or Inline */}
-            {open && !disabled && (
+            {open && !disabled && (!openOnlyOnType || query.trim().length > 0) && (
                 usePortal && typeof document !== 'undefined'
                     ? createPortal(dropdownContent, document.body)
                     : dropdownContent

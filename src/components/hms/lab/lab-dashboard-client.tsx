@@ -696,7 +696,7 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                 </div>
             )}
 
-            {/* New Walk-in Order Modal - Enlarged & Searchable */}
+            {/* New Walk-in Order Modal - Enlarged, 2-Column & Searchable */}
             <AnimatePresence>
                 {isNewOrderModalOpen && (
                     <motion.div
@@ -709,7 +709,7 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                             initial={{ opacity: 0, scale: 0.96, y: 16 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.96, y: 16 }}
-                            className="bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[90vh] flex flex-col rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-white/10"
+                            className="bg-white dark:bg-slate-900 w-full max-w-5xl max-h-[92vh] flex flex-col rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-white/10"
                         >
                             {/* Modal Header */}
                             <div className="p-6 md:px-8 border-b border-slate-100 dark:border-white/10 flex items-center justify-between shrink-0 bg-white dark:bg-slate-900">
@@ -730,235 +730,286 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                                 </button>
                             </div>
 
-                            {/* Modal Scrollable Body */}
-                            <div className="p-6 md:p-8 space-y-6 overflow-y-auto flex-1">
-                                {/* Mode Toggle */}
-                                <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-2xl">
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsWalkInGuest(false)}
-                                        className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${!isWalkInGuest ? 'bg-white dark:bg-slate-800 text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                                    >
-                                        Registered Hospital Patient
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsWalkInGuest(true)}
-                                        className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${isWalkInGuest ? 'bg-white dark:bg-slate-800 text-pink-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                                    >
-                                        Walk-in Guest / Outside Patient
-                                    </button>
-                                </div>
-
-                                {!isWalkInGuest ? (
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                                                Select Patient
-                                            </label>
-                                            <span className="text-xs text-slate-400">Search by Name, Phone, or Patient ID (e.g. PAT-...)</span>
+                            {/* Modal Scrollable Body - 2 Column Layout */}
+                            <div className="p-6 md:p-8 overflow-y-auto flex-1">
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                                    {/* Left Column: Form Inputs & Test Search (7 cols) */}
+                                    <div className="lg:col-span-7 space-y-6">
+                                        {/* Mode Toggle */}
+                                        <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-2xl">
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsWalkInGuest(false)}
+                                                className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${!isWalkInGuest ? 'bg-white dark:bg-slate-800 text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                            >
+                                                Registered Hospital Patient
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsWalkInGuest(true)}
+                                                className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${isWalkInGuest ? 'bg-white dark:bg-slate-800 text-pink-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                            >
+                                                Walk-in Guest / Outside Patient
+                                            </button>
                                         </div>
-                                        <SearchableSelect
-                                            placeholder="Type name, phone number, or ID (e.g. Ambika, 9840..., PAT-864)..."
-                                            value={newOrderPatientId}
-                                            valueLabel={selectedPatientLabel}
-                                            onChange={(val, opt) => {
-                                                setNewOrderPatientId(val || '');
-                                                setSelectedPatientLabel(opt?.label || '');
-                                                if (val) {
-                                                    setTimeout(() => {
-                                                        const labInput = document.getElementById('lab-test-search-input');
-                                                        if (labInput) {
-                                                            labInput.focus();
+
+                                        {!isWalkInGuest ? (
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                        Select Patient
+                                                    </label>
+                                                    <span className="text-xs text-slate-400">Search by Name, Phone, or Patient ID</span>
+                                                </div>
+                                                <SearchableSelect
+                                                    placeholder="Type name, phone number, or ID (e.g. Ambika, 9840..., PAT-864)..."
+                                                    value={newOrderPatientId}
+                                                    valueLabel={selectedPatientLabel}
+                                                    onChange={(val, opt) => {
+                                                        setNewOrderPatientId(val || '');
+                                                        setSelectedPatientLabel(opt?.label || '');
+                                                        if (val) {
+                                                            setTimeout(() => {
+                                                                const labInput = document.getElementById('lab-test-search-input');
+                                                                if (labInput) {
+                                                                    labInput.focus();
+                                                                }
+                                                            }, 150);
                                                         }
-                                                    }, 150);
-                                                }
-                                            }}
-                                            onSearch={async (query: string) => {
-                                                const results = await searchPatients(query);
-                                                return (results || []).map((p: any) => {
-                                                    const phone = p.contact?.phone || p.contact?.mobile || '';
-                                                    return {
-                                                        id: p.id,
-                                                        label: `${p.first_name} ${p.last_name || ''} (${p.patient_number})`.trim(),
-                                                        subLabel: `${phone ? `📞 ${phone} • ` : ''}${p.gender || ''}`
-                                                    };
-                                                });
-                                            }}
-                                            options={(patients || []).map((p: any) => {
-                                                const phone = p.contact?.phone || p.contact?.mobile || '';
-                                                return {
-                                                    id: p.id,
-                                                    label: `${p.first_name} ${p.last_name || ''} (${p.patient_number})`.trim(),
-                                                    subLabel: `${phone ? `📞 ${phone} • ` : ''}${p.gender || ''}`
-                                                };
-                                            })}
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4 bg-slate-50/60 dark:bg-white/[0.02] p-5 rounded-2xl border border-slate-200/60 dark:border-white/5">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="space-y-1.5">
-                                                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Patient Full Name *</label>
-                                                <input 
-                                                    type="text" 
-                                                    value={walkInDetails.name} 
-                                                    onChange={e => setWalkInDetails({...walkInDetails, name: e.target.value})} 
-                                                    className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-sm font-medium focus:ring-2 focus:ring-violet-500" 
-                                                    placeholder="e.g. Rahul Sharma" 
+                                                    }}
+                                                    onSearch={async (query: string) => {
+                                                        const results = await searchPatients(query);
+                                                        return (results || []).map((p: any) => {
+                                                            const phone = p.contact?.phone || p.contact?.mobile || '';
+                                                            return {
+                                                                id: p.id,
+                                                                label: `${p.first_name} ${p.last_name || ''} (${p.patient_number})`.trim(),
+                                                                subLabel: `${phone ? `📞 ${phone} • ` : ''}${p.gender || ''}`
+                                                            };
+                                                        });
+                                                    }}
+                                                    options={(patients || []).map((p: any) => {
+                                                        const phone = p.contact?.phone || p.contact?.mobile || '';
+                                                        return {
+                                                            id: p.id,
+                                                            label: `${p.first_name} ${p.last_name || ''} (${p.patient_number})`.trim(),
+                                                            subLabel: `${phone ? `📞 ${phone} • ` : ''}${p.gender || ''}`
+                                                        };
+                                                    })}
                                                 />
                                             </div>
-                                            <div className="space-y-1.5">
-                                                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Phone Number</label>
-                                                <input 
-                                                    type="text" 
-                                                    value={walkInDetails.phone} 
-                                                    onChange={e => setWalkInDetails({...walkInDetails, phone: e.target.value})} 
-                                                    className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-sm font-medium focus:ring-2 focus:ring-violet-500" 
-                                                    placeholder="e.g. 9876543210" 
-                                                />
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <div className="space-y-1.5">
-                                                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Age</label>
-                                                    <input 
-                                                        type="number" 
-                                                        value={walkInDetails.age} 
-                                                        onChange={e => setWalkInDetails({...walkInDetails, age: e.target.value})} 
-                                                        className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-sm font-medium focus:ring-2 focus:ring-violet-500" 
-                                                        placeholder="e.g. 35" 
-                                                    />
+                                        ) : (
+                                            <div className="space-y-4 bg-slate-50/60 dark:bg-white/[0.02] p-5 rounded-2xl border border-slate-200/60 dark:border-white/5">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Patient Full Name *</label>
+                                                        <input 
+                                                            type="text" 
+                                                            value={walkInDetails.name} 
+                                                            onChange={e => setWalkInDetails({...walkInDetails, name: e.target.value})} 
+                                                            className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-sm font-medium focus:ring-2 focus:ring-violet-500" 
+                                                            placeholder="e.g. Rahul Sharma" 
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Phone Number</label>
+                                                        <input 
+                                                            type="text" 
+                                                            value={walkInDetails.phone} 
+                                                            onChange={e => setWalkInDetails({...walkInDetails, phone: e.target.value})} 
+                                                            className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-sm font-medium focus:ring-2 focus:ring-violet-500" 
+                                                            placeholder="e.g. 9876543210" 
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div className="space-y-1.5">
+                                                            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Age</label>
+                                                            <input 
+                                                                type="number" 
+                                                                value={walkInDetails.age} 
+                                                                onChange={e => setWalkInDetails({...walkInDetails, age: e.target.value})} 
+                                                                className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-sm font-medium focus:ring-2 focus:ring-violet-500" 
+                                                                placeholder="e.g. 35" 
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Gender</label>
+                                                            <select 
+                                                                value={walkInDetails.gender} 
+                                                                onChange={e => setWalkInDetails({...walkInDetails, gender: e.target.value})} 
+                                                                className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 text-sm font-medium focus:ring-2 focus:ring-violet-500"
+                                                            >
+                                                                <option>Male</option>
+                                                                <option>Female</option>
+                                                                <option>Other</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Referring Doctor</label>
+                                                        <input 
+                                                            type="text" 
+                                                            value={walkInDetails.doctor_name} 
+                                                            onChange={e => setWalkInDetails({...walkInDetails, doctor_name: e.target.value})} 
+                                                            onKeyDown={e => {
+                                                                if (e.key === 'Enter') {
+                                                                    e.preventDefault();
+                                                                    const labInput = document.getElementById('lab-test-search-input');
+                                                                    if (labInput) {
+                                                                        labInput.focus();
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-sm font-medium focus:ring-2 focus:ring-violet-500" 
+                                                            placeholder="e.g. Dr. John Smith (Self / External)" 
+                                                        />
+                                                    </div>
                                                 </div>
-                                                <div className="space-y-1.5">
-                                                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Gender</label>
-                                                    <select 
-                                                        value={walkInDetails.gender} 
-                                                        onChange={e => setWalkInDetails({...walkInDetails, gender: e.target.value})} 
-                                                        className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 text-sm font-medium focus:ring-2 focus:ring-violet-500"
-                                                    >
-                                                        <option>Male</option>
-                                                        <option>Female</option>
-                                                        <option>Other</option>
-                                                    </select>
-                                                </div>
                                             </div>
-                                            <div className="space-y-1.5">
-                                                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Referring Doctor</label>
-                                                <input 
-                                                    type="text" 
-                                                    value={walkInDetails.doctor_name} 
-                                                    onChange={e => setWalkInDetails({...walkInDetails, doctor_name: e.target.value})} 
-                                                    onKeyDown={e => {
-                                                        if (e.key === 'Enter') {
-                                                            e.preventDefault();
+                                        )}
+
+                                        {/* Lab Tests Search Input */}
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                    Search & Add Lab Tests
+                                                </label>
+                                                <span className="text-xs text-slate-400">Type test name to filter</span>
+                                            </div>
+                                            
+                                            <SearchableSelect
+                                                inputId="lab-test-search-input"
+                                                openOnlyOnType={true}
+                                                placeholder="Type test name to search (e.g. CBC, Lipid, Blood Sugar)..."
+                                                options={availableTests
+                                                    .filter((t: any) => !newOrderTestIds.includes(t.id))
+                                                    .map((t: any) => ({ 
+                                                        id: t.id, 
+                                                        label: t.name, 
+                                                        subLabel: `₹${Number(t.price || 0).toLocaleString()}` 
+                                                    }))}
+                                                onChange={(val) => {
+                                                    if (val && !newOrderTestIds.includes(val)) {
+                                                        setNewOrderTestIds([...newOrderTestIds, val]);
+                                                        setTimeout(() => {
                                                             const labInput = document.getElementById('lab-test-search-input');
                                                             if (labInput) {
                                                                 labInput.focus();
                                                             }
-                                                        }
-                                                    }}
-                                                    className="w-full h-11 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 text-sm font-medium focus:ring-2 focus:ring-violet-500" 
-                                                    placeholder="e.g. Dr. John Smith (Self / External)" 
-                                                />
-                                            </div>
+                                                        }, 150);
+                                                    }
+                                                }}
+                                                value={null}
+                                            />
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                💡 Dropdown suggestions appear after you start typing in the box. Click or press Enter to add.
+                                            </p>
+
+                                            {availableTests.length === 0 && (
+                                                <div className="flex flex-col items-center justify-center p-6 gap-3 text-center border-2 border-dashed border-slate-200 dark:border-white/5 rounded-2xl mt-4">
+                                                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No lab tests configured yet.</p>
+                                                    <button 
+                                                        type="button"
+                                                        onClick={async () => {
+                                                            const res = await seedStandardLabTests();
+                                                            if (res && !res.success) alert(res.error);
+                                                            else router.refresh();
+                                                        }}
+                                                        className="px-4 py-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-xs transition-colors flex items-center gap-2"
+                                                    >
+                                                        <FlaskConical className="w-3 h-3" />
+                                                        Load Standard Tests Library
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                )}
 
-                                {/* Lab Tests Selection */}
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                                            Select Lab Tests
-                                        </label>
-                                        {newOrderTestIds.length > 0 && (
-                                            <span className="text-xs font-bold text-violet-600 dark:text-violet-400">
-                                                {newOrderTestIds.length} test{newOrderTestIds.length > 1 ? 's' : ''} selected
-                                            </span>
-                                        )}
-                                    </div>
-                                    
-                                    <SearchableSelect
-                                        inputId="lab-test-search-input"
-                                        placeholder="Search and add lab tests (e.g. Complete Blood Count, Lipid Profile, Liver Function)..."
-                                        options={availableTests
-                                            .filter((t: any) => !newOrderTestIds.includes(t.id))
-                                            .map((t: any) => ({ 
-                                                id: t.id, 
-                                                label: t.name, 
-                                                subLabel: `₹${Number(t.price || 0).toLocaleString()}` 
-                                            }))}
-                                        onChange={(val) => {
-                                            if (val && !newOrderTestIds.includes(val)) {
-                                                setNewOrderTestIds([...newOrderTestIds, val]);
-                                                setTimeout(() => {
-                                                    const labInput = document.getElementById('lab-test-search-input');
-                                                    if (labInput) {
-                                                        labInput.focus();
-                                                    }
-                                                }, 150);
-                                            }
-                                        }}
-                                        value={null}
-                                    />
+                                    {/* Right Column: Order Summary / Selected Tests Tray (5 cols) */}
+                                    <div className="lg:col-span-5 bg-slate-50 dark:bg-white/[0.03] rounded-2xl border border-slate-200/80 dark:border-white/10 p-5 flex flex-col gap-4">
+                                        <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-white/10 pb-3">
+                                            <div className="flex items-center gap-2">
+                                                <TestTube2 className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                                                <span className="font-bold text-sm text-slate-900 dark:text-white">
+                                                    Selected Tests
+                                                </span>
+                                                <span className="text-xs font-bold bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 px-2 py-0.5 rounded-full">
+                                                    {newOrderTestIds.length}
+                                                </span>
+                                            </div>
+                                            {newOrderTestIds.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setNewOrderTestIds([])}
+                                                    className="text-xs text-rose-500 hover:text-rose-700 font-semibold transition-colors"
+                                                >
+                                                    Clear All
+                                                </button>
+                                            )}
+                                        </div>
 
-                                    {newOrderTestIds.length > 0 && (
-                                        <div className="space-y-3 mt-3">
-                                            <div className="flex flex-wrap gap-2.5 p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 max-h-48 overflow-y-auto">
-                                                {newOrderTestIds.map(id => {
+                                        {/* List of Added Tests */}
+                                        <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+                                            {newOrderTestIds.length === 0 ? (
+                                                <div className="py-12 px-4 text-center text-slate-400 dark:text-slate-500 flex flex-col items-center gap-2">
+                                                    <FlaskConical className="w-8 h-8 stroke-1 text-slate-300 dark:text-slate-600" />
+                                                    <p className="text-xs font-medium">No tests added yet</p>
+                                                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                                                        Type in the search box to find and add tests. They will appear here in real time.
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                newOrderTestIds.map((id, index) => {
                                                     const test = availableTests.find((t: any) => t.id === id);
                                                     return (
-                                                        <div key={id} className="flex items-center gap-2 bg-violet-100 dark:bg-violet-900/40 text-violet-800 dark:text-violet-200 pl-3 pr-2 py-1.5 rounded-xl text-sm font-semibold shadow-sm border border-violet-200/50 dark:border-violet-700/30">
-                                                            <span>{test?.name || id}</span>
-                                                            {test?.price ? (
-                                                                <span className="text-xs font-bold bg-violet-200 dark:bg-violet-800/60 px-1.5 py-0.5 rounded text-violet-900 dark:text-violet-100">
-                                                                    ₹{test.price}
+                                                        <div 
+                                                            key={id} 
+                                                            className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-white/5 shadow-sm group hover:border-violet-300 dark:hover:border-violet-500/40 transition-all"
+                                                        >
+                                                            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                                                <span className="text-xs font-bold text-slate-400 w-4 shrink-0">
+                                                                    {index + 1}.
                                                                 </span>
-                                                            ) : null}
-                                                            <button 
+                                                                <div className="min-w-0">
+                                                                    <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                                                                        {test?.name || id}
+                                                                    </p>
+                                                                    <span className="text-[11px] font-semibold text-violet-600 dark:text-violet-400">
+                                                                        ₹{Number(test?.price || 0).toLocaleString()}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <button
                                                                 type="button"
-                                                                onClick={() => setNewOrderTestIds(newOrderTestIds.filter(tid => tid !== id))} 
-                                                                className="text-violet-500 hover:text-violet-900 dark:hover:text-violet-100 hover:bg-violet-200 dark:hover:bg-violet-700/50 rounded-lg p-1 transition-colors"
+                                                                onClick={() => setNewOrderTestIds(newOrderTestIds.filter(tid => tid !== id))}
+                                                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors shrink-0"
+                                                                title="Remove test"
                                                             >
-                                                                <X size={14} />
+                                                                <X className="w-4 h-4" />
                                                             </button>
                                                         </div>
-                                                    )
-                                                })}
-                                            </div>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
 
-                                            {/* Cost Summary */}
-                                            <div className="flex items-center justify-between p-3.5 bg-violet-50/60 dark:bg-violet-950/20 rounded-xl border border-violet-100 dark:border-violet-900/30 text-xs">
-                                                <span className="font-medium text-slate-600 dark:text-slate-300">
-                                                    Total {newOrderTestIds.length} test{newOrderTestIds.length > 1 ? 's' : ''} in this order
-                                                </span>
-                                                <span className="font-extrabold text-sm text-violet-700 dark:text-violet-300">
-                                                    Est. Total: ₹{availableTests
+                                        {/* Price & Summary Box */}
+                                        <div className="mt-auto pt-3 border-t border-slate-200/60 dark:border-white/10 space-y-2">
+                                            <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                                                <span>Total Tests</span>
+                                                <span className="font-bold text-slate-800 dark:text-slate-200">{newOrderTestIds.length} item{newOrderTestIds.length !== 1 ? 's' : ''}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center p-3 bg-violet-600/10 dark:bg-violet-500/10 rounded-xl border border-violet-200 dark:border-violet-500/20">
+                                                <span className="text-xs font-bold text-violet-900 dark:text-violet-200">Estimated Total</span>
+                                                <span className="text-base font-black text-violet-700 dark:text-violet-300">
+                                                    ₹{availableTests
                                                         .filter((t: any) => newOrderTestIds.includes(t.id))
                                                         .reduce((acc: number, curr: any) => acc + (Number(curr.price) || 0), 0)
                                                         .toLocaleString()}
                                                 </span>
                                             </div>
                                         </div>
-                                    )}
-
-                                    {availableTests.length === 0 && (
-                                        <div className="flex flex-col items-center justify-center p-6 gap-3 text-center border-2 border-dashed border-slate-200 dark:border-white/5 rounded-2xl mt-4">
-                                            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No lab tests configured yet.</p>
-                                            <button 
-                                                type="button"
-                                                onClick={async () => {
-                                                    const res = await seedStandardLabTests();
-                                                    if (res && !res.success) alert(res.error);
-                                                    else router.refresh();
-                                                }}
-                                                className="px-4 py-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-xs transition-colors flex items-center gap-2"
-                                            >
-                                                <FlaskConical className="w-3 h-3" />
-                                                Load Standard Tests Library
-                                            </button>
-                                        </div>
-                                    )}
+                                    </div>
                                 </div>
                             </div>
 
@@ -967,7 +1018,10 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                                 <div className="text-xs text-slate-500 dark:text-slate-400">
                                     {newOrderTestIds.length > 0 ? (
                                         <span>
-                                            Ready to order <strong className="text-slate-800 dark:text-white">{newOrderTestIds.length}</strong> test{newOrderTestIds.length > 1 ? 's' : ''}
+                                            Ready to order <strong className="text-slate-800 dark:text-white">{newOrderTestIds.length}</strong> test{newOrderTestIds.length > 1 ? 's' : ''} (Est. Total: ₹{availableTests
+                                                .filter((t: any) => newOrderTestIds.includes(t.id))
+                                                .reduce((acc: number, curr: any) => acc + (Number(curr.price) || 0), 0)
+                                                .toLocaleString()})
                                         </span>
                                     ) : (
                                         <span>Select at least 1 test to proceed</span>
