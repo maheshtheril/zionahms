@@ -17,12 +17,12 @@ async function sync() {
 
     const financeModule = await prisma.modules.findUnique({ where: { module_key: 'finance' } });
     if (financeModule) {
-        await prisma.modules.update({ where: { module_key: 'finance' }, data: { name: 'Gateway of Tally', is_active: true } });
+        await prisma.modules.update({ where: { module_key: 'finance' }, data: { name: 'Finance & Accounts', is_active: true } });
     } else {
-        await prisma.modules.create({ data: { module_key: 'finance', name: 'Gateway of Tally', is_active: true } });
+        await prisma.modules.create({ data: { module_key: 'finance', name: 'Finance & Accounts', is_active: true } });
     }
     console.log("✅ Module 'finance' synced.");
-    console.log("✅ Module 'finance' renamed to 'Gateway of Tally'.");
+    console.log("✅ Module 'finance' renamed to 'Finance & Accounts'.");
 
     // 2. Ensure Inventory Module is active
     const invModule = await prisma.modules.findUnique({ where: { module_key: 'inventory' } });

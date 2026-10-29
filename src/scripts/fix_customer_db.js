@@ -20,8 +20,8 @@ async function run() {
         `);
         await client.query(`
             INSERT INTO "modules" (id, module_key, name, is_active, created_at, updated_at)
-            VALUES (gen_random_uuid(), 'finance', 'Gateway of Tally', true, now(), now())
-            ON CONFLICT (module_key) DO UPDATE SET name = 'Gateway of Tally', is_active = true, updated_at = now();
+            VALUES (gen_random_uuid(), 'finance', 'Finance & Accounts', true, now(), now())
+            ON CONFLICT (module_key) DO UPDATE SET name = 'Finance & Accounts', is_active = true, updated_at = now();
         `);
         await client.query(`
             INSERT INTO "modules" (id, module_key, name, is_active, created_at, updated_at)

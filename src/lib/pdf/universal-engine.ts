@@ -633,7 +633,7 @@ export async function generateUniversalPDF(
                     continue;
                 }
                 
-                // Shift close uses custom ledger tally, suppress default totals
+                // Shift close uses custom ledger reconciliation, suppress default totals
                 if ((usage as any) === 'shift_close' && isTotalElement) {
                     continue;
                 }
@@ -1300,7 +1300,7 @@ async function renderTable(doc: jsPDF, usage: string, data: any, tableConfig: an
         }
     }
 
-    // --- LEDGER TALLY (SHIFT REPORT ONLY) ---
+    // --- LEDGER RECONCILIATION (SHIFT REPORT ONLY) ---
     if ((usage as any) === 'shift_close') {
         currentY += 10 * scale;
         doc.setDrawColor(0, 0, 0);
@@ -1310,7 +1310,7 @@ async function renderTable(doc: jsPDF, usage: string, data: any, tableConfig: an
         currentY += 15 * scale;
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(fontSize);
-        doc.text("TOTAL TRANSACTIONS TALLY:", margin + (35 * scale), currentY);
+        doc.text("TOTAL RECONCILED TRANSACTIONS:", margin + (35 * scale), currentY);
         doc.text(totalDebit.toFixed(2), rateX, currentY, { align: 'right' });
         doc.text(totalCredit.toFixed(2), totalX, currentY, { align: 'right' });
         

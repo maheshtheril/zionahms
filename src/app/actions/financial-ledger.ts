@@ -5,7 +5,7 @@ import { auth } from '@/auth'
 
 /**
  * Fetches the General Ledger for any account or partner.
- * Designed for Tally ERP-style Financial Reporting.
+ * Designed for Enterprise Financial Reporting.
  */
 export async function getGeneralLedgerReport(filters: {
     accountId?: string;

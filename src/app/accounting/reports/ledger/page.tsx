@@ -47,7 +47,7 @@ export default function GeneralLedgerPage() {
 
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 md:p-8 bg-slate-50/50 dark:bg-slate-950/20 min-h-screen font-sans">
-            {/* Tally Style Header */}
+            {/* General Ledger Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-border/50 backdrop-blur-xl">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors h-10 w-10">

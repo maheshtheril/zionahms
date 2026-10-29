@@ -153,7 +153,7 @@ export const BUILT_IN_PRESETS: PrintTemplatePreset[] = [
     {
         id: 'gst_standard',
         name: 'GST Tax Invoice',
-        description: 'Indian GST compliant. CGST/SGST columns, HSN codes, supplier details. Tally-compatible.',
+        description: 'Indian GST compliant. CGST/SGST columns, HSN codes, supplier details. Enterprise standard.',
         layout: 'gst',
         brand: {
             primaryColor: '#7c3aed',
@@ -234,7 +234,7 @@ export const LAYOUT_DESCRIPTIONS: Record<PrintLayout, { icon: string; label: str
     minimal: { icon: '◻️', label: 'Minimal' },
     compact: { icon: '📄', label: 'Compact' },
     thermal: { icon: '🧾', label: 'Thermal' },
-    tally: { icon: '📊', label: 'Tally Style' },
+    tally: { icon: '📊', label: 'Classic Grid' },
     gst: { icon: '🇮🇳', label: 'GST Invoice' },
 };
 

@@ -71,7 +71,7 @@ export default function PharmacyInventoryPage() {
                 </div>
             </div>
 
-            {/* Analytic Cards - Tally Inspired Modern Look */}
+            {/* Analytic Cards - Executive Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
                     { label: 'TOTAL DRUGS', val: stats?.totalItems || 0, icon: Package, color: 'text-indigo-600', bg: 'bg-indigo-50', filter: 'ALL' },

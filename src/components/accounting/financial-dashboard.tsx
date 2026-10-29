@@ -29,7 +29,7 @@ import {
  * FINANCIAL PRIME CONTROL CENTER - WORLD STANDARD EDITION
  * High-Density, Audit-Grade Financial Intelligence Dashboard.
  * 
- * THEME AWARE: Tally-Inspired in Dark Mode / Professional ERP in Light Mode.
+ * THEME AWARE: Classic Terminal in Dark Mode / Professional ERP in Light Mode.
  */
 export function FinancialDashboard({
     currencyCode,

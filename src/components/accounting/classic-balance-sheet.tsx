@@ -42,7 +42,7 @@ export function ClassicBalanceSheet({
 
     return (
         <div className="min-h-screen bg-[#002b2b] text-[#ffffcc] font-mono select-none flex flex-col overflow-hidden">
-            {/* Tally Header Bar */}
+            {/* Classic Accounting Header Bar */}
             <div className="h-8 bg-[#004d4d] flex items-center justify-between px-4 border-b border-[#006666] text-[10px] font-bold no-print">
                 <div className="flex items-center gap-4">
                     <span className="text-[#64ffff]">BALANCE SHEET</span>
@@ -74,7 +74,7 @@ export function ClassicBalanceSheet({
                         </div>
                     </div>
 
-                    {/* TWO COLUMN TALLY LAYOUT */}
+                    {/* TWO COLUMN STANDARD LEDGER LAYOUT */}
                     <div className="flex-1 overflow-auto flex flex-col p-4">
                         <div className="flex-1 border border-[#006666] flex flex-col bg-[#002b2b]">
                             {/* Column Headers */}
@@ -167,7 +167,7 @@ export function ClassicBalanceSheet({
                     </div>
                 </div>
 
-                {/* Right Side Shortcuts (Tally Sidebar) */}
+                {/* Right Side Shortcuts (Sidebar) */}
                 <div className="w-56 bg-[#003333] border border-[#006666] flex flex-col p-1 gap-1 no-print">
                     <div className="bg-[#004d4d] flex flex-col items-center py-4 border border-[#006666] mb-2">
                         <span className="text-[12px] font-black text-[#ffffcc]">CLASSIC ERP GATEWAY</span>

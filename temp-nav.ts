@@ -581,7 +581,7 @@ export async function auditAndFixMenuPermissions() {
         await ensureHmsMenus();
         await ensureCrmMenus();
         await ensureAdminMenus();
-        await ensureAccountingMenu(); // Restored: Fixed Tally-style accounting menus
+        await ensureAccountingMenu(); // Restored: Fixed standard accounting menus
         // await ensurePurchasingMenus();
 
         // 0. CHECK REAL MODULES (User Request)

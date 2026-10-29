@@ -6,7 +6,7 @@ import { serialize } from '@/lib/utils'
 
 /**
  * Fetches the transactional stock ledger for a specific period/product.
- * Designed for Tally ERP-style viewing.
+ * Designed for Enterprise-grade viewing.
  */
 export async function getStockLedgerReport(filters: {
     productId?: string;
@@ -43,7 +43,7 @@ export async function getStockLedgerReport(filters: {
                 }
             },
             orderBy: { created_at: 'desc' },
-            take: 1000 // Tally style usually has a lot of rows
+            take: 1000 // Detailed register limit
         });
 
         // Serialization fix for Decimal objects in hms_stock_ledger

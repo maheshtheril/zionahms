@@ -35,7 +35,7 @@ const HARDCODED_CURRENCIES = [
 const HARDCODED_MODULES = [
     { id: 'hms', module_key: 'hms', name: 'Health Management', description: 'Complete Hospital Operations' },
     { id: 'crm', module_key: 'crm', name: 'CRM', description: 'Patient Relationship Management' },
-    { id: 'finance', module_key: 'finance', name: 'Finance & Accounting', description: 'Billing & Tally' }
+    { id: 'finance', module_key: 'finance', name: 'Finance & Accounting', description: 'General Ledger, Financial Accounting & Billing' }
 ];
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {

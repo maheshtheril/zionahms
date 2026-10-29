@@ -172,7 +172,9 @@ function TallySelect({
     );
 }
 
-export function TallyPaymentForm({
+export const TallyPaymentForm = (props: TallyPaymentFormProps) => <StandardPaymentForm {...props} />;
+
+export function StandardPaymentForm({
     type,
     initialData,
     onSave,

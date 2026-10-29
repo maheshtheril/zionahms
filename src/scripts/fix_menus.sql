@@ -1,6 +1,6 @@
 -- 1. Update Module Names Globally
 UPDATE modules SET name = 'Hospital' WHERE module_key = 'hms';
-UPDATE modules SET name = 'Gateway of Tally' WHERE module_key = 'finance';
+UPDATE modules SET name = 'Finance & Accounts' WHERE module_key = 'finance';
 
 -- 2. Ensure Inventory Module exists and is active globally
 INSERT INTO modules (module_key, name, is_active)

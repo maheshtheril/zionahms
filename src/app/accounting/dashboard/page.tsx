@@ -64,10 +64,10 @@ export default function AccountingGatewayPage() {
                             <ShieldCheck className="h-6 w-6 text-white" />
                         </div>
                         <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">
-                            GATEWAY OF <span className="text-indigo-600">ZIONA</span>
+                            FINANCE & <span className="text-indigo-600">ACCOUNTS HUB</span>
                         </h1>
                     </div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em] ml-1 opacity-70">Integrated ERP Accounting v.2035</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em] ml-1 opacity-70">Enterprise General Ledger & Financial Accounting</p>
                 </div>
                 
                 <div className="flex items-center gap-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-border/50 p-2 rounded-2xl shadow-sm">

@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useLocalization } from "@/contexts/localization-context";
 
-// Tally Style Schema
+// Standard Voucher Schema
 const lineItemSchema = z.object({
     categoryId: z.string().min(1, "Ledger required"),
     amount: z.coerce.number().min(0.01, "Amount required"),

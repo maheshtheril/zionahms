@@ -37,7 +37,7 @@ export class AccountingService {
 
             if (!invoice) throw new Error("Invoice not found");
 
-            // [TALLY-STYLE] Resolve Patient Name for narration fallback
+            // Resolve Patient Name for narration fallback
             const patientName = invoice.hms_patient
                 ? (invoice.hms_patient.full_name || `${invoice.hms_patient.first_name || ''} ${invoice.hms_patient.last_name || ''}`.trim())
                 : (invoice.billing_metadata as any)?.patient_name || 'Guest Patient';
@@ -284,7 +284,7 @@ export class AccountingService {
                     }
 
                     if (!debitAccount) {
-                        // Fallback to defaults using the Tally-Standardized COA codes (including legacy fallbacks)
+                        // Fallback to defaults using standardized COA codes (including legacy fallbacks)
                         const cashAccount = await prisma.accounts.findFirst({ 
                             where: { company_id: invoice.company_id, code: { in: ['1610', '1600'] } } 
                         });

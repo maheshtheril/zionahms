@@ -1271,14 +1271,14 @@ export function CompactInvoiceEditor({
       }
 
       if (res.success) {
-        let tallyMsg = `Transaction serialized as ${effectiveStatus}.`;
+        let settlementMsg = `Transaction serialized as ${effectiveStatus}.`;
         if (totalPaid > 0) {
           if (totalPaid < grandTotal) {
-            tallyMsg = `Partial settlement of ${safeCurrency}${totalPaid.toFixed(2)} recorded. Balance ${safeCurrency}${balanceDue.toFixed(2)} posted to Patient Credit ledger.`;
+            settlementMsg = `Partial settlement of ${safeCurrency}${totalPaid.toFixed(2)} recorded. Balance ${safeCurrency}${balanceDue.toFixed(2)} posted to Patient Credit ledger.`;
           } else if (totalPaid > grandTotal) {
-            tallyMsg = `Full settlement recorded with ${safeCurrency}${(totalPaid - grandTotal).toFixed(2)} advance deposit detected.`;
+            settlementMsg = `Full settlement recorded with ${safeCurrency}${(totalPaid - grandTotal).toFixed(2)} advance deposit detected.`;
           } else {
-            tallyMsg = `Invoice fully settled for ${safeCurrency}${grandTotal.toFixed(2)}. Connection closed.`;
+            settlementMsg = `Invoice fully settled for ${safeCurrency}${grandTotal.toFixed(2)}. Connection closed.`;
           }
         }
 
@@ -1290,7 +1290,7 @@ export function CompactInvoiceEditor({
         }
 
         toast.success(successTitle, { 
-          description: tallyMsg,
+          description: settlementMsg,
           className: mode === 'return' ? "bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800" : ""
         });
 
@@ -2030,7 +2030,7 @@ export function CompactInvoiceEditor({
           </div>
         </div>
 
-        {/* 2. Tally-Style Ribbon Area */}
+        {/* 2. Rapid Accounting Ribbon Area */}
         <div className="flex items-center justify-between px-6 py-2 bg-slate-100/50 dark:bg-[#003333] border-b border-slate-200 dark:border-[#006666] z-10 transition-all no-print">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
@@ -2947,7 +2947,7 @@ export function CompactInvoiceEditor({
                   </div>
                 )}
 
-                {/* Tally Summary Overlay Moved here */}
+                {/* Settlement Summary Overlay */}
                 <div className={`mt-auto p-6 rounded-3xl border transition-all duration-500 ${!isBalanced ? 'bg-amber-500/10 border-amber-500/30 animate-pulse' : 'bg-slate-200/50 dark:bg-slate-800/50 border-white/5'}`}>
                   {isSurplus ? (
                     <div className="bg-emerald-500 rounded-2xl p-5 text-center text-white mb-2 shadow-xl shadow-emerald-500/20 animate-in fade-in zoom-in">
@@ -2979,7 +2979,7 @@ export function CompactInvoiceEditor({
                           }}
                           className="mt-4 w-full py-3 bg-white text-emerald-700 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-emerald-50 transition-all shadow-sm active:scale-95"
                         >
-                          Give Change & Tally Invoice
+                          Give Change & Settle Invoice
                         </button>
                       )}
                     </div>
@@ -2991,7 +2991,7 @@ export function CompactInvoiceEditor({
                       <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-4 leading-relaxed tracking-tight underline-offset-4 decoration-dotted decoration-slate-300">
                         {isDeficit ?
                           `Deficit: ${safeCurrency}${(Math.max(0, settlementTarget - totalPaid)).toFixed(2)} to be carried as debt.` :
-                          `Transaction perfectly tallied. Ready for sync.`
+                          `Transaction perfectly reconciled. Ready for sync.`
                         }
                       </p>
                     </>

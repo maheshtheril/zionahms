@@ -38,15 +38,15 @@ export function ClassicProfitLoss({
         )
     }
 
-    // Tally often has Gross Profit calculated in the Trading Account part
+    // Gross Profit calculated in the Trading Account part
     const grossProfit = data.totalRevenue - data.totalCOGS;
 
-    // Helper to format amount for Tally look
+    // Helper to format amount for accounting display
     const val = (num: number) => num === 0 ? '' : num.toLocaleString('en-IN', { minimumFractionDigits: 2 });
 
     return (
         <div className="min-h-screen bg-[#002b2b] text-[#ffffcc] font-mono select-none flex flex-col overflow-hidden">
-            {/* Tally Header Bar */}
+            {/* Classic Accounting Header Bar */}
             <div className="h-8 bg-[#004d4d] flex items-center justify-between px-4 border-b border-[#006666] text-[10px] font-bold no-print">
                 <div className="flex items-center gap-4">
                     <span className="text-[#64ffff]">PROFIT & LOSS A/C</span>
@@ -81,7 +81,7 @@ export function ClassicProfitLoss({
                         </div>
                     </div>
 
-                    {/* TWO COLUMN TALLY LAYOUT */}
+                    {/* TWO COLUMN STANDARD LEDGER LAYOUT */}
                     <div className="flex-1 overflow-auto flex flex-col p-4">
                         <div className="flex-1 border border-[#006666] flex flex-col bg-[#002b2b]">
                             {/* Column Headers */}
@@ -191,7 +191,7 @@ export function ClassicProfitLoss({
                     </div>
                 </div>
 
-                {/* Right Side Shortcuts (Tally Sidebar) */}
+                {/* Right Side Shortcuts (Sidebar) */}
                 <div className="w-56 bg-[#003333] border border-[#006666] flex flex-col p-1 gap-1 no-print">
                     <div className="bg-[#004d4d] flex flex-col items-center py-4 border border-[#006666] mb-2">
                         <span className="text-[12px] font-black text-[#ffffcc]">CLASSIC ERP GATEWAY</span>

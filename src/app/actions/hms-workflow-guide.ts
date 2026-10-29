@@ -108,11 +108,11 @@ export async function generateHMSWorkflowGuidePDF() {
     ], [101, 119, 134]) // Slate 500
 
     addSection('4. ACCOUNTANT (Institutional ERP)', [
-        '• CLASSIC ERP MODE: Use /hms/accounting/payments/new for high-speed terminal entry. Designed for Tally experts.',
+        '• CLASSIC ERP MODE: Use /hms/accounting/payments/new for high-speed terminal entry. Designed for professional accountants.',
         '• KEYBOARD MACROS: Use Ctrl+A to Save, Esc to Quit, and Enter to navigate fields. The system is optimized for zero-mouse interaction.',
         '• VOUCHER ENTRIES: Record against bills (Suppliers/Vendors) or lead direct expense entries for miscellaneous items.',
         '• RECONCILIATION: Automatic clearing of forms after every successful save allows for endless, high-speed data entry.'
-    ], [22, 101, 52]) // Forest Green (Tally-ish)
+    ], [22, 101, 52]) // Forest Green (Classic ERP)
 
     addSection('5. LABORATORY & RADIOLOGY', [
         '• ORDER PIPELINE: View pending investigations sorted by urgency.',

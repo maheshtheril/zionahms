@@ -29,7 +29,7 @@ echo.
 echo [1/3] Recovering Module Structure...
 !PSQL_PATH! %DATABASE_URL% -c "UPDATE modules SET is_active = true, name = 'Inventory & Procurement' WHERE module_key = 'inventory';"
 !PSQL_PATH! %DATABASE_URL% -c "UPDATE modules SET is_active = true, name = 'Hospital' WHERE module_key = 'hms';"
-!PSQL_PATH! %DATABASE_URL% -c "UPDATE modules SET is_active = true, name = 'Gateway of Tally' WHERE module_key = 'finance';"
+!PSQL_PATH! %DATABASE_URL% -c "UPDATE modules SET is_active = true, name = 'Finance & Accounts' WHERE module_key = 'finance';"
 
 echo [2/3] Force-Enabling Inventory for All Tenants...
 !PSQL_PATH! %DATABASE_URL% -c "INSERT INTO tenant_module (id, tenant_id, module_key, enabled, created_at, updated_at) SELECT gen_random_uuid(), id, 'inventory', true, now(), now() FROM tenant ON CONFLICT (tenant_id, module_key) DO UPDATE SET enabled = true;"
