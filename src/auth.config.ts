@@ -33,12 +33,11 @@ export const authConfig = {
 
             // const isOnHMS = nextUrl.pathname.startsWith("/hms");
             // const isOnCRM = nextUrl.pathname.startsWith("/crm");
-            const isOnRoot = nextUrl.pathname === "/";
             const isProtected = nextUrl.pathname.startsWith("/hms") || nextUrl.pathname.startsWith("/crm") || nextUrl.pathname.startsWith("/settings") || nextUrl.pathname.startsWith("/print-studio");
             const isAuthPage = nextUrl.pathname.startsWith("/login");
 
-            // 1. If on protected route (HMS, CRM, Settings, Root)
-            if (isProtected || isOnRoot) {
+            // 1. If on protected route (HMS, CRM, Settings) - Root (/) is public landing page for logged-out visitors
+            if (isProtected) {
                 if (isLoggedIn) {
                     // Logic moved to page.tsx to prevent middleware loops
                     return true;
